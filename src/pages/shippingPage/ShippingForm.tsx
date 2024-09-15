@@ -216,6 +216,7 @@ const useSaveShippingForm = ({
 			})
 			.then(({ order, total }) => {
 				dispatch(setOrder(order));
+				// @todo: I think here is where need to update total services subtotal so that price is from canada post api.
 				dispatch(setTotal(total));
 
 				navigate("/payment");
