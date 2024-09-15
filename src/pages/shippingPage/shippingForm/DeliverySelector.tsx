@@ -59,9 +59,10 @@ const DeliveryTitle = ({delivery}: {delivery: IDelivery}) => {
 				? <StoreMallDirectoryIcon className='bdl-shipping-form__shipping-img' fontSize='large' />
 				: delivery.img && <img className='bdl-shipping-form__shipping-img' src={getImgThumb(delivery.img)} />}
 			{delivery.title}
-			<small className='bdl-shipping-form__price'>
+			{/* // @todo: Uncomment once find out how to update delivery rate before this is shown. */}
+			{/* <small className='bdl-shipping-form__price'>
 				{price ? formatCurrency(price) : t('shippingForm.freeDelivery')}
-			</small>
+			</small> */}
 		</span>
 	);
 };
