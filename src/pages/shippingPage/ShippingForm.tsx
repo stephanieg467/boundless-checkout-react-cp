@@ -202,10 +202,10 @@ const useSaveShippingForm = ({
 					})
 				) {
 					const zip = shipping_address?.zip ?? "";
-					const shippingRate = canadaShippingRate(zip);
+					// const shippingRate = canadaShippingRate(zip);
 					await api.adminOrder.updateOrder(order.id, {
 						delivery_id: delivery_id,
-						delivery_rate: shippingRate,
+						delivery_rate: 15,
 					} as unknown as IUpdateOrderRequest);
 				}
 

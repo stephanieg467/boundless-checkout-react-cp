@@ -10,7 +10,6 @@ export const canadaShippingRate = async (zip: string): Promise<any> => {
   </mailing-scenario>`;
   const parser = new XMLParser();
   let result = parser.parse(XMLdata);
-  console.log(JSON.stringify(result, null,4));
   const builder = new XMLBuilder();
   const output = builder.build(result);
   const rates = await fetch('https://soa-gw.canadapost.ca/rs/ship/price', {
