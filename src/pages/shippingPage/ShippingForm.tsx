@@ -164,43 +164,8 @@ const useSaveShippingForm = ({
 					data.billing_address = billing_address;
 				}
 
-				// 	const orderDotServices = [
-				// 		{
-				// 				"order_service_id": 163,
-				// 				"service_id": null,
-				// 				"qty": 1,
-				// 				"total_price": "10.00",
-				// 				"item_price_id": 890,
-				// 				"is_delivery": true,
-				// 				"serviceDelivery": {
-				// 						"delivery_id": 25,
-				// 						"title": null,
-				// 						"text_info": null,
-				// 						"data": null,
-				// 						"delivery": {
-				// 								"delivery_id": 25,
-				// 								"title": "Canada Post",
-				// 								"description": "Shipping cost will be provided shortly",
-				// 								"alias": null,
-				// 								"img": null,
-				// 								"shipping_id": null,
-				// 								"shipping_config": {
-				// 										"price": 10
-				// 								},
-				// 								"free_shipping_from": null,
-				// 								"calc_method": "single",
-				// 								"created_at": "2024-04-20 01:36:50.641454-04",
-				// 								"shipping": null
-				// 						}
-				// 				}
-				// 		}
-				// ]
-
-				if (
-					order.services?.find((service) => {
-						service?.serviceDelivery?.delivery?.title === "Canada Post";
-					})
-				) {
+				const title = order?.services && order?.services[0].serviceDelivery?.delivery?.title;
+				if (title === "Canada Post") {
 					const zip = shipping_address?.zip ?? "";
 					// const shippingRate = canadaShippingRate(zip);
 					await api.adminOrder.updateOrder(order.id, {
@@ -217,6 +182,7 @@ const useSaveShippingForm = ({
 			.then(({ order, total }) => {
 				dispatch(setOrder(order));
 				// @todo: I think here is where need to update total services subtotal so that price is from canada post api.
+				total.servicesSubTotal.price = "15";
 				dispatch(setTotal(total));
 
 				navigate("/payment");
