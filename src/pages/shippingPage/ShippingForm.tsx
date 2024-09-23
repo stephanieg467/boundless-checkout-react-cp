@@ -147,6 +147,8 @@ const useSaveShippingForm = ({
 			billing_address_the_same,
 		} = values;
 
+		const title = order?.services && order?.services[0].serviceDelivery?.delivery?.title;
+
 		const promise = Promise.resolve()
 			.then(async () => {
 				const data: ISetAddressesData = { order_id: order.id };
@@ -164,7 +166,6 @@ const useSaveShippingForm = ({
 					data.billing_address = billing_address;
 				}
 
-				const title = order?.services && order?.services[0].serviceDelivery?.delivery?.title;
 				if (title === "Canada Post") {
 					const zip = shipping_address?.zip ?? "";
 					// const shippingRate = canadaShippingRate(zip);
@@ -181,8 +182,8 @@ const useSaveShippingForm = ({
 			})
 			.then(({ order, total }) => {
 				dispatch(setOrder(order));
-				// @todo: I think here is where need to update total services subtotal so that price is from canada post api.
-				total.servicesSubTotal.price = "15";
+				
+				if (title === "Canada Post") total.servicesSubTotal.price = "15";
 				dispatch(setTotal(total));
 
 				navigate("/payment");
