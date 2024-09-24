@@ -147,7 +147,8 @@ const useSaveShippingForm = ({
 			billing_address_the_same,
 		} = values;
 
-		const title = order?.services && order?.services[0].serviceDelivery?.delivery?.title;
+		const service = order?.services && order?.services.find(service => service.is_delivery);
+		const title = service?.serviceDelivery?.delivery?.title;
 
 		const promise = Promise.resolve()
 			.then(async () => {
@@ -168,7 +169,7 @@ const useSaveShippingForm = ({
 
 				if (title === "Canada Post") {
 					const zip = shipping_address?.zip ?? "";
-					// const shippingRate = canadaShippingRate(zip);
+					const shippingRate = canadaShippingRate(zip);
 					await api.adminOrder.updateOrder(order.id, {
 						delivery_id: delivery_id,
 						delivery_rate: 15,
