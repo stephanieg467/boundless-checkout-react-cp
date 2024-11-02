@@ -20,8 +20,6 @@ import { setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
 import { isPickUpDelivery } from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
-import { IUpdateOrderRequest } from "boundless-api-client/dist/endpoints/adminOrder";
-import { canadaShippingRate } from "../../lib/canadaShipping";
 
 export default function ShippingForm({
 	shippingPage,
@@ -147,9 +145,6 @@ const useSaveShippingForm = ({
 			billing_address_the_same,
 		} = values;
 
-		const service = order?.services && order?.services.find(service => service.is_delivery);
-		const title = service?.serviceDelivery?.delivery?.title;
-
 		const promise = Promise.resolve()
 			.then(async () => {
 				const data: ISetAddressesData = { order_id: order.id };
@@ -167,15 +162,6 @@ const useSaveShippingForm = ({
 					data.billing_address = billing_address;
 				}
 
-				if (title === "Canada Post") {
-					const zip = shipping_address?.zip ?? "";
-					const shippingRate = canadaShippingRate(zip);
-					await api.adminOrder.updateOrder(order.id, {
-						delivery_id: delivery_id,
-						delivery_rate: 15,
-					} as unknown as IUpdateOrderRequest);
-				}
-
 				return api.customerOrder.setAddresses(data);
 			})
 			.then(() => {
@@ -184,7 +170,6 @@ const useSaveShippingForm = ({
 			.then(({ order, total }) => {
 				dispatch(setOrder(order));
 				
-				if (title === "Canada Post") total.servicesSubTotal.price = "15";
 				dispatch(setTotal(total));
 
 				navigate("/payment");

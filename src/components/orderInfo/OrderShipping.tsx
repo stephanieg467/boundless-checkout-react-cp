@@ -25,7 +25,7 @@ export default function OrderShipping({services, customer}: {services: IOrderSer
 			<Grid container>
 				<Grid item sm={8} xs={12} className='bdl-order-items__service-cell bdl-order-items__service-cell_title'>
 					<div>{delivery.serviceDelivery?.delivery?.title || ''}</div>
-					{shippingAddress && <ShippingAddress address={shippingAddress} />}
+					{/* {shippingAddress && <ShippingAddress address={shippingAddress} />} */}
 				</Grid>
 				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
 				</Grid>

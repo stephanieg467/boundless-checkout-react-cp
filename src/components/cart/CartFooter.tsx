@@ -67,13 +67,6 @@ export default function CartFooter({open}: ICartFooterProps) {
 					<span className='bdl-cart__footer-value'> -{formatCurrency(total.discount)}</span>
 				</h5>
 			</div>}
-			{hasShipping && <div className="bdl-cart__footer-row" >
-				<h5 className='bdl-cart__footer-title'>
-					{t('cart.footer.shipping')}
-					{/* // @todo: how to update total services subtotal. */}
-					<span className='bdl-cart__footer-value'> {formatCurrency(total.servicesSubTotal.price)}</span>
-				</h5>
-			</div>}
 
 			{hasTax && <div className="bdl-cart__footer-row" >
 				<h5 className='bdl-cart__footer-title'>{taxSettings?.taxTitle}:

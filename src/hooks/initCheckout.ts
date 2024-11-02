@@ -10,9 +10,7 @@ export default function useInitCheckoutByCart() {
 
 	useEffect(() => {
 		if (cartId) {
-			if (!isInited) {
-				dispatch(initCheckoutByCart());
-			}
+			dispatch(initCheckoutByCart());
 		} else {
 			dispatch(setGlobalError('Cart ID is not passed to the Checkout component.'));
 		}

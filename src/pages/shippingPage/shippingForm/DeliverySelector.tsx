@@ -43,10 +43,10 @@ export default function DeliverySelector({options}: IInPros) {
 type IInPros = Pick<ICheckoutShippingPageData, 'options'>;
 
 const DeliveryTitle = ({delivery}: {delivery: IDelivery}) => {
-	const price = delivery.shipping_config?.price;
+	// const price = delivery.shipping_config?.price;
 	const api = useAppSelector(state => state.app.api);
-	const {formatCurrency} = useFormatCurrency();
-	const {t} = useTranslation();
+	// const {formatCurrency} = useFormatCurrency();
+	// const {t} = useTranslation();
 
 	const getImgThumb = (img: string) => api!.makeThumb({
 		imgLocalPath: img,

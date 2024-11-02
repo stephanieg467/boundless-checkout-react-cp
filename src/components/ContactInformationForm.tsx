@@ -52,9 +52,9 @@ export function ContactFormView({setViewMode}: { setViewMode: (mode: TViewMode) 
 	const smGridCell = fieldsList.length ? 12 / fieldsList.length : 12;
 	const {onSubmit} = useSaveContactInfo();
 	const excludedFields = fieldsList.map(({type}) => type);
-	if (!order!.customer && !loggedInCustomer) {
-		excludedFields.push('receive_marketing_info');
-	}
+	// if (!order!.customer && !loggedInCustomer) {
+	// 	excludedFields.push('receive_marketing_info');
+	// }
 
 	return (
 		<Formik initialValues={getInitialValues(order!, loggedInCustomer)} onSubmit={onSubmit}>
@@ -119,7 +119,7 @@ export function ContactFormView({setViewMode}: { setViewMode: (mode: TViewMode) 
 								} label={t('contactForm.registerMe')}/>
 							</Grid>
 						}
-						{excludedFields.includes('receive_marketing_info') &&
+						{/* {excludedFields.includes('receive_marketing_info') &&
 						<Grid item
 									xs={12}
 						>
@@ -127,7 +127,7 @@ export function ContactFormView({setViewMode}: { setViewMode: (mode: TViewMode) 
 								<Checkbox {...checkAttrs('receive_marketing_info', formikProps)} />
 							} label={t('contactForm.receiveMarketingInfo')}/>
 						</Grid>
-						}
+						} */}
 						<Grid item xs={12} sx={{textAlign: 'right'}}>
 							<NextStepBtn stepper={stepper!}
 													 isSubmitting={formikProps.isSubmitting}
@@ -179,7 +179,7 @@ const useSaveContactInfo = () => {
 		const promise = api!.checkout.saveContactsData({
 				order_id,
 				...rest,
-				receive_marketing_info: receive_marketing_info
+				receive_marketing_info: false
 			})
 				.then(({customer, authToken}) => {
 					if (customer && authToken) {
@@ -236,7 +236,7 @@ const getFieldsList = (contactFields: ICheckoutSettingsContactFields) => {
 const getInitialValues = (order: IOrder, loggedInCustomer: ICustomer | null) => {
 	const {customer} = order;
 	const initialValues: IContactInformationFormValues = {
-		receive_marketing_info: true,
+		receive_marketing_info: false,
 		register_me: false
 	};
 
