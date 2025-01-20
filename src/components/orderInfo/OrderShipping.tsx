@@ -5,7 +5,7 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import useFormatCurrency from '../../hooks/useFormatCurrency';
 import {useTranslation} from 'react-i18next';
 
-export default function OrderShipping({services, customer}: {services: IOrderService[], customer: ICustomer | null}) {
+export default function OrderShipping({services, customer, hasShipping}: {services: IOrderService[], customer: ICustomer | null, hasShipping: boolean}) {
 	const delivery = useMemo(() => services.find(service => service.is_delivery), [services]);
 	const shippingAddress = useMemo(() =>
 		customer?.addresses?.find(address => address.type === TAddressType.shipping) || null
@@ -25,7 +25,7 @@ export default function OrderShipping({services, customer}: {services: IOrderSer
 			<Grid container>
 				<Grid item sm={8} xs={12} className='bdl-order-items__service-cell bdl-order-items__service-cell_title'>
 					<div>{delivery.serviceDelivery?.delivery?.title || ''}</div>
-					{/* {shippingAddress && <ShippingAddress address={shippingAddress} />} */}
+					{hasShipping && shippingAddress && <ShippingAddress address={shippingAddress} />}
 				</Grid>
 				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
 				</Grid>

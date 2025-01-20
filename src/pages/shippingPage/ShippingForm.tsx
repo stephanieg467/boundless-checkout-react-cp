@@ -3,14 +3,17 @@ import {
 	IAddress,
 	IAddressFields,
 	ICheckoutShippingPageData,
+	IDetailedOrder,
+	IOrder,
 	ISetAddressesData,
+	ITotal,
 	TAddressType,
 } from "boundless-api-client";
 import { Form, Formik, FormikHelpers } from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
 import { Button, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import { IShippingFormValues } from "../../types/shippingForm";
+import { IShippingFormValues, IShippingRate } from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +21,10 @@ import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import { isPickUpDelivery } from "../../lib/shipping";
+import { isPickUpDelivery, getShippingRate, updateOrderTaxes } from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
+import { RootState } from "../../redux/store";
+import { IOrderWithCustmAttr } from "../../types/Order";
 
 export default function ShippingForm({
 	shippingPage,
@@ -130,6 +135,7 @@ const useSaveShippingForm = ({
 	shippingPage: ICheckoutShippingPageData;
 }) => {
 	const { api, order } = useAppSelector((state) => state.app);
+	const cartItems = useAppSelector((state: RootState) => state.app.items);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
@@ -144,9 +150,10 @@ const useSaveShippingForm = ({
 			billing_address,
 			billing_address_the_same,
 		} = values;
+		let total: ITotal;
 
 		const promise = Promise.resolve()
-			.then(async () => {
+			.then(() => {
 				const data: ISetAddressesData = { order_id: order.id };
 				if (!isPickUpDelivery(delivery_id, shippingPage.options.delivery)) {
 					data.shipping_address = shipping_address;
@@ -167,10 +174,23 @@ const useSaveShippingForm = ({
 			.then(() => {
 				return api.checkout.setDeliveryMethod(order.id, delivery_id);
 			})
-			.then(({ order, total }) => {
-				dispatch(setOrder(order));
+			.then(({order, total: deliveryMethodTotal}) => {
+				total = deliveryMethodTotal;
+				return getShippingRate(api, order as IDetailedOrder, cartItems);
+			})
+			.then((shippingRate: IShippingRate | null) => {
+				if (shippingRate) {
+					total.servicesSubTotal.price = shippingRate['price-quotes']['price-quote']['price-details']['base'].toString();
+				};
 				
-				dispatch(setTotal(total));
+				return api.customerOrder.getOrder(order.id)
+			})
+			.then((order) => {
+				updateOrderTaxes(order as IOrderWithCustmAttr, total);
+				order.service_total_price = total.servicesSubTotal.price;
+				order.services[0].total_price = total.servicesSubTotal.price;
+				dispatch(setOrder(order as IOrder));
+				dispatch(setTotal(total))
 
 				navigate("/payment");
 			})

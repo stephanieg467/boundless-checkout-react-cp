@@ -1,4 +1,4 @@
-import {createSlice, PayloadAction} from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
 	ICartItem,
 	IOrder,
@@ -7,29 +7,47 @@ import {
 	TCheckoutStep,
 	ICustomer,
 	BoundlessClient,
-	ICheckoutInitData, ICurrency, ILocaleSettings, ISystemTax, ITotal
-} from 'boundless-api-client';
-import {ReactNode} from 'react';
-import {TClickedElement} from '../../lib/elementEvents';
+	ICheckoutInitData,
+	ICurrency,
+	ILocaleSettings,
+	ISystemTax,
+	ITotal,
+} from "boundless-api-client";
+import { ReactNode } from "react";
+import { TClickedElement } from "../../lib/elementEvents";
+import { IOrderWithCustmAttr } from "../../types/Order";
 
 const initialState: IAppState = {
 	isInited: false,
 	show: false,
 	globalError: null,
-	stepper: null
+	stepper: null,
 };
 
 const appSlice = createSlice({
-	name: 'app',
+	name: "app",
 	initialState,
 	reducers: {
-		setBasicProps(state, action: PayloadAction<Required<Pick<IAppState, 'onHide' | 'api' | 'onThankYouPage'>> & {
-			basename?: string,
-			logo?: string|ReactNode,
-			cartId?: string,
-			onCheckoutInited?: TOnCheckoutInited
-		}>) {
-			const {onHide, onThankYouPage, cartId, basename, api, logo, onCheckoutInited} = action.payload;
+		setBasicProps(
+			state,
+			action: PayloadAction<
+				Required<Pick<IAppState, "onHide" | "api" | "onThankYouPage">> & {
+					basename?: string;
+					logo?: string | ReactNode;
+					cartId?: string;
+					onCheckoutInited?: TOnCheckoutInited;
+				}
+			>
+		) {
+			const {
+				onHide,
+				onThankYouPage,
+				cartId,
+				basename,
+				api,
+				logo,
+				onCheckoutInited,
+			} = action.payload;
 
 			return {
 				...state,
@@ -39,7 +57,7 @@ const appSlice = createSlice({
 				basename,
 				api,
 				logo,
-				onCheckoutInited
+				onCheckoutInited,
 			};
 		},
 		showCheckout(state) {
@@ -50,21 +68,40 @@ const appSlice = createSlice({
 				...state,
 				show: false,
 				isInited: false,
-				globalError: null
+				globalError: null,
 			};
 		},
 		setCheckoutData(
 			state,
 			action: PayloadAction<
-				Required<Pick<
-					IAppState,
-					'items' | 'order' | 'settings' |  'currency' | 'localeSettings' | 'taxSettings' | 'stepper'
-					| 'hasCouponCampaigns' | 'needShipping' | 'total'
-				>>
+				Required<
+					Pick<
+						IAppState,
+						| "items"
+						| "order"
+						| "settings"
+						| "currency"
+						| "localeSettings"
+						| "taxSettings"
+						| "stepper"
+						| "hasCouponCampaigns"
+						| "needShipping"
+						| "total"
+					>
+				>
 			>
 		) {
 			const {
-				items, order, settings, currency, localeSettings, taxSettings, stepper, hasCouponCampaigns, needShipping, total
+				items,
+				order,
+				settings,
+				currency,
+				localeSettings,
+				taxSettings,
+				stepper,
+				hasCouponCampaigns,
+				needShipping,
+				total,
 			} = action.payload;
 
 			return {
@@ -79,14 +116,14 @@ const appSlice = createSlice({
 				isInited: true,
 				hasCouponCampaigns,
 				needShipping,
-				total
+				total,
 			};
 		},
-		setCheckoutInited(state, action: PayloadAction<{isInited: boolean}>) {
+		setCheckoutInited(state, action: PayloadAction<{ isInited: boolean }>) {
 			state.isInited = action.payload.isInited;
 		},
-		addFilledStep(state, action: PayloadAction<{step: TCheckoutStep}>) {
-			const {step} = action.payload;
+		addFilledStep(state, action: PayloadAction<{ step: TCheckoutStep }>) {
+			const { step } = action.payload;
 			const stepper = state.stepper!;
 
 			if (!stepper.filledSteps.includes(step)) {
@@ -100,17 +137,27 @@ const appSlice = createSlice({
 			const customer = action.payload;
 			state.order!.customer = customer;
 		},
-		setGlobalError(state, action: PayloadAction<string|null>) {
+		setGlobalError(state, action: PayloadAction<string | null>) {
 			state.globalError = action.payload;
 		},
 		resetAppState() {
-			return {...initialState};
+			return { ...initialState };
 		},
 		setTotal(state, action: PayloadAction<ITotal>) {
 			const total = action.payload;
+			if (state.order && total.servicesSubTotal.price) {
+				const order = state.order as IOrderWithCustmAttr
+				const shippingTaxes = order.custom_attrs.shippingTax ? Number(order.custom_attrs.shippingTax) : 0;
+				const initialTaxes = total.tax.totalTaxAmount;
+				total.tax.totalTaxAmount = (Number(initialTaxes) + shippingTaxes).toString();
+				
+				if (total.tax.shipping) {
+					total.tax.shipping.shippingTaxes = shippingTaxes.toString();
+				}
+			}
 			state.total = total;
 		},
-		setApi(state, action: PayloadAction<{api: BoundlessClient}>) {
+		setApi(state, action: PayloadAction<{ api: BoundlessClient }>) {
 			state.api = action.payload.api;
 		},
 		setIsInited(state, action: PayloadAction<boolean>) {
@@ -121,8 +168,8 @@ const appSlice = createSlice({
 		},
 		setTaxSettings(state, action: PayloadAction<ISystemTax>) {
 			state.taxSettings = action.payload;
-		}
-	}
+		},
+	},
 });
 
 export const {
@@ -140,33 +187,39 @@ export const {
 	setApi,
 	setIsInited,
 	setLocaleSettings,
-	setTaxSettings
+	setTaxSettings,
 } = appSlice.actions;
 
 export default appSlice.reducer;
 
-export type TOnThankYouPage = ({orderId, error}: {orderId: string, error?: string}) => void;
+export type TOnThankYouPage = ({
+	orderId,
+	error,
+}: {
+	orderId: string;
+	error?: string;
+}) => void;
 export type TOnCheckoutInited = (data: ICheckoutInitData) => void;
 
 export interface IAppState {
-	show: boolean,
-	isInited: boolean,
-	globalError: string|null,
-	basename?: string,
-	onHide?: (element: TClickedElement, error?: string) => void,
-	onThankYouPage?: TOnThankYouPage,
-	cartId?: string,
-	api?: BoundlessClient,
-	items?: ICartItem[],
-	order?: IOrder,
-	settings?: ICheckoutPageSettings,
-	currency?: ICurrency,
-	localeSettings?: ILocaleSettings,
-	taxSettings?: ISystemTax,
-	logo?: string|ReactNode,
-	stepper?: ICheckoutStepper|null,
-	hasCouponCampaigns?: boolean,
-	needShipping?: boolean,
-	onCheckoutInited?: TOnCheckoutInited,
-	total?: ITotal
+	show: boolean;
+	isInited: boolean;
+	globalError: string | null;
+	basename?: string;
+	onHide?: (element: TClickedElement, error?: string) => void;
+	onThankYouPage?: TOnThankYouPage;
+	cartId?: string;
+	api?: BoundlessClient;
+	items?: ICartItem[];
+	order?: IOrder;
+	settings?: ICheckoutPageSettings;
+	currency?: ICurrency;
+	localeSettings?: ILocaleSettings;
+	taxSettings?: ISystemTax;
+	logo?: string | ReactNode;
+	stepper?: ICheckoutStepper | null;
+	hasCouponCampaigns?: boolean;
+	needShipping?: boolean;
+	onCheckoutInited?: TOnCheckoutInited;
+	total?: ITotal;
 }

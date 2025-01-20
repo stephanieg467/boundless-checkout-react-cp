@@ -193,7 +193,6 @@ const useSaveContactInfo = () => {
 					navigate(nextUrl, {replace: true});
 				})
 				.catch((err) => {
-					// console.log('err:', err);
 					const {response: {data}} = err;
 					setErrors(apiErrors2Formik(data));
 				})

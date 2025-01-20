@@ -10,6 +10,7 @@ import {Provider} from 'react-redux';
 import {useAppDispatch, useAppSelector} from './hooks/redux';
 import {setApi, setIsInited, setLocaleSettings, setTaxSettings} from './redux/reducers/app';
 import {useTranslation} from 'react-i18next';
+import { IOrderWithCustmAttr } from './types/Order';
 
 export default function BoundlessOrderInfo({api, ...restProps}: BoundlessOrderInfoProps) {
 	useEffect(() => {
@@ -80,7 +81,7 @@ const OrderInfo = ({orderId, showItems = true, showPayButton = true, showStatus 
 					{order.paid_at && <Typography variant="subtitle1" gutterBottom>{t('orderInfo.paymentStatusPaid')}</Typography>}
 				</div>}
 			<Paper>
-				{showItems && <OrderItems order={order} />}
+				{showItems && <OrderItems order={order as IOrderWithCustmAttr} />}
 			</Paper>
 		</div>
 	);

@@ -6,11 +6,13 @@ import {addPromise} from '../../redux/actions/xhr';
 import {setOrder, setTotal} from '../../redux/reducers/app';
 import useFormatCurrency from '../../hooks/useFormatCurrency';
 import {useTranslation} from 'react-i18next';
+import { hasShipping, updateOrderTaxes } from '../../lib/shipping';
+import { IOrderWithCustmAttr } from '../../types/Order';
 
 export default function CartFooter({open}: ICartFooterProps) {
 	const dispatch = useAppDispatch();
 	const api = useAppSelector(state => state.app.api);
-	const order = useAppSelector(state => state.app.order);
+	const order = useAppSelector(state => state.app.order) as IOrderWithCustmAttr;
 	const total = useAppSelector(state => state.app.total);
 	const taxSettings = useAppSelector(state => state.app.taxSettings);
 	const [submitting, setSubmitting] = useState(false);
@@ -38,6 +40,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 
 		const promise = api.checkout.clearDiscounts(order.id)
 			.then(({order, total}) => {
+				updateOrderTaxes(order as IOrderWithCustmAttr, total);
 				dispatch(setOrder(order));
 				dispatch(setTotal(total));
 			})
@@ -50,12 +53,19 @@ export default function CartFooter({open}: ICartFooterProps) {
 	if (!order || !total) return null;
 
 	const hasDiscount = total.discount != '0';
-	const hasShipping = total.servicesSubTotal.price != '0';
-	const hasTax = taxSettings?.turnedOn && Number(total.tax.totalTaxAmount) > 0;
+	const orderHasShipping = hasShipping(order);
+
+	const shippingTaxes = orderHasShipping && order.custom_attrs?.shippingTax ? Number(order.custom_attrs?.shippingTax) : 0;
+	const initialTaxes = total.tax.totalTaxAmount;
+
+	const totalTaxAmount = Number(initialTaxes) + shippingTaxes;
+	const hasTax = taxSettings?.turnedOn && totalTaxAmount > 0;
+
+	const totalPrice = Number(total.servicesSubTotal.price) + Number(total.itemsSubTotal.price) - Number(total.discount) + totalTaxAmount;
 
 	return (
 		<div className={clsx('bdl-cart__footer', {open})}>
-			{(hasShipping || hasDiscount || hasTax) && <div className='bdl-cart__footer-row'>
+			{(orderHasShipping || hasDiscount || hasTax) && <div className='bdl-cart__footer-row'>
 				<h5 className='bdl-cart__footer-title'>
 					{t('cart.footer.subTotal')}
 					<span className='bdl-cart__footer-value'> {formatCurrency(total.itemsSubTotal.price)}</span>
@@ -67,14 +77,20 @@ export default function CartFooter({open}: ICartFooterProps) {
 					<span className='bdl-cart__footer-value'> -{formatCurrency(total.discount)}</span>
 				</h5>
 			</div>}
+			{orderHasShipping && <div className="bdl-cart__footer-row" >
+				<h5 className='bdl-cart__footer-title'>
+					{t('cart.footer.shipping')}
+					<span className='bdl-cart__footer-value'> {formatCurrency(total.servicesSubTotal.price)}</span>
+				</h5>
+			</div>}
 
 			{hasTax && <div className="bdl-cart__footer-row" >
 				<h5 className='bdl-cart__footer-title'>{taxSettings?.taxTitle}:
-					<span className='bdl-cart__footer-value'> {formatCurrency(total.tax.totalTaxAmount!)}</span>
+					<span className='bdl-cart__footer-value'>{formatCurrency(totalTaxAmount)}</span>
 				</h5>
 			</div>}
 			<h4 className="bdl-cart__footer-row bdl-cart__footer-row_total">
-				{t('cart.footer.total')} <span className='bdl-cart__footer-value'>{formatCurrency(total.price)}</span>
+				{t('cart.footer.total')} <span className='bdl-cart__footer-value'>{formatCurrency(totalPrice)}</span>
 			</h4>
 
 			{hasDiscount && <div className='bdl-cart__footer-rm'>
