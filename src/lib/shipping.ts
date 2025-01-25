@@ -73,7 +73,7 @@ export async function getShippingRate(
 	if (api && hasShipping(order)) {
 		const shipping = async () => {
 			try {
-				const resp = await fetch(`${process.env.BASE_URL}/api/shipping`, {
+				const resp = await fetch(`${process.env.BASE_URL}api/shipping`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -82,8 +82,7 @@ export async function getShippingRate(
 				});
 				return await resp.json();
 			} catch (error) {
-				const resp = JSON.parse(JSON.stringify({ error: error }));
-				console.error("Failed to get shipping", resp);
+				console.error("Failed to get shipping", error);
 				return null;
 			}
 		};
