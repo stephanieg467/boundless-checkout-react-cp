@@ -43,7 +43,7 @@ export default function ShippingForm({
 				<Form className={"bdl-shipping-form"}>
 					{Object.keys(formikProps.errors).length > 0 && (
 						<ExtraErrors
-							excludedFields={...Object.keys(formikProps.initialValues)}
+							excludedFields={Object.keys(formikProps.initialValues)}
 							errors={formikProps.errors}
 						/>
 					)}

@@ -112,31 +112,9 @@ const useSavePaymentMethod = () => {
 	// const dispatch = useAppDispatch();
 
 	const onSubmit = (values: IPaymentMethodFormValues, {
-		setSubmitting,
-		setErrors
+		setSubmitting
 	}: FormikHelpers<IPaymentMethodFormValues>) => {
 		if (!order || !api) return;
-
-	// 	const promise = api!.checkout.setPaymentMethod({
-	// 			order_id: order.id,
-	// 			...values
-	// 		})
-	// 			.then(({redirectTo, url, error}) => {
-	// 				if (redirectTo == 'url') {
-	// 					window.location.href = url!;
-	// 				} else if (redirectTo === TCheckoutStep.thankYou) {
-	// 					onThankYouPage!({orderId: order.id, error});
-	// 				} else {
-	// 					console.error('Unknown redirect:', redirectTo);
-	// 				}
-	// 			})
-	// 			.catch(({response: {data}}) => {
-	// 				setErrors(apiErrors2Formik(data));
-	// 			})
-	// 			.finally(() => setSubmitting(false))
-	// 	;
-
-	// 	dispatch(addPromise(promise));
 
 		onThankYouPage!({orderId: order.id});
 		setSubmitting(false)
