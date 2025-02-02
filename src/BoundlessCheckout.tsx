@@ -14,7 +14,7 @@ import {TClickedElement} from './lib/elementEvents';
 
 export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps, {}> {
 	private el: HTMLDivElement|null;
-	private rootElRef: React.RefObject<HTMLDivElement>;
+	private rootElRef: React.RefObject<HTMLDivElement | null>;
 
 	constructor(props: IBoundlessCheckoutProps) {
 		super(props);
@@ -23,7 +23,7 @@ export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps
 			? document.createElement('div')
 			: null
 		;
-		this.rootElRef = createRef();
+		this.rootElRef = createRef<HTMLDivElement>();
 	}
 
 	componentDidMount() {
