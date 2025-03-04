@@ -65,7 +65,7 @@ export function ContactFormView({setViewMode}: { setViewMode: (mode: TViewMode) 
 				})}>
 					{Object.keys(formikProps.errors).length > 0 &&
 					<ExtraErrors excludedFields={excludedFields} errors={formikProps.errors}/>}
-					<Typography variant="h5" mb={2}>
+					<Typography variant="h5" sx={{ mb: 2 }}>
 						{t('contactForm.pageHeader')}
 					</Typography>
 					{(accountPolicy === TCheckoutAccountPolicy.guestAndLogin && !loggedInCustomer) &&

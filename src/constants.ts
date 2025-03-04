@@ -1,0 +1,1 @@
+export const SHIPPING_DELIVERY_ID = 25

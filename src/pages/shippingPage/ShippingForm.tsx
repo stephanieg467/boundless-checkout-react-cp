@@ -21,60 +21,24 @@ import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import { isPickUpDelivery, getShippingRate, updateOrderTaxes } from "../../lib/shipping";
+import {
+	hasShipping,
+	isPickUpDelivery,
+	setOrderShippingRate,
+	updateOrderTaxes,
+} from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
 import { RootState } from "../../redux/store";
 import { IOrderWithCustmAttr } from "../../types/Order";
-
-export default function ShippingForm({
-	shippingPage,
-}: {
-	shippingPage: ICheckoutShippingPageData;
-}) {
-	const { onSubmit } = useSaveShippingForm({ shippingPage });
-	const { t } = useTranslation();
-
-	return (
-		<Formik
-			initialValues={getFormInitialValues(shippingPage)}
-			onSubmit={onSubmit}
-		>
-			{(formikProps) => (
-				<Form className={"bdl-shipping-form"}>
-					{Object.keys(formikProps.errors).length > 0 && (
-						<ExtraErrors
-							excludedFields={Object.keys(formikProps.initialValues)}
-							errors={formikProps.errors}
-						/>
-					)}
-					<Typography variant="h5" mb={2}>
-						{t("shippingForm.pageHeader")}
-					</Typography>
-					<DeliverySelector options={shippingPage.options} />
-					<AddressesFields shippingPage={shippingPage} />
-					<Box textAlign={"end"}>
-						<Button
-							variant="contained"
-							type={"submit"}
-							disabled={
-								formikProps.isSubmitting || !formikProps.values.delivery_id
-							}
-						>
-							{t("shippingForm.continueToPayment")}
-						</Button>
-					</Box>
-				</Form>
-			)}
-		</Formik>
-	);
-}
+import { SHIPPING_DELIVERY_ID } from "../../constants";
+import ShippingRatesField from "./shippingForm/ShippingRatesField";
 
 const getFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData
 ): IShippingFormValues => {
 	const initialValues: IShippingFormValues = {
-		delivery_id:
-			shippingPage.orderServiceDelivery?.serviceDelivery?.delivery_id || 0,
+		delivery_id: 0,
+		shippingRate: '',
 		shipping_address: getEmptyAddressFields(shippingPage.shippingAddress),
 		billing_address: getEmptyAddressFields(shippingPage.billingAddress),
 		billing_address_the_same: false,
@@ -144,12 +108,15 @@ const useSaveShippingForm = ({
 		{ setSubmitting, setErrors }: FormikHelpers<IShippingFormValues>
 	) => {
 		if (!api || !order) return;
+		
 		const {
 			delivery_id,
+			shippingRate,
 			shipping_address,
 			billing_address,
 			billing_address_the_same,
 		} = values;
+		
 		let total: ITotal;
 
 		const promise = Promise.resolve()
@@ -164,37 +131,52 @@ const useSaveShippingForm = ({
 						data.required_addresses.push(TAddressType.billing);
 						data.billing_address = billing_address;
 					}
-				} else {
-					data.required_addresses = [TAddressType.billing];
-					data.billing_address = billing_address;
-				}
 
-				return api.customerOrder.setAddresses(data);
+					return api.customerOrder.setAddresses(data);
+				}
+				return;
 			})
 			.then(() => {
 				return api.checkout.setDeliveryMethod(order.id, delivery_id);
 			})
-			.then(({order, total: deliveryMethodTotal}) => {
+			.then(async ({ order, total: deliveryMethodTotal }) => {
 				total = deliveryMethodTotal;
-				return getShippingRate(api, order as IDetailedOrder, cartItems);
+				
+				const orderShippingRate = await setOrderShippingRate(
+					order as IDetailedOrder,
+					cartItems,
+					shippingRate
+				);
+				if (hasShipping(order) && orderShippingRate && !('price-quotes' in orderShippingRate)) {
+					const error = { response: { data: [{ field: 'shippingRate', message: 'Unable to set shipping rate' }] } };
+					throw error;
+				}
+				return orderShippingRate;
 			})
 			.then((shippingRate: IShippingRate | null) => {
 				if (shippingRate) {
-					total.servicesSubTotal.price = shippingRate['price-quotes']['price-quote']['price-details']['base'].toString();
-				};
-				
-				return api.customerOrder.getOrder(order.id)
+					const priceQuote = shippingRate["price-quotes"]["price-quote"];
+					const singlePriceQuote = Array.isArray(priceQuote)
+						? priceQuote[0]
+						: priceQuote;
+					total.servicesSubTotal.price =
+						singlePriceQuote["price-details"]["base"].toString();
+				}
+
+				return api.customerOrder.getOrder(order.id);
 			})
 			.then((order) => {
 				updateOrderTaxes(order as IOrderWithCustmAttr, total);
 				order.service_total_price = total.servicesSubTotal.price;
 				order.services[0].total_price = total.servicesSubTotal.price;
 				dispatch(setOrder(order as IOrder));
-				dispatch(setTotal(total))
+				dispatch(setTotal(total));
 
 				navigate("/payment");
 			})
-			.catch(({ response: { data } }) => setErrors(apiErrors2Formik(data)))
+			.catch(({ response: { data } }) => {
+				setErrors(apiErrors2Formik(data));
+			})
 			.finally(() => setSubmitting(false));
 		dispatch(addPromise(promise));
 	};
@@ -203,3 +185,59 @@ const useSaveShippingForm = ({
 		onSubmit,
 	};
 };
+
+export default function ShippingForm({
+	shippingPage,
+}: {
+	shippingPage: ICheckoutShippingPageData;
+}) {	
+	const { onSubmit } = useSaveShippingForm({ shippingPage });
+	const { t } = useTranslation();
+
+	return (
+		<Formik
+			initialValues={getFormInitialValues(shippingPage)}
+			onSubmit={onSubmit}
+		>
+			{(formikProps) => {
+				const { values } = formikProps;
+				values.delivery_id = Number(values.delivery_id);
+				
+				const { delivery_id, shippingRate } = values;
+				
+				return (
+					<Form className={"bdl-shipping-form"}>
+						{Object.keys(formikProps.errors).length > 0 && (
+							<ExtraErrors
+								excludedFields={Object.keys(formikProps.initialValues)}
+								errors={formikProps.errors}
+							/>
+						)}
+						<Typography variant="h5" sx={{ m: 2 }}>
+							{t("shippingForm.pageHeader")}
+						</Typography>
+						<DeliverySelector options={shippingPage.options} />
+						{!isPickUpDelivery(
+							delivery_id,
+							shippingPage.options.delivery
+						) && <AddressesFields shippingPage={shippingPage} />}
+						{delivery_id === SHIPPING_DELIVERY_ID && (
+							<ShippingRatesField />
+						)}
+						<Box textAlign={"end"}>
+							<Button
+								variant="contained"
+								type={"submit"}
+								disabled={
+									formikProps.isSubmitting || !delivery_id || (delivery_id === SHIPPING_DELIVERY_ID && !shippingRate)
+								}
+							>
+								{t("shippingForm.continueToPayment")}
+							</Button>
+						</Box>
+					</Form>
+				);
+			}}
+		</Formik>
+	);
+}

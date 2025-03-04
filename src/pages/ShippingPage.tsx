@@ -8,25 +8,6 @@ import {addPromise} from '../redux/actions/xhr';
 import ShippingForm from './shippingPage/ShippingForm';
 import {useTranslation} from 'react-i18next';
 
-export default function ShippingPage() {
-	const {isInited, shippingPage} = useInitShippingPage();
-	const {t} = useTranslation();
-
-	useEffect(() => {
-		document.title = t('shippingForm.pageTitle');
-	}, []);//eslint-disable-line
-
-	if (!isInited) {
-		return <Loading />;
-	}
-
-	return (
-		<CheckoutLayout>
-			{shippingPage ? <ShippingForm shippingPage={shippingPage} /> : <Loading />}
-		</CheckoutLayout>
-	);
-}
-
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();
 	const [shippingPage, setShippingPage] = useState<null | ICheckoutShippingPageData>(null);
@@ -47,3 +28,22 @@ const useInitShippingPage = () => {
 		shippingPage
 	};
 };
+
+export default function ShippingPage() {
+	const {isInited, shippingPage} = useInitShippingPage();
+	const {t} = useTranslation();
+
+	useEffect(() => {
+		document.title = t('shippingForm.pageTitle');
+	}, []);//eslint-disable-line
+
+	if (!isInited) {
+		return <Loading />;
+	}
+
+	return (
+		<CheckoutLayout>
+			{shippingPage ? <ShippingForm shippingPage={shippingPage} /> : <Loading />}
+		</CheckoutLayout>
+	);
+}

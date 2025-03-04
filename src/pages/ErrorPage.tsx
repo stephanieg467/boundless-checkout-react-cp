@@ -26,7 +26,7 @@ export default function ErrorPage({error}: {error: string}) {
 						<AlertTitle>{t('errorPage.error')}</AlertTitle>
 						{error}
 					</Alert>
-					<Box mt={2} textAlign={'center'}>
+					<Box sx={{ mt: 2 }} textAlign={'center'}>
 						<Button variant="contained"
 										size="large"
 										onClick={onBackClicked}

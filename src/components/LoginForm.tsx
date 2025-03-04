@@ -46,7 +46,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 		<Formik initialValues={{email: '', password: ''}} onSubmit={onSubmit}>
 			{(formikProps) => (
 				<Form className={'bdl-login-form'}>
-					<Typography variant="h5" mb={2}>{t('loginForm.pageHeader')}</Typography>
+					<Typography variant="h5" sx={{ mb: 2 }}>{t('loginForm.pageHeader')}</Typography>
 					{accountPolicy === TCheckoutAccountPolicy.guestAndLogin &&
 						<Typography align={'right'}
 							variant="body2"

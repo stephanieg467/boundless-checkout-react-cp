@@ -7,7 +7,7 @@ import {
 	ITotal,
 	IOrder,
 } from "boundless-api-client";
-import { IShippingRate } from "../types/shippingForm";
+import { IShippingRate, IShippingRateInfo } from "../types/shippingForm";
 import { IOrderWithCustmAttr } from "../types/Order";
 
 export const isPickUpDelivery = (
@@ -65,12 +65,47 @@ export const updateOrderTaxes = (order: IOrderWithCustmAttr, total: ITotal) => {
 	}
 };
 
-export async function getShippingRate(
-	api: BoundlessClient,
+export async function fetchShippingRates(
+	zip: string,
+	cartItems: ICartItem[] | undefined,
+): Promise<IShippingRateInfo[] | null> {
+	const shipping = async () => {
+		try {
+			const resp = await fetch(`${process.env.BASE_URL}api/shippingRates`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ zip: zip, cartItems: cartItems }),
+			});
+			
+			if (!resp.ok) {
+				throw new Error("Failed to get shipping rates");
+			}
+			
+			return await resp.json();
+		} catch (error) {
+			console.error("Failed to get shipping", error);
+			// @todo: test this.
+			throw new Error("Failed to get shipping rate");
+		}
+	};
+	return shipping();
+}
+
+export async function setOrderShippingRate(
 	order: IDetailedOrder,
-	cartItems: ICartItem[] | undefined
+	cartItems: ICartItem[] | undefined,
+	shippingRate?: string
 ): Promise<IShippingRate | null> {
-	if (api && hasShipping(order)) {
+	if (hasShipping(order) && shippingRate) {
+		const serviceCodes = {
+			'Xpresspost': 'DOM.XP',
+			'Regular Parcel': 'DOM.RP',
+			'Expedited Parcel': 'DOM.EP',
+		} as const;
+		const serviceCode = serviceCodes[shippingRate as keyof typeof serviceCodes];
+		
 		const shipping = async () => {
 			try {
 				const resp = await fetch(`${process.env.BASE_URL}api/shipping`, {
@@ -78,12 +113,12 @@ export async function getShippingRate(
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ order: order, cartItems: cartItems }),
+					body: JSON.stringify({ serviceCode: serviceCode, order: order, cartItems: cartItems }),
 				});
 				return await resp.json();
 			} catch (error) {
 				console.error("Failed to get shipping", error);
-				return null;
+				throw new Error("Failed to get shipping rates")
 			}
 		};
 		return shipping();

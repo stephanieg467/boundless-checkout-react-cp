@@ -1,125 +1,159 @@
-import React from 'react';
-import {IVWCountry, TCheckoutCustomerName, TCheckoutFieldStatus} from 'boundless-api-client';
-import Grid from '@mui/material/Grid';
-import {FormikProps, useFormikContext} from 'formik';
-import TextField from '@mui/material/TextField';
-import {IFieldAttrs} from '../../../lib/formUtils';
-import {useAppSelector} from '../../../hooks/redux';
-import {IAddressSubForm, IShippingFormValues} from '../../../types/shippingForm';
-import {useTranslation} from 'react-i18next';
+import React from "react";
+import {
+	IVWCountry,
+	TCheckoutCustomerName,
+	TCheckoutFieldStatus,
+} from "boundless-api-client";
+import Grid from "@mui/material/Grid";
+import { FormikProps, useFormikContext } from "formik";
+import TextField from "@mui/material/TextField";
+import { IFieldAttrs } from "../../../lib/formUtils";
+import { useAppSelector } from "../../../hooks/redux";
+import {
+	IAddressSubForm,
+	IShippingFormValues,
+} from "../../../types/shippingForm";
+import { useTranslation } from "react-i18next";
+import { SHIPPING_DELIVERY_ID } from "../../../constants";
 
-export default function AddressFieldset({countries, showPhone, keyPrefix}: IProps) {
-	const {settings} = useAppSelector(state => state.app);
+export default function AddressFieldset({
+	countries,
+	showPhone,
+	keyPrefix,
+}: IProps) {
+	const { settings } = useAppSelector((state) => state.app);
 	const formikProps = useFormikContext<IShippingFormValues>();
-	const {t} = useTranslation();
+	const { values } = formikProps;
+	values.delivery_id = Number(values.delivery_id);
+	
+	const { delivery_id } = values;
+	const { t } = useTranslation();
 
 	return (
 		<Grid container spacing={2}>
 			<Grid item xs={6}>
-				<TextField label={t('addresses.firstName')}
-									 variant={'standard'}
-									 required={settings!.customerNameRequired.includes(TCheckoutCustomerName.first)}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'first_name', formikProps)}
+				<TextField
+					label={t("addresses.firstName")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID && settings!.customerNameRequired.includes(
+						TCheckoutCustomerName.first
+					)}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "first_name", formikProps)}
 				/>
 			</Grid>
 			<Grid item xs={6}>
-				<TextField label={t('addresses.lastName')}
-									 variant={'standard'}
-									 required={true}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'last_name', formikProps)}
+				<TextField
+					label={t("addresses.lastName")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "last_name", formikProps)}
 				/>
 			</Grid>
 
-			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(settings!.companyName) &&
+			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(
+				settings!.companyName
+			) && (
+				<Grid item xs={12}>
+					<TextField
+						label={t("addresses.company")}
+						variant={"standard"}
+						required={delivery_id === SHIPPING_DELIVERY_ID && settings!.companyName === TCheckoutFieldStatus.required}
+						fullWidth
+						{...addressFieldAttrs(keyPrefix, "company", formikProps)}
+					/>
+				</Grid>
+			)}
+
 			<Grid item xs={12}>
-				<TextField label={t('addresses.company')}
-									 variant={'standard'}
-									 required={settings!.companyName === TCheckoutFieldStatus.required}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'company', formikProps)}
-				/>
-			</Grid>
-			}
-
-			<Grid item xs={12}>
-				<TextField label={t('addresses.addressLine1')}
-									 variant={'standard'}
-									 required={true}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'address_line_1', formikProps)}
+				<TextField
+					label={t("addresses.addressLine1")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "address_line_1", formikProps)}
 				/>
 			</Grid>
 
-			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(settings!.addressLine2) &&
-			<Grid item xs={12}>
-				<TextField label={t('addresses.addressLine2')}
-									 variant={'standard'}
-									 required={settings!.addressLine2 === TCheckoutFieldStatus.required}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'address_line_2', formikProps)}
-				/>
-			</Grid>
-			}
+			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(
+				settings!.addressLine2
+			) && (
+				<Grid item xs={12}>
+					<TextField
+						label={t("addresses.addressLine2")}
+						variant={"standard"}
+						required={delivery_id === SHIPPING_DELIVERY_ID && settings!.addressLine2 === TCheckoutFieldStatus.required}
+						fullWidth
+						{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
+					/>
+				</Grid>
+			)}
 
 			<Grid item xs={6}>
-				<TextField label={t('addresses.zip')}
-									 variant={'standard'}
-									 required={true}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'zip', formikProps)}
+				<TextField
+					label={t("addresses.zip")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "zip", formikProps)}
 				/>
 			</Grid>
 			<Grid item xs={6}>
-				<TextField label={t('addresses.city')}
-									 variant={'standard'}
-									 required={true}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'city', formikProps)}
+				<TextField
+					label={t("addresses.city")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "city", formikProps)}
 				/>
 			</Grid>
 
 			<Grid item xs={6}>
-				<TextField label={t('addresses.state')}
-									 variant={'standard'}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'state', formikProps)}
+				<TextField
+					label={t("addresses.state")}
+					variant={"standard"}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
 			<Grid item xs={6}>
-				<TextField label={t('addresses.country')}
-									 variant={'standard'}
-									 required={true}
-									 fullWidth
-									 select
-									 SelectProps={{native: true}}
-									 {...addressFieldAttrs(keyPrefix, 'country_id', formikProps)}
+				<TextField
+					label={t("addresses.country")}
+					variant={"standard"}
+					required={delivery_id === SHIPPING_DELIVERY_ID}
+					fullWidth
+					select
+					SelectProps={{ native: true }}
+					{...addressFieldAttrs(keyPrefix, "country_id", formikProps)}
 				>
 					<option>Select country</option>
-					{countries.map(({country_id, title}) =>
-						<option key={country_id} value={country_id}>{title}</option>
-					)}
+					{countries.map(({ country_id, title }) => (
+						<option key={country_id} value={country_id}>
+							{title}
+						</option>
+					))}
 				</TextField>
 			</Grid>
 
-			{showPhone &&
-			<Grid item xs={12}>
-				<TextField label={t('addresses.phone')}
-									 variant={'standard'}
-									 fullWidth
-									 {...addressFieldAttrs(keyPrefix, 'phone', formikProps)}
-				/>
-			</Grid>
-			}
+			{showPhone && (
+				<Grid item xs={12}>
+					<TextField
+						label={t("addresses.phone")}
+						variant={"standard"}
+						fullWidth
+						{...addressFieldAttrs(keyPrefix, "phone", formikProps)}
+					/>
+				</Grid>
+			)}
 		</Grid>
 	);
 }
 
 interface IProps {
-	countries: IVWCountry[],
-	showPhone?: boolean,
-	keyPrefix: 'shipping_address' | 'billing_address'
+	countries: IVWCountry[];
+	showPhone?: boolean;
+	keyPrefix: "shipping_address" | "billing_address";
 }
 
 export interface IAddressFields {
@@ -130,18 +164,18 @@ export interface IAddressFields {
 	address_line_2?: string;
 	city?: string;
 	state?: string;
-	country_id?: number|string;
+	country_id?: number | string;
 	zip?: string;
 	phone?: string;
 }
 
 export function addressFieldAttrs(
-	keyPrefix: 'shipping_address' | 'billing_address',
+	keyPrefix: "shipping_address" | "billing_address",
 	field: string,
 	formikProps: FormikProps<IShippingFormValues>,
-	helperText: string = ''
+	helperText: string = ""
 ): IFieldAttrs {
-	const {errors, values, handleChange} = formikProps;
+	const { errors, values, handleChange } = formikProps;
 	const addressValues = values[keyPrefix] as IAddressSubForm;
 
 	const fullName = `${keyPrefix}.${field}`;
@@ -156,8 +190,8 @@ export function addressFieldAttrs(
 	const out: IFieldAttrs = {
 		name: fullName,
 		error,
-		value: '',
-		onChange: handleChange
+		value: "",
+		onChange: handleChange,
 	};
 
 	//@ts-ignore
@@ -166,8 +200,7 @@ export function addressFieldAttrs(
 		out.value = addressValues[field];
 	}
 
-	if (helperText)
-		out.helperText = helperText;
+	if (helperText) out.helperText = helperText;
 
 	return out;
 }
