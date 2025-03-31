@@ -16,6 +16,7 @@ import {
 import { ReactNode } from "react";
 import { TClickedElement } from "../../lib/elementEvents";
 import { IOrderWithCustmAttr } from "../../types/Order";
+import { IUseCartItems } from "../../types/cart";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -210,7 +211,7 @@ export interface IAppState {
 	onThankYouPage?: TOnThankYouPage;
 	cartId?: string;
 	api?: BoundlessClient;
-	items?: ICartItem[];
+	items?: IUseCartItems[];
 	order?: IOrder;
 	settings?: ICheckoutPageSettings;
 	currency?: ICurrency;

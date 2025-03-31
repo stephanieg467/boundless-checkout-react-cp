@@ -9,6 +9,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import { checkAttrs } from "../../../lib/formUtils";
 import { useTranslation } from "react-i18next";
+import { isPickUpDelivery } from "../../../lib/shipping";
 
 export default function AddressesFields({
 	shippingPage,
@@ -23,33 +24,56 @@ export default function AddressesFields({
 
 	return (
 		<>
-			<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
-				<Typography variant="h6">{t("addresses.shippingAddress")}</Typography>
-				<AddressFieldset
-					countries={shippingPage.options.country}
-					keyPrefix={"shipping_address"}
-					showPhone
-				/>
-			</Box>
-			<Box sx={{ mb: 2 }}>
-				<FormControlLabel
-					control={
-						<Checkbox
-							value={true}
-							{...checkAttrs("billing_address_the_same", formikProps)}
+			{isPickUpDelivery(
+				formikProps.values.delivery_id,
+				shippingPage.options.delivery
+			) ? (
+				<>
+					<Box className="bdl-shipping-form__address-form" mb={2}>
+						<Typography variant="h6">
+							{t("addresses.billingAddress")}
+						</Typography>
+						<AddressFieldset
+							countries={shippingPage.options.country}
+							keyPrefix={"billing_address"}
 						/>
-					}
-					label={t("addresses.billingTheSame")}
-				/>
-			</Box>
-			{!values.billing_address_the_same && (
-				<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
-					<Typography variant="h6">{t("addresses.billingAddress")}</Typography>
-					<AddressFieldset
-						countries={shippingPage.options.country}
-						keyPrefix={"billing_address"}
-					/>
-				</Box>
+					</Box>
+				</>
+			) : (
+				<>
+					<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
+						<Typography variant="h6">
+							{t("addresses.shippingAddress")}
+						</Typography>
+						<AddressFieldset
+							countries={shippingPage.options.country}
+							keyPrefix={"shipping_address"}
+							showPhone
+						/>
+					</Box>
+					<Box sx={{ mb: 2 }}>
+						<FormControlLabel
+							control={
+								<Checkbox
+									value={true}
+									{...checkAttrs("billing_address_the_same", formikProps)}
+								/>
+							}
+							label={t("addresses.billingTheSame")}
+						/>
+					</Box>
+					{!values.billing_address_the_same && (
+						<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
+							<Typography variant="h6">
+								{t("addresses.billingAddress")}
+							</Typography>
+							<AddressFieldset
+								countries={shippingPage.options.country}
+								keyPrefix={"billing_address"}
+							/>
+						</Box>
+					)}
+				</>
 			)}
 		</>
 	);

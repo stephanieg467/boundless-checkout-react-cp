@@ -20,9 +20,9 @@ export default function CartItems() {
 		<ul className='bdl-cart-item__list'>
 			{cartItems?.map(item => (
 				<li className='bdl-cart-item' key={item.basket_item_id}>
-					{item.vwItem.image
+					{item.vwItem.image || item.image
 						? <div className='bdl-cart-item__img'>
-							<img {...getProductImg(api!, item.vwItem.image, 200)} />
+							<img {...getProductImg(api!, item.image, 200)} />
 						</div>
 						: <div className='bdl-cart-item__img no-image' />}
 					<div className='bdl-cart-item__desc'>

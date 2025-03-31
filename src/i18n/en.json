@@ -6,6 +6,8 @@
 		"login": "Login",
 		"email": "Email",
 		"phone": "Phone",
+		"firstName": "First name",
+		"lastName": "Last name",
 		"receiveMarketingInfo": "Email me with news and offers",
 		"continueToShipping": "Continue to shipping",
 		"continueToPayment": "Continue to payment",

@@ -16,9 +16,9 @@ export default function OrderRow({item}: {item: IOrderItem}) {
 		<>
 			<Grid className='bdl-order-item' container>
 				<Grid item className='bdl-order-item__description-col' sm={6} xs={12}>
-					{(item.vwItem.image && api)
+					{((item.image) && api)
 						? <div className='bdl-order-item__img'>
-							<img {...getProductImg(api, item.vwItem.image, 200)} />
+							<img {...getProductImg(api, item.image, 200)} />
 						</div>
 						: <div className='bdl-order-item__img no-image' />}
 					<div className='bdl-order-item__title'>

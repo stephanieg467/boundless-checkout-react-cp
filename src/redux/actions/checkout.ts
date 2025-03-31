@@ -3,6 +3,7 @@ import {setCheckoutData, setCheckoutInited, setGlobalError} from '../reducers/ap
 import {setLoggedInCustomer, userCookieName} from './user';
 import Cookie from 'js-cookie';
 import {TClickedElement} from '../../lib/elementEvents';
+import addImagesToItems from '../../lib/addImagesToItems';
 
 export const initCheckoutByCart = (): AppThunk => async (dispatch, getState) => {
 	const {api, cartId, onCheckoutInited, onHide} = getState().app;
@@ -13,14 +14,17 @@ export const initCheckoutByCart = (): AppThunk => async (dispatch, getState) => 
 	}
 
 	api!.checkout.init(cartId!)
-		.then((data) => {
+		.then(async (data) => {
 			if (!data.items.length) {
 				dispatch(setGlobalError('Your cart is empty. Please go back to the site and start shopping.'));
 
 				return;
 			}
 
-			dispatch(setCheckoutData(data));
+			const {items} = data;
+			const itemsWithImages = await addImagesToItems(items, api!);
+
+			dispatch(setCheckoutData({...data, items: itemsWithImages}));
 
 			if (data.loggedInCustomer) {
 				dispatch(setLoggedInCustomer(data.loggedInCustomer, customerAuthToken!));

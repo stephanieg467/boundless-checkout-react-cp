@@ -11,6 +11,7 @@ import {useAppDispatch, useAppSelector} from './hooks/redux';
 import {setApi, setIsInited, setLocaleSettings, setTaxSettings} from './redux/reducers/app';
 import {useTranslation} from 'react-i18next';
 import { IOrderWithCustmAttr } from './types/Order';
+import addImagesToItems from './lib/addImagesToItems';
 
 export default function BoundlessOrderInfo({api, ...restProps}: BoundlessOrderInfoProps) {
 	useEffect(() => {
@@ -53,8 +54,10 @@ const OrderInfo = ({orderId, showItems = true, showPayButton = true, showStatus 
 					dispatch(setTaxSettings(data['system.tax'] as ISystemTax));
 					return api.customerOrder.getOrder(orderId);
 				})
-				.then((data) => {
-					setOrder(data);
+				.then(async (data) => {
+					const {items} = data;
+					const itemsWithImages = await addImagesToItems(items, api!);
+					setOrder({...data, items: itemsWithImages});
 				})
 				.catch(err => {
 					console.error(err);

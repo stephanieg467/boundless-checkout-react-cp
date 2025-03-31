@@ -166,6 +166,7 @@ const useSaveShippingForm = ({
 				return api.customerOrder.getOrder(order.id);
 			})
 			.then((order) => {
+				// @todo: check if order has beverages and if so apply bottle tax.
 				updateOrderTaxes(order as IOrderWithCustmAttr, total);
 				order.service_total_price = total.servicesSubTotal.price;
 				order.services[0].total_price = total.servicesSubTotal.price;
