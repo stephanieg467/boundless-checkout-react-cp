@@ -124,8 +124,11 @@ export default function AddressFieldset({
 					required={delivery_id === SHIPPING_DELIVERY_ID}
 					fullWidth
 					select
+					disabled
 					SelectProps={{ native: true }}
 					{...addressFieldAttrs(keyPrefix, "country_id", formikProps)}
+					defaultValue="Canada"
+          helperText="Currently only shipping within Canada"
 				>
 					<option>Select country</option>
 					{countries.map(({ country_id, title }) => (

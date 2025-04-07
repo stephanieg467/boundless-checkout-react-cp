@@ -9,7 +9,7 @@ import {useTranslation} from 'react-i18next';
 import { hasShipping, updateOrderTaxes } from '../../lib/shipping';
 import { IOrderWithCustmAttr } from '../../types/Order';
 
-export default function CartFooter({open}: ICartFooterProps) {
+export default async function CartFooter({open}: ICartFooterProps) {
 	const dispatch = useAppDispatch();
 	const api = useAppSelector(state => state.app.api);
 	const order = useAppSelector(state => state.app.order) as IOrderWithCustmAttr;
@@ -55,10 +55,27 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const hasDiscount = total.discount != '0';
 	const orderHasShipping = hasShipping(order);
 
+	const calculateBeverageCount = async () => {
+		let count = 0;
+		
+		if (order.items) {
+			await Promise.all(order.items.map(async (item) => {
+				const product = await api?.catalog.getProduct(item.vwItem.product_id);
+				if (product?.props.arbitrary_data?.is_beverage) {
+					count += item.qty;
+				}
+			}));
+		}
+		
+		return count;
+	};
+
+	const numOfBeverages = await calculateBeverageCount()
+	const beverageTaxes = numOfBeverages > 0 ? Number(numOfBeverages * 0.10) : 0;
 	const shippingTaxes = orderHasShipping && order.custom_attrs?.shippingTax ? Number(order.custom_attrs?.shippingTax) : 0;
 	const initialTaxes = total.tax.totalTaxAmount;
 
-	const totalTaxAmount = Number(initialTaxes) + shippingTaxes;
+	const totalTaxAmount = Number(initialTaxes) + shippingTaxes + beverageTaxes;
 	const hasTax = taxSettings?.turnedOn && totalTaxAmount > 0;
 
 	const totalPrice = Number(total.servicesSubTotal.price) + Number(total.itemsSubTotal.price) - Number(total.discount) + totalTaxAmount;

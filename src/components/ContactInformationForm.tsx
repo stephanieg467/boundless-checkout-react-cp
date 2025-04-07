@@ -329,6 +329,8 @@ const getInitialValues = (
 	const initialValues: IContactInformationFormValues = {
 		receive_marketing_info: false,
 		register_me: false,
+		first_name: "",
+		last_name: "",
 	};
 
 	if (loggedInCustomer) {

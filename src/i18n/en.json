@@ -51,9 +51,9 @@
 		"company": "Company",
 		"addressLine1": "Address",
 		"addressLine2": "Apartment, suite, etc.",
-		"zip": "ZIP code",
+		"zip": "Postal code",
 		"city": "City",
-		"state": "State",
+		"state": "Province",
 		"country": "Country",
 		"phone": "Phone"
 	},
