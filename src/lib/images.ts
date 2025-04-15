@@ -19,7 +19,6 @@ export function getProductImg(api: BoundlessClient, image: IItemImage, maxSize: 
 			src: image.path,
 			width: width ?? undefined,
 			height: height ?? undefined,
-			blurSrc: image.path
 		};
 	}
 

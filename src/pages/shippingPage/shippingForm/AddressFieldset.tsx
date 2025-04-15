@@ -14,7 +14,6 @@ import {
 	IShippingFormValues,
 } from "../../../types/shippingForm";
 import { useTranslation } from "react-i18next";
-import { SHIPPING_DELIVERY_ID } from "../../../constants";
 
 export default function AddressFieldset({
 	countries,
@@ -26,7 +25,6 @@ export default function AddressFieldset({
 	const { values } = formikProps;
 	values.delivery_id = Number(values.delivery_id);
 	
-	const { delivery_id } = values;
 	const { t } = useTranslation();
 
 	return (
@@ -35,7 +33,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.firstName")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID && settings!.customerNameRequired.includes(
+					required={settings!.customerNameRequired.includes(
 						TCheckoutCustomerName.first
 					)}
 					fullWidth
@@ -46,7 +44,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.lastName")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID}
+					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "last_name", formikProps)}
 				/>
@@ -59,7 +57,7 @@ export default function AddressFieldset({
 					<TextField
 						label={t("addresses.company")}
 						variant={"standard"}
-						required={delivery_id === SHIPPING_DELIVERY_ID && settings!.companyName === TCheckoutFieldStatus.required}
+						required={settings!.companyName === TCheckoutFieldStatus.required}
 						fullWidth
 						{...addressFieldAttrs(keyPrefix, "company", formikProps)}
 					/>
@@ -70,7 +68,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.addressLine1")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID}
+					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "address_line_1", formikProps)}
 				/>
@@ -83,7 +81,7 @@ export default function AddressFieldset({
 					<TextField
 						label={t("addresses.addressLine2")}
 						variant={"standard"}
-						required={delivery_id === SHIPPING_DELIVERY_ID && settings!.addressLine2 === TCheckoutFieldStatus.required}
+						required={settings!.addressLine2 === TCheckoutFieldStatus.required}
 						fullWidth
 						{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
 					/>
@@ -94,7 +92,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.zip")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID}
+					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "zip", formikProps)}
 				/>
@@ -103,7 +101,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.city")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID}
+					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "city", formikProps)}
 				/>
@@ -114,6 +112,7 @@ export default function AddressFieldset({
 					label={t("addresses.state")}
 					variant={"standard"}
 					fullWidth
+					required
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
@@ -121,13 +120,13 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.country")}
 					variant={"standard"}
-					required={delivery_id === SHIPPING_DELIVERY_ID}
 					fullWidth
 					select
 					disabled
 					SelectProps={{ native: true }}
 					{...addressFieldAttrs(keyPrefix, "country_id", formikProps)}
-					defaultValue="Canada"
+					// @todo: hard code Canada country code.
+					value={40}
           helperText="Currently only shipping within Canada"
 				>
 					<option>Select country</option>

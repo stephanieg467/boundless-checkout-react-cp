@@ -25,6 +25,27 @@ export const isPickUpDelivery = (
 	return false;
 };
 
+export const deliveryMethod = (
+	deliveryId: number,
+	deliveryOptions: IDelivery[]
+): string => {
+	const selectedDelivery = deliveryOptions.find(
+		({ delivery_id }) => delivery_id == deliveryId
+	);
+
+	if (selectedDelivery) {
+		if (selectedDelivery.title === 'Canada Post') {
+			return 'shipping'
+		}
+		if (selectedDelivery.title === 'Delivery') {
+			return 'delivery'
+		}
+		return 'pickup'
+	}
+
+	return '';
+};
+
 export const hasShipping = (order: IDetailedOrder | IOrder) => {
 	if (!order.services || order.services.length < 1) return false;
 	

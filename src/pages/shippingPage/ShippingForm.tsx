@@ -87,7 +87,9 @@ const getEmptyAddressFields = (
 		address_line_2: address_line_2 || "",
 		city: city || "",
 		state: state || "",
-		country_id: country_id || 0,
+		// country_id: country_id || 0,
+		// @todo: currently only shipping in Canada.
+		country_id: 40,
 		zip: zip || "",
 		phone: phone || "",
 	};

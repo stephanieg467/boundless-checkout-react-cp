@@ -63,9 +63,7 @@ export default function DeliverySelector({options}: IInPros) {
 								control={<Radio size='small' required />}
 								label={<DeliveryTitle delivery={delivery} />}
 							/>
-							{formikProps.values.delivery_id == delivery.delivery_id &&
-								<DeliveryDetails delivery={delivery} />
-							}
+							<DeliveryDetails delivery={delivery} />
 						</React.Fragment>
 					))}
 				</RadioGroup>
