@@ -14,7 +14,12 @@
 
 	&__shipping-details {
 		display: flex;
-		padding: 0 0 10px;
+    align-items: center;
+		padding: 0 10px 0 0;
+	}
+	
+	&__shipping-label {
+		display: flex;
 	}
 
 	&__shipping-item {

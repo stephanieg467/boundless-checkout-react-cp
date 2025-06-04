@@ -8,7 +8,6 @@ import TextField from '@mui/material/TextField';
 import {apiErrors2Formik, fieldAttrs} from '../lib/formUtils';
 import Button from '@mui/material/Button';
 import LoginIcon from '@mui/icons-material/Login';
-import {TCheckoutAccountPolicy} from 'boundless-api-client';
 import {addPromise} from '../redux/actions/xhr';
 import {setLoggedInCustomer} from '../redux/actions/user';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
@@ -37,8 +36,6 @@ export default function LoginForm() {
 }
 
 export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => void}) {
-	const {settings} = useAppSelector(state => state.app);
-	const {accountPolicy} = settings!;
 	const {onSubmit} = useSaveLoginForm(setViewMode);
 	const {t} = useTranslation();
 
@@ -47,8 +44,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 			{(formikProps) => (
 				<Form className={'bdl-login-form'}>
 					<Typography variant="h5" sx={{ mb: 2 }}>{t('loginForm.pageHeader')}</Typography>
-					{accountPolicy === TCheckoutAccountPolicy.guestAndLogin &&
-						<Typography align={'right'}
+					<Typography align={'right'}
 							variant="body2"
 							gutterBottom
 						>
@@ -61,7 +57,6 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 								{t('loginForm.continueAsGuest')}
 							</Button>
 						</Typography>
-					}
 					<Grid container spacing={2}>
 						<Grid item xs={12}>
 							<Box sx={{display: 'flex', alignItems: 'flex-end'}}>

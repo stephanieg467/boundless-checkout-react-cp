@@ -2,31 +2,29 @@ import React, { useEffect, useState } from "react";
 import { Form, Formik, FormikHelpers } from "formik";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import {
-	ICheckoutSettingsContactFields,
 	IOrder,
 	ICheckoutStepper,
 	TCheckoutStep,
-	TCheckoutAccountPolicy,
 	ICustomer,
 } from "boundless-api-client";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
-import { apiErrors2Formik, checkAttrs, fieldAttrs } from "../lib/formUtils";
-import { addPromise } from "../redux/actions/xhr";
+import { fieldAttrs } from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
 import { addFilledStep, setOrdersCustomer } from "../redux/reducers/app";
 import { useNavigate } from "react-router-dom";
 import Typography from "@mui/material/Typography";
-import LoginIcon from "@mui/icons-material/Login";
 import { LoginFormView } from "./LoginForm";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { setLoggedInCustomer } from "../redux/actions/user";
+import { v4 } from "uuid";
+import {
+	setLocalStorageCheckoutData,
+} from "../hooks/checkoutData";
+import { IOrderWithCustmAttr } from "../types/Order";
 
 export interface IContactInformationFormValues {
 	email?: string;
@@ -47,7 +45,7 @@ export function ContactFormView({
 }: {
 	setViewMode: (mode: TViewMode) => void;
 }) {
-	const { settings, order, stepper } = useAppSelector((state) => state.app);
+	const { order, stepper } = useAppSelector((state) => state.app);
 	const { loggedInCustomer } = useAppSelector((state) => state.user);
 	const { t } = useTranslation();
 
@@ -55,8 +53,7 @@ export function ContactFormView({
 		document.title = t("contactForm.pageTitle");
 	}, []); //eslint-disable-line
 
-	const { accountPolicy, contactFields } = settings!;
-	const fieldsList = getFieldsList(contactFields);
+	const fieldsList = getFieldsList();
 	const { onSubmit } = useSaveContactInfo();
 	const excludedFields = fieldsList.map(({ type }) => type);
 	// if (!order!.customer && !loggedInCustomer) {
@@ -84,26 +81,25 @@ export function ContactFormView({
 					<Typography variant="h5" sx={{ mb: 2 }}>
 						{t("contactForm.pageHeader")}
 					</Typography>
-					{accountPolicy === TCheckoutAccountPolicy.guestAndLogin &&
-						!loggedInCustomer && (
-							<Typography
-								align={"right"}
-								variant="body2"
-								className={"bdl-contact-form__has-account"}
-								gutterBottom
+					{/* {!loggedInCustomer && (
+						<Typography
+							align={"right"}
+							variant="body2"
+							className={"bdl-contact-form__has-account"}
+							gutterBottom
+						>
+							{t("contactForm.alreadyHaveAccount")}
+							<Button
+								startIcon={<LoginIcon />}
+								variant="text"
+								onClick={() => setViewMode(TViewMode.login)}
+								sx={{ mx: 1 }}
+								size={"small"}
 							>
-								{t("contactForm.alreadyHaveAccount")}
-								<Button
-									startIcon={<LoginIcon />}
-									variant="text"
-									onClick={() => setViewMode(TViewMode.login)}
-									sx={{ mx: 1 }}
-									size={"small"}
-								>
-									{t("contactForm.login")}
-								</Button>
-							</Typography>
-						)}
+								{t("contactForm.login")}
+							</Button>
+						</Typography>
+					)} */}
 					<Grid container spacing={{ xs: 2, md: 3 }}>
 						{fieldsList.map(({ type, required }, i) => (
 							<Grid size={{ xs: 12, md: 6 }} key={i}>
@@ -158,20 +154,18 @@ export function ContactFormView({
 										fullWidth
 									/>
 								)}
-								
 							</Grid>
 						))}
-						{accountPolicy === TCheckoutAccountPolicy.guestAndLogin &&
-							!loggedInCustomer && (
-								<Grid size={{ xs: 12 }}>
-									<FormControlLabel
-										control={
-											<Checkbox {...checkAttrs("register_me", formikProps)} />
-										}
-										label={t("contactForm.registerMe")}
-									/>
-								</Grid>
-							)}
+						{/* {!loggedInCustomer && (
+							<Grid size={{ xs: 12 }}>
+								<FormControlLabel
+									control={
+										<Checkbox {...checkAttrs("register_me", formikProps)} />
+									}
+									label={t("contactForm.registerMe")}
+								/>
+							</Grid>
+						)} */}
 						{/* {excludedFields.includes('receive_marketing_info') &&
 						<Grid
 									xs={12}
@@ -231,52 +225,84 @@ const NextStepBtn = ({
 };
 
 const useSaveContactInfo = () => {
-	const { api, order, stepper } = useAppSelector((state) => state.app);
+	const { order, stepper, total } = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
-	const order_id = order!.id;
 	const onSubmit = (
 		values: IContactInformationFormValues,
 		{ setSubmitting, setErrors }: FormikHelpers<IContactInformationFormValues>
 	) => {
 		const { receive_marketing_info, ...rest } = values;
 
-		const promise = api!.checkout
-			.saveContactsData({
-				order_id,
-				...rest,
-				receive_marketing_info: false,
-			})
-			.then(({ customer, authToken }) => {
-				if (customer && authToken) {
-					dispatch(setLoggedInCustomer(customer, authToken));
-				}
+		// if (customer && authToken) {
+		// 	dispatch(setLoggedInCustomer(customer, authToken));
+		// }
 
-				dispatch(setOrdersCustomer(customer));
-				dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
-			})
-			.then(async () => {
-				const order = await api!.adminOrder.updateOrder(order_id, {
-					custom_attrs: {
-						first_name: rest.first_name,
-						last_name: rest.last_name,
-					},
-				});
+		const customer = {
+			id: v4(),
+			email: rest.email ?? null,
+			created_at: new Date().toISOString(),
+			first_name: rest.first_name,
+			last_name: rest.last_name,
+			phone: rest.phone ?? null,
+			receive_marketing_info: false,
+			custom_attrs: null,
+			addresses: [],
+		};
 
-				const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
-					? "/shipping-address"
-					: "/payment";
-				navigate(nextUrl, { replace: true });
-			})
-			.catch((err) => {
-				const {
-					response: { data },
-				} = err;
-				setErrors(apiErrors2Formik(data));
-			})
-			.finally(() => setSubmitting(false));
-		dispatch(addPromise(promise));
+		setLocalStorageCheckoutData({
+			order: {
+				...(order as IOrderWithCustmAttr),
+				customer: customer,
+			},
+			total: total,
+		});
+		dispatch(setOrdersCustomer(customer));
+		dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
+
+		setSubmitting(false);
+
+		const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
+			? "/shipping-address"
+			: "/payment";
+		navigate(nextUrl, { replace: true });
+
+		// const promise = api!.checkout
+		// 	.saveContactsData({
+		// 		order_id,
+		// 		...rest,
+		// 		receive_marketing_info: false,
+		// 	})
+		// 	.then(({ customer, authToken }) => {
+		// 		if (customer && authToken) {
+		// 			dispatch(setLoggedInCustomer(customer, authToken));
+		// 		}
+
+		// 		dispatch(setOrdersCustomer(customer));
+		// 		dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
+		// 	})
+		// 	.then(async () => {
+		// 		const order = await api!.adminOrder.updateOrder(order_id, {
+		// 			custom_attrs: {
+		// 				first_name: rest.first_name,
+		// 				last_name: rest.last_name,
+		// 			},
+		// 		});
+
+		// 		const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
+		// 			? "/shipping-address"
+		// 			: "/payment";
+		// 		navigate(nextUrl, { replace: true });
+		// 	})
+		// 	.catch((err) => {
+		// 		const {
+		// 			response: { data },
+		// 		} = err;
+		// 		setErrors(apiErrors2Formik(data));
+		// 	})
+		// 	.finally(() => setSubmitting(false));
+		// dispatch(addPromise(promise));
 	};
 
 	return {
@@ -284,14 +310,17 @@ const useSaveContactInfo = () => {
 	};
 };
 
-const getFieldsList = (contactFields: ICheckoutSettingsContactFields) => {
-	const fields: { type: string, required: boolean, show: boolean }[] = ['email', 'phone']
-		.map(type => ({
+const getFieldsList = () => {
+	const fields: { type: string; required: boolean; show: boolean }[] = [
+		"email",
+		"phone",
+	]
+		.map((type) => ({
 			type,
 			//@ts-ignore
-			required: contactFields[type].required,
+			required: true,
 			//@ts-ignore
-			show: contactFields[type].show,
+			show: true,
 		}))
 		.filter(({ show }) => show);
 
@@ -343,6 +372,14 @@ const getInitialValues = (
 
 		if (customer.phone) {
 			initialValues.phone = customer.phone;
+		}
+		
+		if (customer.first_name) {
+			initialValues.first_name = customer.first_name;
+		}
+
+		if (customer.last_name) {
+			initialValues.last_name = customer.last_name;
 		}
 	}
 

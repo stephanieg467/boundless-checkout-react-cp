@@ -45,18 +45,11 @@ export default function Header() {
 }
 
 const Logo = () => {
-	const {settings, logo, api} = useAppSelector(state => state.app);
+	const {logo} = useAppSelector(state => state.app);
 
 	const textLogoClass = 'bdl-header__text-logo';
 	if (logo) {
 		return (typeof logo === 'string') ? <h1 className={textLogoClass}>{logo}</h1> : <>{logo}</>;
-	} else if (settings?.logo) {
-		const thumb = api!.makeThumb({
-			imgLocalPath: settings.logo,
-			maxSize: 300
-		});
-
-		return <img src={thumb.getSrc()} className={'bdl-header__img-logo'} />;
 	} else {
 		return <h1 className={textLogoClass}>Checkout</h1>;
 	}

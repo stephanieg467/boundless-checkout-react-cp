@@ -7,7 +7,6 @@ import CheckoutApp from './App';
 import {Provider} from 'react-redux';
 import {store} from './redux/store';
 import {setBasicProps, hideCheckout, showCheckout, TOnThankYouPage, TOnCheckoutInited} from './redux/reducers/app';
-import {BoundlessClient} from 'boundless-api-client';
 import {BrowserRouter} from 'react-router-dom';
 import {useAppSelector} from './hooks/redux';
 import {TClickedElement} from './lib/elementEvents';
@@ -29,13 +28,12 @@ export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps
 	componentDidMount() {
 		document.body.appendChild(this.el!);
 
-		const {onHide, onThankYouPage, cartId, basename, api, logo, onCheckoutInited} = this.props;
+		const {onHide, onThankYouPage, cartId, basename, logo, onCheckoutInited} = this.props;
 		store.dispatch(setBasicProps({
 			onHide,
 			onThankYouPage,
 			cartId,
 			basename,
-			api,
 			logo,
 			onCheckoutInited
 		}));
@@ -94,7 +92,6 @@ export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps
 }
 
 export interface IBoundlessCheckoutProps {
-	api: BoundlessClient,
 	show: boolean,
 	onHide: (element: TClickedElement) => void,
 	onThankYouPage: TOnThankYouPage,

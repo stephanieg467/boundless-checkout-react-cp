@@ -58,7 +58,7 @@ const ShippingAddress = ({address}: {address: IAddress}) => {
 				{address.address_line_2 && <p className='bdl-order-items__address-lane'>{address.address_line_2}</p>}
 				{cityCountry && <p className='bdl-order-items__address-lane'>{cityCountry}</p>}
 				{address.company && <p className='bdl-order-items__address-lane'>{address.company}</p>}
-				{address.phone && <p className='bdl-order-items__address-lane'><abbr title="Phone">P:</abbr>{address.phone}</p>}
+				{address.phone && <p className='bdl-order-items__address-lane'><abbr title="Phone">Phone: </abbr>{address.phone}</p>}
 			</address>
 		</>
 	);

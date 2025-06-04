@@ -1,7 +1,7 @@
 import {IAddressFields} from 'boundless-api-client';
 export interface IShippingFormValues {
 	delivery_id: number;
-  shippingRate?: string;
+  serviceCode?: string;
 	shipping_address?: IAddressFields;
 	billing_address_the_same?: boolean;
 	billing_address?: IAddressFields;

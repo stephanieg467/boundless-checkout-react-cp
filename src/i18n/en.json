@@ -60,9 +60,7 @@
 	"paymentMethodForm": {
 		"pageTitle": "Checkout: Payment",
 		"pageHeader": "Payment method",
-		"payNow": "Pay now",
-		"completeOrder": "Complete order",
-		"payPalHint": "After clicking \"Pay now\", you will be redirected to PayPal to complete your purchase securely."
+		"completeOrder": "Complete order"
 	},
 	"cart": {
 		"hideOrderSummary": "Hide order summary",
@@ -86,6 +84,7 @@
 		"orderId": "Order ID: {{id}}",
 		"orderStatus": "Order status: {{status}}",
 		"paymentStatusPaid": "Payment status: Paid",
+		"paymentStatusPayInStore": "Payment status: Pay in store",
 		"discounts": {
 			"title": "Discounts",
 			"total": "Total discount:"
@@ -110,9 +109,6 @@
 			"qty": "Qty:",
 			"price": "Price:"
 		}
-	},
-	"payButton": {
-		"payNow": "Pay now"
 	},
 	"form": {
 		"areYouSure": "Are you sure?"

@@ -1,13 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-	ICartItem,
-	IOrder,
-	ICheckoutPageSettings,
 	ICheckoutStepper,
 	TCheckoutStep,
 	ICustomer,
-	BoundlessClient,
-	ICheckoutInitData,
 	ICurrency,
 	ILocaleSettings,
 	ISystemTax,
@@ -15,8 +10,8 @@ import {
 } from "boundless-api-client";
 import { ReactNode } from "react";
 import { TClickedElement } from "../../lib/elementEvents";
+import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
 import { IOrderWithCustmAttr } from "../../types/Order";
-import { IUseCartItems } from "../../types/cart";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -32,7 +27,7 @@ const appSlice = createSlice({
 		setBasicProps(
 			state,
 			action: PayloadAction<
-				Required<Pick<IAppState, "onHide" | "api" | "onThankYouPage">> & {
+				Required<Pick<IAppState, "onHide" | "onThankYouPage">> & {
 					basename?: string;
 					logo?: string | ReactNode;
 					cartId?: string;
@@ -45,7 +40,6 @@ const appSlice = createSlice({
 				onThankYouPage,
 				cartId,
 				basename,
-				api,
 				logo,
 				onCheckoutInited,
 			} = action.payload;
@@ -56,7 +50,6 @@ const appSlice = createSlice({
 				onThankYouPage,
 				cartId,
 				basename,
-				api,
 				logo,
 				onCheckoutInited,
 			};
@@ -80,13 +73,10 @@ const appSlice = createSlice({
 						IAppState,
 						| "items"
 						| "order"
-						| "settings"
 						| "currency"
 						| "localeSettings"
-						| "taxSettings"
 						| "stepper"
 						| "hasCouponCampaigns"
-						| "needShipping"
 						| "total"
 					>
 				>
@@ -95,13 +85,9 @@ const appSlice = createSlice({
 			const {
 				items,
 				order,
-				settings,
 				currency,
-				localeSettings,
-				taxSettings,
 				stepper,
 				hasCouponCampaigns,
-				needShipping,
 				total,
 			} = action.payload;
 
@@ -109,14 +95,10 @@ const appSlice = createSlice({
 				...state,
 				items,
 				order,
-				settings,
 				currency,
-				localeSettings,
-				taxSettings,
 				stepper,
 				isInited: true,
 				hasCouponCampaigns,
-				needShipping,
 				total,
 			};
 		},
@@ -131,8 +113,12 @@ const appSlice = createSlice({
 				stepper.filledSteps.push(step);
 			}
 		},
-		setOrder(state, action: PayloadAction<IOrder>) {
-			state.order = action.payload;
+		setOrder(state, action: PayloadAction<IOrderWithCustmAttr>) {
+			const order = { ...action.payload };
+			if (order && order.customer === null) {
+				order.customer = undefined;
+			}
+			state.order = order;
 		},
 		setOrdersCustomer(state, action: PayloadAction<ICustomer>) {
 			const customer = action.payload;
@@ -142,33 +128,18 @@ const appSlice = createSlice({
 			state.globalError = action.payload;
 		},
 		resetAppState() {
+			localStorage.removeItem("cc_checkout_data")
 			return { ...initialState };
 		},
 		setTotal(state, action: PayloadAction<ITotal>) {
 			const total = action.payload;
-			if (state.order && total.servicesSubTotal.price) {
-				const order = state.order as IOrderWithCustmAttr
-				const shippingTaxes = order.custom_attrs.shippingTax ? Number(order.custom_attrs.shippingTax) : 0;
-				const initialTaxes = total.tax.totalTaxAmount;
-				total.tax.totalTaxAmount = (Number(initialTaxes) + shippingTaxes).toString();
-				
-				if (total.tax.shipping) {
-					total.tax.shipping.shippingTaxes = shippingTaxes.toString();
-				}
-			}
 			state.total = total;
-		},
-		setApi(state, action: PayloadAction<{ api: BoundlessClient }>) {
-			state.api = action.payload.api;
 		},
 		setIsInited(state, action: PayloadAction<boolean>) {
 			state.isInited = action.payload;
 		},
 		setLocaleSettings(state, action: PayloadAction<ILocaleSettings>) {
 			state.localeSettings = action.payload;
-		},
-		setTaxSettings(state, action: PayloadAction<ISystemTax>) {
-			state.taxSettings = action.payload;
 		},
 	},
 });
@@ -185,10 +156,8 @@ export const {
 	setCheckoutInited,
 	resetAppState,
 	setTotal,
-	setApi,
 	setIsInited,
 	setLocaleSettings,
-	setTaxSettings,
 } = appSlice.actions;
 
 export default appSlice.reducer;
@@ -200,7 +169,7 @@ export type TOnThankYouPage = ({
 	orderId: string;
 	error?: string;
 }) => void;
-export type TOnCheckoutInited = (data: ICheckoutInitData) => void;
+export type TOnCheckoutInited = (data: CovaCheckoutInitData) => void;
 
 export interface IAppState {
 	show: boolean;
@@ -210,17 +179,14 @@ export interface IAppState {
 	onHide?: (element: TClickedElement, error?: string) => void;
 	onThankYouPage?: TOnThankYouPage;
 	cartId?: string;
-	api?: BoundlessClient;
-	items?: IUseCartItems[];
-	order?: IOrder;
-	settings?: ICheckoutPageSettings;
+	items?: CovaCartItem[];
+	order?: IOrderWithCustmAttr;
 	currency?: ICurrency;
 	localeSettings?: ILocaleSettings;
 	taxSettings?: ISystemTax;
 	logo?: string | ReactNode;
 	stepper?: ICheckoutStepper | null;
 	hasCouponCampaigns?: boolean;
-	needShipping?: boolean;
 	onCheckoutInited?: TOnCheckoutInited;
 	total?: ITotal;
 }

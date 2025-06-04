@@ -1,1 +1,53 @@
-export const SHIPPING_DELIVERY_ID = 25
+import { TShippingAlias } from "boundless-api-client";
+
+export const SHIPPING_DELIVERY_ID = 3;
+export const DELIVERY_ID = 2;
+export const SELF_PICKUP_ID = 1;
+
+export const DELIVERY_COST = "4.00";
+
+export const DELIVERY_INFO = {
+	delivery_id: DELIVERY_ID,
+	title: "Delivery",
+	description: "Deliver order to your address (available within Penticton, BC)",
+	alias: "delivery",
+	shipping_id: DELIVERY_ID,
+	shipping_config: null,
+	free_shipping_from: null,
+	calc_method: null,
+	created_at: "",
+	shipping: null,
+	img: null,
+};
+
+export const SHIPPING_DELIVERY_INFO = {
+	delivery_id: SHIPPING_DELIVERY_ID,
+	title: "Shipping",
+	description: "Ship order to your address via Canada Post (available within Canada)",
+	alias: "shipping",
+	shipping_id: SHIPPING_DELIVERY_ID,
+	shipping_config: null,
+	free_shipping_from: null,
+	calc_method: null,
+	created_at: "",
+	shipping: null,
+	img: null,
+};
+
+export const SELF_PICKUP_INFO = {
+	delivery_id: SELF_PICKUP_ID,
+	title: "Self Pickup",
+	description: "In Store Pick Up",
+	alias: TShippingAlias.selfPickup,
+	shipping_id: SELF_PICKUP_ID,
+	shipping_config: null,
+	free_shipping_from: null,
+	calc_method: null,
+	created_at: "",
+	shipping: null,
+	img: null,
+};
+
+export const PAY_IN_STORE_PAYMENT_METHOD = "4";
+
+export const CREDIT_CARD_PAYMENT_METHOD = "5";

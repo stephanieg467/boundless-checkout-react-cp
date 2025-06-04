@@ -1,14 +1,11 @@
 import React from "react";
 import {
 	IVWCountry,
-	TCheckoutCustomerName,
-	TCheckoutFieldStatus,
 } from "boundless-api-client";
 import Grid from "@mui/material/Grid";
 import { FormikProps, useFormikContext } from "formik";
 import TextField from "@mui/material/TextField";
 import { IFieldAttrs } from "../../../lib/formUtils";
-import { useAppSelector } from "../../../hooks/redux";
 import {
 	IAddressSubForm,
 	IShippingFormValues,
@@ -20,11 +17,10 @@ export default function AddressFieldset({
 	showPhone,
 	keyPrefix,
 }: IProps) {
-	const { settings } = useAppSelector((state) => state.app);
 	const formikProps = useFormikContext<IShippingFormValues>();
 	const { values } = formikProps;
 	values.delivery_id = Number(values.delivery_id);
-	
+
 	const { t } = useTranslation();
 
 	return (
@@ -33,9 +29,7 @@ export default function AddressFieldset({
 				<TextField
 					label={t("addresses.firstName")}
 					variant={"standard"}
-					required={settings!.customerNameRequired.includes(
-						TCheckoutCustomerName.first
-					)}
+					required={true}
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "first_name", formikProps)}
 				/>
@@ -50,20 +44,6 @@ export default function AddressFieldset({
 				/>
 			</Grid>
 
-			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(
-				settings!.companyName
-			) && (
-				<Grid item xs={12}>
-					<TextField
-						label={t("addresses.company")}
-						variant={"standard"}
-						required={settings!.companyName === TCheckoutFieldStatus.required}
-						fullWidth
-						{...addressFieldAttrs(keyPrefix, "company", formikProps)}
-					/>
-				</Grid>
-			)}
-
 			<Grid item xs={12}>
 				<TextField
 					label={t("addresses.addressLine1")}
@@ -74,19 +54,15 @@ export default function AddressFieldset({
 				/>
 			</Grid>
 
-			{[TCheckoutFieldStatus.optional, TCheckoutFieldStatus.required].includes(
-				settings!.addressLine2
-			) && (
-				<Grid item xs={12}>
-					<TextField
-						label={t("addresses.addressLine2")}
-						variant={"standard"}
-						required={settings!.addressLine2 === TCheckoutFieldStatus.required}
-						fullWidth
-						{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
-					/>
-				</Grid>
-			)}
+			<Grid item xs={12}>
+				<TextField
+					label={t("addresses.addressLine2")}
+					variant={"standard"}
+					required={false}
+					fullWidth
+					{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
+				/>
+			</Grid>
 
 			<Grid item xs={6}>
 				<TextField
@@ -116,7 +92,8 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
-			<Grid item xs={6}>
+			{/* // @todo: Currently only supporting Canada. */}
+			{/* <Grid item xs={6}>
 				<TextField
 					label={t("addresses.country")}
 					variant={"standard"}
@@ -127,7 +104,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "country_id", formikProps)}
 					// @todo: hard code Canada country code.
 					value={40}
-          helperText="Currently only shipping within Canada"
+					helperText="Currently only shipping within Canada"
 				>
 					<option>Select country</option>
 					{countries.map(({ country_id, title }) => (
@@ -136,7 +113,7 @@ export default function AddressFieldset({
 						</option>
 					))}
 				</TextField>
-			</Grid>
+			</Grid> */}
 
 			{showPhone && (
 				<Grid item xs={12}>

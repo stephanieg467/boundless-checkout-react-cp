@@ -3,11 +3,7 @@ import {
 	IAddress,
 	IAddressFields,
 	ICheckoutShippingPageData,
-	IDetailedOrder,
-	IOrder,
-	ISetAddressesData,
-	ITotal,
-	TAddressType,
+	TCheckoutStep,
 } from "boundless-api-client";
 import { Form, Formik, FormikHelpers } from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
@@ -19,26 +15,38 @@ import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { useNavigate } from "react-router-dom";
 import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
-import { setOrder, setTotal } from "../../redux/reducers/app";
+import { addFilledStep, setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import {
-	hasShipping,
-	isPickUpDelivery,
-	setOrderShippingRate,
-	updateOrderTaxes,
-} from "../../lib/shipping";
+import { isPickUpDelivery, getOrderShippingRate } from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
 import { RootState } from "../../redux/store";
 import { IOrderWithCustmAttr } from "../../types/Order";
-import { SHIPPING_DELIVERY_ID } from "../../constants";
+import {
+	DELIVERY_COST,
+	DELIVERY_ID,
+	DELIVERY_INFO,
+	SELF_PICKUP_ID,
+	SELF_PICKUP_INFO,
+	SHIPPING_DELIVERY_ID,
+	SHIPPING_DELIVERY_INFO,
+} from "../../constants";
 import ShippingRatesField from "./shippingForm/ShippingRatesField";
+import { v4 } from "uuid";
+import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
 
 const getFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData
 ): IShippingFormValues => {
+	const { order } = useAppSelector((state) => state.app);
+
 	const initialValues: IShippingFormValues = {
-		delivery_id: 0,
-		shippingRate: '',
+		delivery_id:
+			order?.services &&
+			order.services.length > 0 &&
+			order.services[0].service_id != null
+				? order.services[0].service_id
+				: SELF_PICKUP_ID,
+		serviceCode: "",
 		shipping_address: getEmptyAddressFields(shippingPage.shippingAddress),
 		billing_address: getEmptyAddressFields(shippingPage.billingAddress),
 		billing_address_the_same: false,
@@ -61,9 +69,9 @@ const getEmptyAddressFields = (
 		address_line_2,
 		city,
 		state,
-		country_id,
 		zip,
 		phone;
+
 	if (address) {
 		({
 			first_name,
@@ -73,7 +81,6 @@ const getEmptyAddressFields = (
 			address_line_2,
 			city,
 			state,
-			country_id,
 			zip,
 			phone,
 		} = address);
@@ -100,7 +107,7 @@ const useSaveShippingForm = ({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) => {
-	const { api, order } = useAppSelector((state) => state.app);
+	const { order, total } = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state: RootState) => state.app.items);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
@@ -109,71 +116,242 @@ const useSaveShippingForm = ({
 		values: IShippingFormValues,
 		{ setSubmitting, setErrors }: FormikHelpers<IShippingFormValues>
 	) => {
-		if (!api || !order) return;
-		
+		if (!order) return;
+
 		const {
 			delivery_id,
-			shippingRate,
+			serviceCode,
 			shipping_address,
 			billing_address,
 			billing_address_the_same,
 		} = values;
-		
-		let total: ITotal;
+
+		const service = (delivery_id: number, rate: IShippingRate | null) => {
+			switch (delivery_id) {
+				case SHIPPING_DELIVERY_ID:
+					const shippingPriceQuote = rate
+						? rate["price-quotes"]["price-quote"]
+						: null;
+					const shippingRate = Array.isArray(shippingPriceQuote)
+						? shippingPriceQuote[0]["price-details"]["base"].toString()
+						: shippingPriceQuote
+						? shippingPriceQuote["price-details"]["base"].toString()
+						: "";
+
+					return {
+						order_service_id: v4(),
+						service_id: SHIPPING_DELIVERY_ID,
+						qty: 1,
+						total_price: shippingRate,
+						item_price_id: "",
+						is_delivery: true,
+						serviceDelivery: {
+							delivery_id: SHIPPING_DELIVERY_ID,
+							title: "Shipping",
+							text_info: null,
+							data: null,
+							delivery: SHIPPING_DELIVERY_INFO,
+						},
+					};
+
+				case DELIVERY_ID:
+					return {
+						order_service_id: v4(),
+						service_id: DELIVERY_ID,
+						qty: 1,
+						total_price: DELIVERY_COST,
+						item_price_id: "",
+						is_delivery: true,
+						serviceDelivery: {
+							delivery_id: DELIVERY_ID,
+							title: "Delivery",
+							text_info: null,
+							data: null,
+							delivery: DELIVERY_INFO,
+						},
+					};
+
+				case SELF_PICKUP_ID:
+					return {
+						order_service_id: v4(),
+						service_id: SELF_PICKUP_ID,
+						qty: 1,
+						total_price: "0.00",
+						item_price_id: "",
+						is_delivery: false,
+						serviceDelivery: {
+							delivery_id: SELF_PICKUP_ID,
+							title: "Self Pickup",
+							text_info: null,
+							data: null,
+							delivery: SELF_PICKUP_INFO,
+						},
+					};
+
+				default:
+					return null;
+			}
+		};
 
 		const promise = Promise.resolve()
 			.then(() => {
-				const data: ISetAddressesData = { order_id: order.id };
+				if (!order) return;
+
+				const addresses = [];
+
 				if (!isPickUpDelivery(delivery_id, shippingPage.options.delivery)) {
-					data.shipping_address = shipping_address;
-					data.billing_address_the_same = billing_address_the_same;
-					data.required_addresses = [TAddressType.shipping];
+					addresses.push({
+						id: v4(),
+						type: "shipping",
+						is_default: true,
+						first_name: order.customer?.first_name,
+						last_name: order.customer?.last_name,
+						company: null,
+						address_line_1: shipping_address?.address_line_1,
+						address_line_2: shipping_address?.address_line_2,
+						city: shipping_address?.city,
+						state: shipping_address?.state,
+						country_id: 0, // Canada
+						zip: shipping_address?.zip,
+						phone: shipping_address?.phone,
+						created_at: new Date().toISOString(),
+						vwCountry: null,
+					});
 
 					if (!billing_address_the_same) {
-						data.required_addresses.push(TAddressType.billing);
-						data.billing_address = billing_address;
+						addresses.push({
+							id: v4(),
+							type: "billing",
+							is_default: false,
+							first_name: billing_address?.first_name,
+							last_name: billing_address?.last_name,
+							company: null,
+							address_line_1: billing_address?.address_line_1,
+							address_line_2: billing_address?.address_line_2,
+							city: billing_address?.city,
+							state: billing_address?.state,
+							country_id: 0, // Canada
+							zip: billing_address?.zip,
+							phone: billing_address?.phone,
+							created_at: new Date().toISOString(),
+							vwCountry: null,
+						});
 					}
-
-					return api.customerOrder.setAddresses(data);
 				}
-				return;
+
+				return {
+					order: {
+						...order,
+						customer: {
+							...order.customer,
+							id: order.customer?.id ?? "",
+							addresses: addresses,
+						},
+					} as IOrderWithCustmAttr,
+				};
 			})
-			.then(() => {
-				return api.checkout.setDeliveryMethod(order.id, delivery_id);
-			})
-			.then(async ({ order, total: deliveryMethodTotal }) => {
-				total = deliveryMethodTotal;
-				
-				const orderShippingRate = await setOrderShippingRate(
-					order as IDetailedOrder,
+			.then(async (result) => {
+				if (!result) throw new Error("Order data is missing");
+				const { order } = result;
+
+				const orderShippingRate = await getOrderShippingRate(
+					order,
 					cartItems,
-					shippingRate
+					serviceCode
 				);
-				if (hasShipping(order) && orderShippingRate && !('price-quotes' in orderShippingRate)) {
-					const error = { response: { data: [{ field: 'shippingRate', message: 'Unable to set shipping rate' }] } };
+
+				if (
+					delivery_id === SHIPPING_DELIVERY_ID &&
+					orderShippingRate &&
+					!("price-quotes" in orderShippingRate)
+				) {
+					const error = {
+						response: {
+							data: [
+								{
+									field: "serviceCode",
+									message: "Unable to set shipping rate",
+								},
+							],
+						},
+					};
 					throw error;
 				}
-				return orderShippingRate;
+
+				return { orderShippingRate, order };
 			})
-			.then((shippingRate: IShippingRate | null) => {
-				if (shippingRate) {
-					const priceQuote = shippingRate["price-quotes"]["price-quote"];
-					const singlePriceQuote = Array.isArray(priceQuote)
-						? priceQuote[0]
-						: priceQuote;
-					total.servicesSubTotal.price =
-						singlePriceQuote["price-details"]["base"].toString();
+			.then((result) => {
+				if (!result) throw new Error("Order data is missing");
+
+				const { orderShippingRate, order } = result;
+				const shippingPriceQuote = orderShippingRate
+					? orderShippingRate["price-quotes"]["price-quote"]
+					: null;
+				let shippingTaxes = 0;
+				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
+
+				if (shippingPriceQuote) {
+					const shippingPriceQuoteValue = Array.isArray(shippingPriceQuote)
+						? shippingPriceQuote[0]["price-details"]
+						: shippingPriceQuote["price-details"];
+					shippingRate = shippingPriceQuoteValue["base"].toString();
+
+					shippingTaxes =
+						shippingPriceQuoteValue["due"] - shippingPriceQuoteValue["base"];
 				}
 
-				return api.customerOrder.getOrder(order.id);
-			})
-			.then((order) => {
-				// @todo: check if order has beverages and if so apply bottle tax.
-				updateOrderTaxes(order as IOrderWithCustmAttr, total);
-				order.service_total_price = total.servicesSubTotal.price;
-				order.services[0].total_price = total.servicesSubTotal.price;
-				dispatch(setOrder(order as IOrder));
-				dispatch(setTotal(total));
+				const updatedOrder = {
+					...order,
+					total_price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
+					tax_amount: (Number(order.tax_amount) + shippingTaxes).toString(),
+					service_total_price: shippingRate,
+					servicesSubTotal: {
+						qty: 1,
+						price: shippingRate,
+					},
+					customer: {
+						...order.customer,
+						email: order.customer?.email ?? null,
+					},
+					services: [service(delivery_id, orderShippingRate)],
+					custom_attrs: {
+						...order.custom_attrs,
+						serviceCode: serviceCode,
+						shippingRate: shippingRate,
+						shippingTax: shippingTaxes,
+					},
+				};
+
+				if (total) {
+					const initialTaxes = total.tax.totalTaxAmount;
+
+					const updatedTotal = {
+						...total,
+						price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
+						tax: {
+							...total.tax,
+							shipping: {
+								...total.tax.shipping,
+								shippingTaxes: shippingTaxes.toString(),
+							} as any,
+							totalTaxAmount: (Number(initialTaxes) + shippingTaxes).toString(),
+						},
+						servicesSubTotal: {
+							...total.servicesSubTotal,
+							price: shippingRate,
+						},
+					};
+
+					setLocalStorageCheckoutData({
+						order: updatedOrder as unknown as IOrderWithCustmAttr,
+						total: updatedTotal,
+					});
+					
+					console.log("updatedOrder", updatedOrder);
+					dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
+					dispatch(setTotal(updatedTotal));
+					dispatch(addFilledStep({ step: TCheckoutStep.shippingMethod }));
+				}
 
 				navigate("/payment");
 			})
@@ -193,7 +371,7 @@ export default function ShippingForm({
 	shippingPage,
 }: {
 	shippingPage: ICheckoutShippingPageData;
-}) {	
+}) {
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
 
@@ -205,9 +383,9 @@ export default function ShippingForm({
 			{(formikProps) => {
 				const { values } = formikProps;
 				values.delivery_id = Number(values.delivery_id);
-				
-				const { delivery_id, shippingRate } = values;
-				
+
+				const { delivery_id, serviceCode } = values;
+
 				return (
 					<Form className={"bdl-shipping-form"}>
 						{Object.keys(formikProps.errors).length > 0 && (
@@ -220,19 +398,18 @@ export default function ShippingForm({
 							{t("shippingForm.pageHeader")}
 						</Typography>
 						<DeliverySelector options={shippingPage.options} />
-						{!isPickUpDelivery(
-							delivery_id,
-							shippingPage.options.delivery
-						) && <AddressesFields shippingPage={shippingPage} />}
-						{delivery_id === SHIPPING_DELIVERY_ID && (
-							<ShippingRatesField />
+						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
+							<AddressesFields shippingPage={shippingPage} />
 						)}
+						{delivery_id === SHIPPING_DELIVERY_ID && <ShippingRatesField />}
 						<Box textAlign={"end"}>
 							<Button
 								variant="contained"
 								type={"submit"}
 								disabled={
-									formikProps.isSubmitting || !delivery_id || (delivery_id === SHIPPING_DELIVERY_ID && !shippingRate)
+									formikProps.isSubmitting ||
+									!delivery_id ||
+									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode)
 								}
 							>
 								{t("shippingForm.continueToPayment")}

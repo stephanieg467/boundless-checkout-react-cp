@@ -9,7 +9,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import { checkAttrs } from "../../../lib/formUtils";
 import { useTranslation } from "react-i18next";
-import { deliveryMethod } from "../../../lib/shipping";
+import { isDeliveryMethod } from "../../../lib/shipping";
 
 export default function AddressesFields({
 	shippingPage,
@@ -22,7 +22,7 @@ export default function AddressesFields({
 	const { values } = formikProps;
 	if (!values.delivery_id) return null;
 
-	const method = deliveryMethod(formikProps.values.delivery_id, shippingPage.options.delivery)
+	const deliveryMethodSelected = isDeliveryMethod(values.delivery_id, shippingPage.options.delivery)
 	return (
 		<>
 			<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
@@ -33,7 +33,7 @@ export default function AddressesFields({
 					showPhone
 				/>
 			</Box>
-			{method !== 'delivery' && (
+			{!deliveryMethodSelected && (
 				<Box sx={{ mb: 2 }}>
 					<FormControlLabel
 						control={
@@ -46,7 +46,7 @@ export default function AddressesFields({
 					/>
 				</Box>
 			)}
-			{method !== 'delivery' && !values.billing_address_the_same && (
+			{!deliveryMethodSelected && !values.billing_address_the_same && (
 				<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
 					<Typography variant="h6">{t("addresses.billingAddress")}</Typography>
 					<AddressFieldset

@@ -1,41 +1,34 @@
 import { Grid } from "@mui/material";
-import React, { useMemo } from "react";
+import React from "react";
 import OrderDiscounts from "./OrderDiscounts";
 import OrderPayment from "./OrderPayment";
 import OrderRow from "./OrderRow";
 import OrderShipping from "./OrderShipping";
 import OrderTotalRow from "./OrderTotalRow";
-import currency from "currency.js";
 import OrderTaxes from "./OrderTaxes";
 import { hasShipping } from "../../lib/shipping";
 import { IOrderWithCustmAttr } from "../../types/Order";
+import { CovaCartItem } from "../../types/cart";
+import { ITotal } from "boundless-api-client";
 
-export default function OrderItems({ order }: { order: IOrderWithCustmAttr }) {
-	const { items, total_price } = order;
+export default function OrderItems({
+	order,
+	total,
+	items,
+}: {
+	total: ITotal;
+	order: IOrderWithCustmAttr;
+	items: CovaCartItem[];
+}) {
+	const { total_price } = order;
 	const hasTaxes = order.tax_amount !== null;
 	const showSubtotal =
 		order.services?.length ||
-		order.discounts.length ||
+		order.discounts?.length ||
 		order.paymentMethod ||
 		hasTaxes;
 
-	const itemsSubTotal = useMemo(() => {
-		let totalQty = 0,
-			totalPrice = "0";
-		items.forEach(({ qty, total_price }) => {
-			totalQty += qty;
-			totalPrice = currency(total_price || 0)
-				.add(totalPrice)
-				.toString();
-		});
-		return { totalQty, totalPrice };
-	}, [items]);
-
-	let totalPrice = total_price ? total_price : 0;
-	if (hasShipping(order) && totalPrice && order.custom_attrs.shippingTax) {
-		const shippingTaxes = Number(order.custom_attrs.shippingTax);
-		totalPrice = Number(totalPrice) + shippingTaxes;
-	}
+	const itemsSubTotal = total.itemsSubTotal;
 
 	return (
 		<>
@@ -58,25 +51,27 @@ export default function OrderItems({ order }: { order: IOrderWithCustmAttr }) {
 					</Grid>
 				</Grid>
 				{items.map((item) => (
-					<OrderRow item={item} key={item.item_id} />
+					<OrderRow item={item} key={item.product.ProductId} />
 				))}
 				{showSubtotal && (
 					<OrderTotalRow
-						price={itemsSubTotal.totalPrice}
-						qty={itemsSubTotal.totalQty}
+						price={itemsSubTotal.price}
+						qty={itemsSubTotal.qty}
 						isSubTotal
 					/>
 				)}
-				<OrderDiscounts order={order} />
-				<OrderShipping
-					services={order.services}
-					customer={order.customer}
-					hasShipping={hasShipping(order)}
-				/>
+				{/* <OrderDiscounts order={order} /> */}
+				{order.services && (
+					<OrderShipping
+						services={order.services}
+						customer={order.customer ?? null}
+						hasShipping={hasShipping(order)}
+					/>
+				)}
 				{order.paymentMethod && <OrderPayment order={order} />}
 				{hasTaxes && <OrderTaxes order={order} />}
-				{totalPrice && (
-					<OrderTotalRow price={totalPrice} qty={itemsSubTotal.totalQty} />
+				{total_price && (
+					<OrderTotalRow price={total_price} qty={itemsSubTotal.qty} />
 				)}
 			</div>
 		</>

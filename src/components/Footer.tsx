@@ -1,11 +1,16 @@
 import React from 'react';
 import Container from '@mui/material/Container';
-import {useAppSelector} from '../hooks/redux';
 import Grid from '@mui/material/Grid';
 
 export default function Footer() {
-	const {settings} = useAppSelector(state => state.app);
-	const {footerLinks} = settings!;
+	const baseUrl = process.env.BASE_URL || '';
+
+	const footerLinks = [
+		{
+			title: 'Home',
+			url: baseUrl,
+		}
+	];
 
 	return (
 		<footer className={'bdl-footer'}>

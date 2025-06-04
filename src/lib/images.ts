@@ -1,28 +1,11 @@
-import {BoundlessClient} from 'boundless-api-client';
-import { IItemImage } from './addImagesToItems';
-
-export function getProductImg(api: BoundlessClient, image: IItemImage, maxSize: number): IImageData {
-	const {width, height, path: imgLocalPath} = image;
-	const thumb = api.makeThumb({
-		imgLocalPath,
-		maxSize
-	});
-
-	if (!image.use_original_path && width && height) {
-		thumb.setOriginalSize(width, height);
-
-		return thumb.getAttrs();
-	}
-
-	if (image.use_original_path) {
-		return {
-			src: image.path,
+export function getProductImg(image: IImagePartial, maxSize: number): IImageData {
+	const {width, height, path} = image;
+	
+	return {
+			src: path,
 			width: width ?? undefined,
 			height: height ?? undefined,
 		};
-	}
-
-	return {src: thumb.getSrc()};
 }
 
 export interface IImagePartial {

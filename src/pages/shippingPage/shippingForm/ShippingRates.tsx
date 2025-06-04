@@ -40,10 +40,10 @@ export default function ShippingRates({ rates }: { rates: IShippingRateInfo[]; }
 			<FormControl
 				required={true}
 				component="fieldset"
-				error={Boolean("shippingRate" in errors)}
+				error={Boolean("serviceCode" in errors)}
 			>
 				<RadioGroup
-					name="shippingRate"
+					name="serviceCode"
 					onChange={handleChange}
 				>
 					{rates.map((shippingRate, i) => (
@@ -51,15 +51,15 @@ export default function ShippingRates({ rates }: { rates: IShippingRateInfo[]; }
 							<FormControlLabel
 								className="bdl-shipping-form__shipping-item"
 								value={shippingRate.name}
-								checked={values.shippingRate === shippingRate.name}
+								checked={values.serviceCode === shippingRate.name}
 								control={<Radio size="small" required />}
 								label={<ShippingTitle shippingRate={shippingRate} />}
 							/>
 						</React.Fragment>
 					))}
 				</RadioGroup>
-				{"shippingRate" in errors && (
-					<FormHelperText>{errors.shippingRate}</FormHelperText>
+				{"serviceCode" in errors && (
+					<FormHelperText>{errors.serviceCode}</FormHelperText>
 				)}
 			</FormControl>
 		</Box>

@@ -6,21 +6,16 @@ import { addPromise } from "../../redux/actions/xhr";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { useTranslation } from "react-i18next";
-import { hasShipping, updateOrderTaxes } from "../../lib/shipping";
+import { hasShipping } from "../../lib/shipping";
 import { IOrderWithCustmAttr } from "../../types/Order";
 
 export default function CartFooter({ open }: ICartFooterProps) {
-	const dispatch = useAppDispatch();
 	const cartItems = useAppSelector((state) => state.app.items);
-	const api = useAppSelector((state) => state.app.api);
 	const order = useAppSelector(
 		(state) => state.app.order
 	) as IOrderWithCustmAttr;
 	const total = useAppSelector((state) => state.app.total);
-	const taxSettings = useAppSelector((state) => state.app.taxSettings);
-	const [submitting, setSubmitting] = useState(false);
-	const [totalTaxAmount, setTotalTaxAmount] = useState(0);
-	const [hasTax, setHasTax] = useState(false);
+	const totalTaxAmount = total?.tax.totalTaxAmount;
 	const { formatCurrency } = useFormatCurrency();
 	const { t } = useTranslation();
 
@@ -33,89 +28,44 @@ export default function CartFooter({ open }: ICartFooterProps) {
 		return "";
 	};
 
-	const handleRmDiscount = (e: React.MouseEvent) => {
-		e.preventDefault();
-		if (
-			!window.confirm(t("form.areYouSure") as string) ||
-			!api ||
-			!order?.id ||
-			submitting
-		)
-			return;
+	// const handleRmDiscount = (e: React.MouseEvent) => {
+	// 	e.preventDefault();
+	// 	if (
+	// 		!window.confirm(t("form.areYouSure") as string) ||
+	// 		!order?.id ||
+	// 		submitting
+	// 	)
+	// 		return;
 
-		setSubmitting(true);
+	// 	setSubmitting(true);
 
-		const promise = api.checkout
-			.clearDiscounts(order.id)
-			.then(({ order, total }) => {
-				updateOrderTaxes(order as IOrderWithCustmAttr, total);
-				dispatch(setOrder(order));
-				dispatch(setTotal(total));
-			})
-			.catch((err) => console.error(err))
-			.finally(() => setSubmitting(false));
+	// 	const promise = api.checkout
+	// 		.clearDiscounts(order.id)
+	// 		.then(({ order, total }) => {
+	// 			dispatch(setOrder(order));
+	// 			dispatch(setTotal(total));
+	// 		})
+	// 		.catch((err) => console.error(err))
+	// 		.finally(() => setSubmitting(false));
 
-		dispatch(addPromise(promise));
-	};
+	// 	dispatch(addPromise(promise));
+	// };
 
 	if (!order || !total) return null;
 
 	const hasDiscount = total.discount != "0";
-	const method = order.services[0]?.serviceDelivery?.delivery?.title
-	const orderHasShipping = hasShipping(order) || method === "Delivery";
+	const orderHasShipping = hasShipping(order);
 
-	useEffect(() => {
-		const calculateBeverageCount = async () => {
-			let count = 0;
-
-			if (cartItems) {
-				await Promise.all(
-					cartItems.map(async (item) => {
-						const product = await api?.catalog.getProduct(
-							item.vwItem.product_id
-						);
-						if (product?.props.arbitrary_data?.is_beverage) {
-							count += item.qty;
-						}
-					})
-				);
-			}
-
-			return count;
-		};
-
-		const calculateTaxes = async () => {
-			if (!(taxSettings?.turnedOn ?? false)) {
-				return;
-			}
-			
-			const numOfBeverages = await calculateBeverageCount();
-
-			const beverageTaxes =
-				numOfBeverages > 0 ? Number(numOfBeverages * 0.1) : 0;
-			const shippingTaxes =
-				orderHasShipping && order.custom_attrs?.shippingTax
-					? Number(order.custom_attrs?.shippingTax)
-					: 0;
-			const initialTaxes = total.tax.totalTaxAmount;
-
-			const newTotalTaxAmount = Number(initialTaxes) + shippingTaxes + beverageTaxes
-			setTotalTaxAmount(newTotalTaxAmount);
-			setHasTax(newTotalTaxAmount > 0);
-		};
-
-		calculateTaxes();
-	}, []);
-
-	const totalPrice =
+	let totalPrice =
 		Number(total.servicesSubTotal.price) +
 		Number(total.itemsSubTotal.price) -
-		Number(total.discount) +
-		totalTaxAmount;
+		Number(total.discount);
+
+	if (totalTaxAmount) totalPrice += Number(totalTaxAmount);
 
 	return (
 		<div className={clsx("bdl-cart__footer", { open })}>
-			{(orderHasShipping || hasDiscount || hasTax) && (
+			{(orderHasShipping || hasDiscount) && (
 				<div className="bdl-cart__footer-row">
 					<h5 className="bdl-cart__footer-title">
 						{t("cart.footer.subTotal")}
@@ -149,16 +99,14 @@ export default function CartFooter({ open }: ICartFooterProps) {
 				</div>
 			)}
 
-			{hasTax && (
-				<div className="bdl-cart__footer-row">
-					<h5 className="bdl-cart__footer-title">
-						{taxSettings?.taxTitle}:
-						<span className="bdl-cart__footer-value">
-							{formatCurrency(totalTaxAmount)}
-						</span>
-					</h5>
-				</div>
-			)}
+			<div className="bdl-cart__footer-row">
+				<h5 className="bdl-cart__footer-title">
+					Tax:
+					<span className="bdl-cart__footer-value">
+						{formatCurrency(totalTaxAmount ?? 0)}
+					</span>
+				</h5>
+			</div>
 			<h4 className="bdl-cart__footer-row bdl-cart__footer-row_total">
 				{t("cart.footer.total")}{" "}
 				<span className="bdl-cart__footer-value">
@@ -166,7 +114,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 				</span>
 			</h4>
 
-			{hasDiscount && (
+			{/* {hasDiscount && (
 				<div className="bdl-cart__footer-rm">
 					<small>
 						<a
@@ -178,7 +126,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 						</a>
 					</small>
 				</div>
-			)}
+			)} */}
 		</div>
 	);
 }

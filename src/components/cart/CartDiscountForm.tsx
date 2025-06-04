@@ -7,8 +7,6 @@ import {RootState} from '../../redux/store';
 import {addPromise} from '../../redux/actions/xhr';
 import {setOrder, setTotal} from '../../redux/reducers/app';
 import {useTranslation} from 'react-i18next';
-import { updateOrderTaxes } from '../../lib/shipping';
-import { IOrderWithCustmAttr } from '../../types/Order';
 
 export default function CartDiscountForm() {
 	const dispatch = useAppDispatch();
@@ -21,7 +19,6 @@ export default function CartDiscountForm() {
 
 		const promise = api.checkout.addDiscountCode(orderId, values.code)
 			.then(({order, total}) => {
-				updateOrderTaxes(order as IOrderWithCustmAttr, total);
 				dispatch(setOrder(order));
 				dispatch(setTotal(total));
 			})
