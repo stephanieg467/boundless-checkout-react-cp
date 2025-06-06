@@ -165,7 +165,7 @@ const PaymentMethods = ({
 							>
 								<option>Select delivery time</option>
 								{deliveryTimes.map((deliveryTime, idx) => (
-									<option key={idx} value={idx}>
+									<option key={idx} value={deliveryTime}>
 										{deliveryTime}
 									</option>
 								))}

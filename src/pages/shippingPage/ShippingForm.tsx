@@ -297,7 +297,7 @@ const useSaveShippingForm = ({
 					shippingRate = shippingPriceQuoteValue["base"].toString();
 
 					shippingTaxes =
-						shippingPriceQuoteValue["due"] - shippingPriceQuoteValue["base"];
+						shippingPriceQuoteValue.taxes.gst + shippingPriceQuoteValue.taxes.pst+ shippingPriceQuoteValue.taxes.hst;
 				}
 
 				const updatedOrder = {

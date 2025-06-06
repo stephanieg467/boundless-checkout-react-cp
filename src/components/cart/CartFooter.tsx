@@ -1,9 +1,7 @@
 import { TDiscountType } from "boundless-api-client";
-import React, { useEffect, useState } from "react";
+import React, {  } from "react";
 import clsx from "clsx";
-import { useAppDispatch, useAppSelector } from "../../hooks/redux";
-import { addPromise } from "../../redux/actions/xhr";
-import { setOrder, setTotal } from "../../redux/reducers/app";
+import { useAppSelector } from "../../hooks/redux";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { useTranslation } from "react-i18next";
 import { hasShipping } from "../../lib/shipping";

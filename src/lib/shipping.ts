@@ -55,7 +55,7 @@ export async function fetchShippingRates(
 ): Promise<IShippingRateInfo[] | null> {
 	const shipping = async () => {
 		try {
-			const resp = await fetch(`${process.env.BASE_URL}api/shippingRates`, {
+			const resp = await fetch(`/api/shippingRates`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -92,7 +92,7 @@ export async function getOrderShippingRate(
 
 		const shipping = async () => {
 			try {
-				const resp = await fetch(`${process.env.BASE_URL}api/shipping`, {
+				const resp = await fetch(`/api/shipping`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",

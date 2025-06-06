@@ -7,7 +7,6 @@ import {
 import { TClickedElement } from "../../lib/elementEvents";
 import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
 import { ITotal, TCheckoutStep, TPublishingStatus } from "boundless-api-client";
-import { getOrderTaxes } from "../../lib/taxes";
 import { getCheckoutData } from "../../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../../types/Order";
 
@@ -29,11 +28,10 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const { items, total: cartTotal } = cart;
+			const { items, total: cartTotal, taxAmount: totalTaxes } = cart;
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 
-			const totalTaxes = await getOrderTaxes(items);
 			const tax = {
 				totalTaxAmount: totalTaxes,
 				itemsWithTax: items,
