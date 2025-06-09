@@ -5,7 +5,6 @@ export const getCartOrRetrieve = (): {
 	id: string;
 	total: ICartTotal;
 	items?: CovaCartItem[];
-	taxAmount: number;
 } | null => {
 	const cart = localStorage.getItem("cc_cart");
 	if (cart) {

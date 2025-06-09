@@ -267,8 +267,6 @@ const useSaveContactInfo = () => {
 			? "/shipping-address"
 			: "/payment";
 		navigate(nextUrl, { replace: true });
-
-		// const promise = api!.checkout
 		// 	.saveContactsData({
 		// 		order_id,
 		// 		...rest,

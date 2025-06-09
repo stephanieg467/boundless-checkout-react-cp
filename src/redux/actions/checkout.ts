@@ -9,6 +9,7 @@ import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
 import { ITotal, TCheckoutStep, TPublishingStatus } from "boundless-api-client";
 import { getCheckoutData } from "../../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../../types/Order";
+import { getOrderTaxes } from "../../lib/taxes";
 
 export const initCheckoutByCart =
 	(): AppThunk => async (dispatch, getState) => {
@@ -28,12 +29,18 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const { items, total: cartTotal, taxAmount: totalTaxes } = cart;
+			const { items, total: cartTotal } = cart;
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
+			
+			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
+			// @todo: still needlessly calling getOrderTaxes even when taxes are already present in checkoutDataOrder
+			if (!totalOrderTaxes) {
+				totalOrderTaxes = await getOrderTaxes(items)
+			}
 
 			const tax = {
-				totalTaxAmount: totalTaxes,
+				totalTaxAmount: totalOrderTaxes,
 				itemsWithTax: items,
 				shipping: {
 					shippingTaxes: checkoutDataOrder?.tax_calculations?.tax?.shipping?.shippingTaxes,
@@ -48,9 +55,9 @@ export const initCheckoutByCart =
 				payment_method_id: checkoutDataOrder?.payment_method_id ?? "0",
 				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
 				payment_mark_up: null,
-				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalTaxes)).toString(),
+				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 				discount_for_order: null,
-				tax_amount: checkoutDataOrder?.tax_amount ? checkoutDataOrder?.tax_amount : totalTaxes,
+				tax_amount: totalOrderTaxes,
 				paid_at: "",
 				publishing_status: TPublishingStatus.published,
 				created_at: order?.created_at ?? new Date().toISOString(),
@@ -58,7 +65,7 @@ export const initCheckoutByCart =
 				discounts: [],
 				services: checkoutDataOrder?.services ?? [],
 				tax_calculations: {
-					price: totalTaxes,
+					price: totalOrderTaxes,
 					itemsSubTotal: {
 						price: cartTotal.total,
 						qty: cartTotal.qty,
@@ -107,7 +114,7 @@ export const initCheckoutByCart =
 					],
 				},
 				total: {
-					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalTaxes)).toString(),
+					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 					itemsSubTotal: {
 						price: cartTotal.total,
 						qty: cartTotal.qty,

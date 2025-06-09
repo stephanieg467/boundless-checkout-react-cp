@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useFormikContext } from "formik";
-import {
-	Button,
-} from "@mui/material";
+import { Button } from "@mui/material";
 import {
 	IShippingFormValues,
 	IShippingRateInfo,
@@ -32,6 +30,7 @@ export default function ShippingRatesField() {
 			setLoadingShippingRates(false);
 		} catch (error) {
 			setErrorLoadingShippingRates(true);
+			setLoadingShippingRates(false);
 		}
 	};
 	const formikProps = useFormikContext<IShippingFormValues>();
@@ -49,9 +48,16 @@ export default function ShippingRatesField() {
 				Calculate Shipping
 			</Button>
 			{errorLoadingShippingRates && (
-				<span>Error loading shipping rates. Please try again</span>
+				<Box sx={{ mt: 2 , mb: 2 }}>
+					Error loading shipping rates. Please try again or contact 
+					<a href={`mailto:${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`}>
+						{process.env.NEXT_PUBLIC_ADMIN_EMAIL}
+					</a>{" "}
+				</Box>
 			)}
-			{!loadingShippingRates && !errorLoadingShippingRates && allShippingRates && <ShippingRates rates={allShippingRates} />}
+			{!loadingShippingRates &&
+				!errorLoadingShippingRates &&
+				allShippingRates && <ShippingRates rates={allShippingRates} />}
 		</Box>
 	);
 }

@@ -236,7 +236,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 		dispatch(setTotal(updatedTotal as unknown as ITotal));
 
-		onThankYouPage!({ orderId: checkoutDataOrder.id });
+		onThankYouPage!({ orderId: checkoutDataOrder.id});
 		setSubmitting(false);
 	};
 

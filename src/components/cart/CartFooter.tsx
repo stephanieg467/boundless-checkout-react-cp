@@ -1,5 +1,5 @@
 import { TDiscountType } from "boundless-api-client";
-import React, {  } from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import { useAppSelector } from "../../hooks/redux";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
@@ -8,14 +8,30 @@ import { hasShipping } from "../../lib/shipping";
 import { IOrderWithCustmAttr } from "../../types/Order";
 
 export default function CartFooter({ open }: ICartFooterProps) {
-	const cartItems = useAppSelector((state) => state.app.items);
 	const order = useAppSelector(
 		(state) => state.app.order
 	) as IOrderWithCustmAttr;
 	const total = useAppSelector((state) => state.app.total);
-	const totalTaxAmount = total?.tax.totalTaxAmount;
 	const { formatCurrency } = useFormatCurrency();
 	const { t } = useTranslation();
+	const [totalPrice, setTotalPrice] = useState(0);
+	const [totalTaxAmount, setTotalTaxAmount] = useState(0);
+
+	useEffect(() => {
+		console.log("CartFooter: total", total);
+		if (total) {
+			const totalTaxAmount = total.tax.totalTaxAmount;
+			const servicesSubTotal = Number(total.servicesSubTotal.price) || 0;
+			const itemsSubTotal = Number(total.itemsSubTotal.price) || 0;
+			const discount = Number(total.discount) || 0;
+			const tax = Number(totalTaxAmount) || 0;
+
+			setTotalPrice(servicesSubTotal + itemsSubTotal - discount + tax);
+			setTotalTaxAmount(Number(totalTaxAmount));
+		} else {
+			setTotalPrice(0);
+		}
+	}, [total]);
 
 	const getDiscountAmount = () => {
 		if (!order?.discounts || !order?.discounts.length) return "";
@@ -53,13 +69,6 @@ export default function CartFooter({ open }: ICartFooterProps) {
 
 	const hasDiscount = total.discount != "0";
 	const orderHasShipping = hasShipping(order);
-
-	let totalPrice =
-		Number(total.servicesSubTotal.price) +
-		Number(total.itemsSubTotal.price) -
-		Number(total.discount);
-
-	if (totalTaxAmount) totalPrice += Number(totalTaxAmount);
 
 	return (
 		<div className={clsx("bdl-cart__footer", { open })}>

@@ -33,6 +33,7 @@ import {
 import ShippingRatesField from "./shippingForm/ShippingRatesField";
 import { v4 } from "uuid";
 import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
+import { getOrderTaxes } from "../../lib/taxes";
 
 const getFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData
@@ -280,17 +281,17 @@ const useSaveShippingForm = ({
 
 				return { orderShippingRate, order };
 			})
-			.then((result) => {
+			.then(async (result) => {
 				if (!result) throw new Error("Order data is missing");
 
 				const { orderShippingRate, order } = result;
 				const shippingPriceQuote = orderShippingRate
 					? orderShippingRate["price-quotes"]["price-quote"]
 					: null;
-				let shippingTaxes = 0;
+				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.20 : 0;
 				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
 
-				if (shippingPriceQuote) {
+				if (delivery_id === SHIPPING_DELIVERY_ID && shippingPriceQuote) {
 					const shippingPriceQuoteValue = Array.isArray(shippingPriceQuote)
 						? shippingPriceQuote[0]["price-details"]
 						: shippingPriceQuote["price-details"];
@@ -300,10 +301,12 @@ const useSaveShippingForm = ({
 						shippingPriceQuoteValue.taxes.gst + shippingPriceQuoteValue.taxes.pst+ shippingPriceQuoteValue.taxes.hst;
 				}
 
+				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : '';
+				
 				const updatedOrder = {
 					...order,
 					total_price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
-					tax_amount: (Number(order.tax_amount) + shippingTaxes).toString(),
+					tax_amount: (Number(totalOrderTaxes) + shippingTaxes).toString(),
 					service_total_price: shippingRate,
 					servicesSubTotal: {
 						qty: 1,
@@ -323,8 +326,6 @@ const useSaveShippingForm = ({
 				};
 
 				if (total) {
-					const initialTaxes = total.tax.totalTaxAmount;
-
 					const updatedTotal = {
 						...total,
 						price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
@@ -334,7 +335,7 @@ const useSaveShippingForm = ({
 								...total.tax.shipping,
 								shippingTaxes: shippingTaxes.toString(),
 							} as any,
-							totalTaxAmount: (Number(initialTaxes) + shippingTaxes).toString(),
+							totalTaxAmount: (Number(totalOrderTaxes) + shippingTaxes).toString(),
 						},
 						servicesSubTotal: {
 							...total.servicesSubTotal,
