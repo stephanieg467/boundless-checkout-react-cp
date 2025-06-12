@@ -62,7 +62,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 							<Box sx={{display: 'flex', alignItems: 'flex-end'}}>
 								<AccountCircle sx={{color: 'action.active', mr: 1, my: 0.5}} />
 								<TextField label={t('loginForm.email')}
-									variant={'standard'}
+									variant={'outlined'}
 									type={'email'}
 									required={true}
 									fullWidth
@@ -74,7 +74,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 							<Box sx={{display: 'flex', alignItems: 'flex-end'}}>
 								<VpnKeyIcon sx={{color: 'action.active', mr: 1, my: 0.5}} />
 								<TextField label={t('loginForm.password')}
-									variant={'standard'}
+									variant={'outlined'}
 									type={'password'}
 									required={true}
 									fullWidth

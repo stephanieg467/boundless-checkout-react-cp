@@ -108,7 +108,7 @@ const PaymentMethods = ({
 	return (
 		<Box sx={{ mb: 2 }}>
 			<FormControl
-				variant="standard"
+				variant="outlined"
 				error={Boolean("payment_method_id" in formikProps.errors)}
 			>
 				<RadioGroup
@@ -137,7 +137,7 @@ const PaymentMethods = ({
 							<TextField
 								label="Tip"
 								type="number"
-								variant={"standard"}
+								variant={"outlined"}
 								{...fieldAttrs("tip", formikProps)}
 								slotProps={{
 									input: {
@@ -155,7 +155,7 @@ const PaymentMethods = ({
 						<Box sx={{ mb: 2 }}>
 							<TextField
 								label="Delivery time"
-								variant={"standard"}
+								variant={"outlined"}
 								fullWidth
 								select
 								slotProps={{

@@ -30,8 +30,6 @@ const useInitShippingPage = () => {
 						order.customer.addresses.find(
 							(address) => address.type === "billing"
 						) || null,
-					// shippingRates: [],
-					// deliveryId: null,
 					billingAddressTheSame: false,
 					options: {
 						country: [

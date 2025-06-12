@@ -23,7 +23,6 @@ export class StarterWrapper {
 
 	destroy() {
 		this.root?.unmount();
-		// store.dispatch(resetState());
 	}
 }
 

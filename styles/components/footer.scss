@@ -1,27 +1,111 @@
-.bdl-footer {
-	background: #fff;
-	margin: 50px 0 0;
-	padding: 0;
+.page-footer {
+	background: $front-footer-bg;
+	color: $front-footer-text-color;
+	padding: 45px 0 30px;
+	position: relative;
+	z-index: $zindex-page-layout-children;
 
-	&__hr {
-		background: #333;
-		height: 15px;
-		margin: 0;
-	}
-
-	&__links {
-		text-align: center;
-	}
-
-	&__link {
-		color: $checkout-link-color;
-		display: inline-block;
-		font-size: $checkout-font-size-small;
-		margin: 0 0.3rem;
-		text-decoration: none;
-
-		&:hover {
-			text-decoration: underline;
+	&__item {
+		margin-bottom: 30px;
+		@include media-breakpoint-up(lg) {
+			margin-bottom: 0;
 		}
 	}
+
+	&__header {
+		color: $front-footer-text-color;
+		font-size: 18px;
+		font-weight: $front-footer-header-weight;
+		line-height: 1.27;
+		margin: 15px 0 24px;
+		padding: 0;
+	}
+
+	&__logo {
+		margin-bottom: 25px;
+		
+		img {
+			max-width: fill-available;
+		}
+	}
+
+	&__icon-w-link {
+		align-items: center;
+		display: flex;
+
+		.icon {
+			color: $front-link-color;
+			display: inline-block;
+			height: 21px;
+			margin-right: 5px;
+			width: 21px;
+		}
+
+		.link {
+			color: $front-footer-link-color;
+			text-decoration: none;
+			transition: all ease-in-out 0.35s;
+
+			&:hover {
+				color: $front-link-color;
+				text-decoration: underline;
+			}
+		}
+	}
+
+	&__social-buttons {
+		display: flex;
+		margin-bottom: 30px;
+	}
+
+	&__social-button {
+		&:not(:last-child) {
+			margin-right: 12px;
+		}
+	}
+
+	&__social-link {
+		align-items: center;
+		background: transparent;
+		border: 1px solid $theme-color;
+		border-radius: 50%;
+		display: inline-flex;
+		height: 36px;
+		justify-content: center;
+		text-decoration: none;
+		transition: all ease-in-out 0.35s;
+		width: 36px;
+
+		&:hover {
+			background: #fff;
+			text-decoration: none;
+		}
+
+		.social-icon {
+			color: $front-link-color;
+		}
+	}
+}
+
+.page-footer-menu {
+	&__list-element {
+		display: inline-block;
+		margin: 0 10px;
+	}
+
+	&__element {
+		&.is-link {
+			color: $front-footer-link-color;
+			text-decoration: none;
+
+			&:hover {
+				color: $front-link-color;
+				text-decoration: underline;
+			}
+		}
+	}
+}
+
+footer.page-footer {
+	display: block !important;
 }

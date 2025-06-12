@@ -1,13 +1,13 @@
-import React, {MouseEvent} from 'react';
-import Container from '@mui/material/Container';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import {useAppSelector} from '../hooks/redux';
-import {TClickedElement} from '../lib/elementEvents';
-import {useTranslation} from 'react-i18next';
+import React, { MouseEvent } from "react";
+import Container from "@mui/material/Container";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import { useAppSelector } from "../hooks/redux";
+import { TClickedElement } from "../lib/elementEvents";
+import { useTranslation } from "react-i18next";
 
 export default function Header() {
-	const {onHide} = useAppSelector(state => state.app);
-	const {t} = useTranslation();
+	const { onHide } = useAppSelector((state) => state.app);
+	const { t } = useTranslation();
 
 	const onBackToCartClicked = (e: MouseEvent<HTMLAnchorElement>) => {
 		e.preventDefault();
@@ -20,36 +20,41 @@ export default function Header() {
 	};
 
 	return (
-		<header className={'bdl-header'}>
+		<header className={"bdl-header"}>
 			<Container>
-				<div className={'bdl-header__body'}>
-					<a href={'#'}
-						 className={'bdl-header__to-cart'}
-						 onClick={onBackToCartClicked}
+				<div className={"bdl-header__body"}>
+					<a
+						href={"#"}
+						className={"bdl-header__to-cart"}
+						onClick={onBackToCartClicked}
 					>
-						<ChevronLeftIcon /> {t('header.backToCart')}
+						<ChevronLeftIcon /> {t("header.backToCart")}
 					</a>
-					<div className={'bdl-header__logo-wrapper'}>
-							<a href={'#'}
-								 className={'bdl-header__logo'}
-								 onClick={onLogoClicked}
-							>
-								<Logo />
-							</a>
+					<div className={"bdl-header__logo-wrapper"}>
+						<a
+							href={"#"}
+							className={"bdl-header__logo"}
+							onClick={onLogoClicked}
+						>
+							<Logo />
+						</a>
 					</div>
-					{/*<div className={'bdl-header__at-right'}></div>*/}
 				</div>
 			</Container>
 		</header>
 	);
 }
 
-const Logo = () => {
-	const {logo} = useAppSelector(state => state.app);
+export const Logo = () => {
+	const { logo } = useAppSelector((state) => state.app);
 
-	const textLogoClass = 'bdl-header__text-logo';
+	const textLogoClass = "bdl-header__text-logo";
 	if (logo) {
-		return (typeof logo === 'string') ? <h1 className={textLogoClass}>{logo}</h1> : <>{logo}</>;
+		return typeof logo === "string" ? (
+			<h1 className={textLogoClass}>{logo}</h1>
+		) : (
+			<>{logo}</>
+		);
 	} else {
 		return <h1 className={textLogoClass}>Checkout</h1>;
 	}

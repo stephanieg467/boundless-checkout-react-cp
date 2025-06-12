@@ -66,6 +66,9 @@
 		color: #000;
 		display: inline-block;
 		text-decoration: none;
+		padding: 10px 20px;
+    background-color: $front-footer-bg;
+    border-radius: 27px;
 	}
 
 	&__text-logo {

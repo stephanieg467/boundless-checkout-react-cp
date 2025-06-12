@@ -28,7 +28,7 @@ export default function AddressFieldset({
 			<Grid item xs={6}>
 				<TextField
 					label={t("addresses.firstName")}
-					variant={"standard"}
+					variant={"outlined"}
 					required={true}
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "first_name", formikProps)}
@@ -37,7 +37,7 @@ export default function AddressFieldset({
 			<Grid item xs={6}>
 				<TextField
 					label={t("addresses.lastName")}
-					variant={"standard"}
+					variant={"outlined"}
 					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "last_name", formikProps)}
@@ -47,7 +47,7 @@ export default function AddressFieldset({
 			<Grid item xs={12}>
 				<TextField
 					label={t("addresses.addressLine1")}
-					variant={"standard"}
+					variant={"outlined"}
 					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "address_line_1", formikProps)}
@@ -57,7 +57,7 @@ export default function AddressFieldset({
 			<Grid item xs={12}>
 				<TextField
 					label={t("addresses.addressLine2")}
-					variant={"standard"}
+					variant={"outlined"}
 					required={false}
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
@@ -67,7 +67,7 @@ export default function AddressFieldset({
 			<Grid item xs={6}>
 				<TextField
 					label={t("addresses.zip")}
-					variant={"standard"}
+					variant={"outlined"}
 					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "zip", formikProps)}
@@ -76,7 +76,7 @@ export default function AddressFieldset({
 			<Grid item xs={6}>
 				<TextField
 					label={t("addresses.city")}
-					variant={"standard"}
+					variant={"outlined"}
 					required
 					fullWidth
 					{...addressFieldAttrs(keyPrefix, "city", formikProps)}
@@ -86,7 +86,7 @@ export default function AddressFieldset({
 			<Grid item xs={6}>
 				<TextField
 					label={t("addresses.state")}
-					variant={"standard"}
+					variant={"outlined"}
 					fullWidth
 					required
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
@@ -96,7 +96,7 @@ export default function AddressFieldset({
 			{/* <Grid item xs={6}>
 				<TextField
 					label={t("addresses.country")}
-					variant={"standard"}
+					variant={"outlined"}
 					fullWidth
 					select
 					disabled
@@ -119,7 +119,7 @@ export default function AddressFieldset({
 				<Grid item xs={12}>
 					<TextField
 						label={t("addresses.phone")}
-						variant={"standard"}
+						variant={"outlined"}
 						fullWidth
 						{...addressFieldAttrs(keyPrefix, "phone", formikProps)}
 					/>

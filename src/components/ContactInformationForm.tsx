@@ -106,7 +106,7 @@ export function ContactFormView({
 								{type === "first_name" && (
 									<TextField
 										label={t("contactForm.firstName")}
-										variant={"standard"}
+										variant={"outlined"}
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"first_name",
@@ -118,7 +118,7 @@ export function ContactFormView({
 								{type === "last_name" && (
 									<TextField
 										label={t("contactForm.lastName")}
-										variant={"standard"}
+										variant={"outlined"}
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"last_name",
@@ -130,7 +130,7 @@ export function ContactFormView({
 								{type === "email" && (
 									<TextField
 										label={t("contactForm.email")}
-										variant={"standard"}
+										variant={"outlined"}
 										type={"email"}
 										required={required}
 										fullWidth
@@ -145,7 +145,7 @@ export function ContactFormView({
 								{type === "phone" && (
 									<TextField
 										label={t("contactForm.phone")}
-										variant={"standard"}
+										variant={"outlined"}
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"phone",
@@ -349,7 +349,7 @@ const getFieldsList = () => {
 };
 
 const getInitialValues = (
-	order: IOrder,
+	order: IOrderWithCustmAttr,
 	loggedInCustomer: ICustomer | null
 ) => {
 	const { customer } = order;
