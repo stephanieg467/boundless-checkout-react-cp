@@ -69,6 +69,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 
 	const hasDiscount = total.discount != "0";
 	const orderHasShipping = hasShipping(order);
+	const isDelivery = order.services?.[0]?.serviceDelivery?.delivery?.title === "Delivery";
 
 	return (
 		<div className={clsx("bdl-cart__footer", { open })}>
@@ -97,7 +98,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 			{orderHasShipping && (
 				<div className="bdl-cart__footer-row">
 					<h5 className="bdl-cart__footer-title">
-						{t("cart.footer.shipping")}
+						{isDelivery ? t("cart.footer.delivery") : t("cart.footer.shipping")}
 						<span className="bdl-cart__footer-value">
 							{" "}
 							{formatCurrency(total.servicesSubTotal.price)}

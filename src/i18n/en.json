@@ -8,7 +8,7 @@
 		"phone": "Phone",
 		"firstName": "First name",
 		"lastName": "Last name",
-		"receiveMarketingInfo": "Email me with news and offers",
+		"dob": "Date of birth",
 		"continueToShipping": "Continue to shipping",
 		"continueToPayment": "Continue to payment",
 		"registerMe": "Register Me",
@@ -45,6 +45,7 @@
 	"addresses": {
 		"billingAddress": "Billing address",
 		"shippingAddress": "Shipping address",
+		"deliveryAddress": "Delivery address",
 		"billingTheSame": "Billing address is the same as shipping address",
 		"firstName": "First name",
 		"lastName": "Last name",
@@ -73,6 +74,7 @@
 			"subTotal": "Subtotal:",
 			"couponTitle": "Coupon {{amount}}",
 			"shipping": "Shipping:",
+			"delivery": "Delivery:",
 			"total": "Total:",
 			"removeCoupon": "Remove coupon"
 		},

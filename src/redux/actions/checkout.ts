@@ -29,12 +29,13 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const { items, total: cartTotal } = cart;
+			const { items, total: cartTotal, taxAmount: cartTaxAmount } = cart;
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 			
-			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
+			let totalOrderTaxes = checkoutDataOrder?.tax_amount ?? cartTaxAmount;
 			// @todo: still needlessly calling getOrderTaxes even when taxes are already present in checkoutDataOrder
+			console.log("initCheckoutByCart totalOrderTaxes", totalOrderTaxes);
 			if (!totalOrderTaxes) {
 				totalOrderTaxes = await getOrderTaxes(items)
 			}

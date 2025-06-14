@@ -27,6 +27,61 @@ import { DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD } from "../../constants";
 import { ITotal } from "boundless-api-client";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import { IOrderWithCustmAttr } from "../../types/Order";
+import { cartHasTickets } from "../../lib/products";
+
+// Helper functions for dynamic delivery times
+const getVancouverDateTime = () => {
+	const now = new Date();
+	const dateInVancouver = new Date(
+		now.toLocaleString("en-CA", { timeZone: "America/Vancouver" })
+	);
+	const dayOfWeek = dateInVancouver.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
+	const hourVancouver = dateInVancouver.getHours(); // 0-23
+	const minuteVancouver = dateInVancouver.getMinutes(); // 0-59
+	return { dayOfWeek, hourVancouver, minuteVancouver };
+};
+
+const shouldIncludeASAP = () => {
+	const { dayOfWeek, hourVancouver, minuteVancouver } = getVancouverDateTime();
+	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
+	console.log(`Current time in Vancouver: ${currentTimeInMinutes} minutes`);
+
+	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
+	if (dayOfWeek >= 0 && dayOfWeek <= 4) {
+		const startTime = 9 * 60; // 9:00 AM
+		const endTime = 20 * 60 + 30; // 8:30 PM
+		return currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime;
+	}
+	// Friday (5) to Saturday (6): 9:00 AM (540 min) to 9:30 PM (1290 min)
+	else if (dayOfWeek >= 5 && dayOfWeek <= 6) {
+		const startTime = 9 * 60; // 9:00 AM
+		const endTime = 21 * 60 + 30; // 9:30 PM
+		return currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime;
+	}
+	return false; // Outside defined days
+};
+
+const getDynamicDeliveryTimes = () => {
+	const baseDeliveryTimes = [
+		"9am - 10am",
+		"10am - 11am",
+		"11am - 12pm",
+		"12pm - 1pm",
+		"1pm - 2pm",
+		"2pm - 3pm",
+		"3pm - 4pm",
+		"4pm - 5pm",
+		"5pm - 6pm",
+		"6pm - 7pm",
+		"7pm - 8pm",
+		"8pm - 8:30pm",
+	];
+
+	if (shouldIncludeASAP()) {
+		return ["ASAP", ...baseDeliveryTimes];
+	}
+	return baseDeliveryTimes;
+};
 
 export default function PaymentMethodForm({
 	paymentPage,
@@ -49,6 +104,13 @@ export default function PaymentMethodForm({
 					<Typography variant="h5" sx={{ mb: 2 }}>
 						{t("paymentMethodForm.pageHeader")}
 					</Typography>
+					{cartHasTickets() && (
+						<Typography variant="body1" sx={{ m: 2 }}>
+							{
+								"Please note, due to limited seating, to reserve your seats, we require payment by credit card online OR you can come in store to purchase your tickets in person by credit, cash or debit. Seats must be purchased prior to event date. We look forward to hosting you!"
+							}
+						</Typography>
+					)}
 					<PaymentMethods
 						formikProps={formikProps}
 						paymentMethods={paymentPage.paymentMethods}
@@ -59,6 +121,7 @@ export default function PaymentMethodForm({
 							startIcon={<PaymentIcon />}
 							type={"submit"}
 							disabled={formikProps.isSubmitting}
+							color="success"
 						>
 							{t("paymentMethodForm.completeOrder")}
 						</Button>
@@ -90,20 +153,7 @@ const PaymentMethods = ({
 	const isDelivery = order?.services?.some(
 		(service) => service.service_id === DELIVERY_ID
 	);
-	const deliveryTimes = [
-		"9am - 10am",
-		"10am - 11am",
-		"11am - 12pm",
-		"12pm - 1pm",
-		"1pm - 2pm",
-		"2pm - 3pm",
-		"3pm - 4pm",
-		"4pm - 5pm",
-		"5pm - 6pm",
-		"6pm - 7pm",
-		"7pm - 8pm",
-		"8pm - 8:30pm",
-	];
+	const deliveryTimes = getDynamicDeliveryTimes();
 
 	return (
 		<Box sx={{ mb: 2 }}>
@@ -133,7 +183,7 @@ const PaymentMethods = ({
 				)}
 				{isDelivery && (
 					<>
-						<Box sx={{ mb: 2 }}>
+						<Box sx={{ mb: 2, mt: 2 }}>
 							<TextField
 								label="Tip"
 								type="number"
@@ -180,7 +230,6 @@ const PaymentMethods = ({
 
 const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 	const { order, onThankYouPage, total } = useAppSelector((state) => state.app);
-	console.log("useSavePaymentMethod order", order);
 	const dispatch = useAppDispatch();
 
 	const onSubmit = (
@@ -190,8 +239,6 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		const { order: checkoutDataOrder } = getCheckoutData() || {};
 
 		if (!order || !checkoutDataOrder) return;
-
-		console.log("useSavePaymentMethod checkoutDataOrder", checkoutDataOrder);
 
 		const { payment_method_id, tip, delivery_time } = values;
 
@@ -229,14 +276,11 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 			} as IOrderWithCustmAttr,
 			total: updatedTotal as unknown as ITotal,
 		});
-		console.log("useSavePaymentMethod updatedOrder", {
-			...updatedOrder,
-		});
 
 		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 		dispatch(setTotal(updatedTotal as unknown as ITotal));
 
-		onThankYouPage!({ orderId: checkoutDataOrder.id});
+		onThankYouPage!({ orderId: checkoutDataOrder.id });
 		setSubmitting(false);
 	};
 

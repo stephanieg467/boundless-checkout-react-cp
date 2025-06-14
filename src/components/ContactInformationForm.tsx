@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Form, Formik, FormikHelpers } from "formik";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import {
-	IOrder,
 	ICheckoutStepper,
 	TCheckoutStep,
 	ICustomer,
@@ -10,6 +9,10 @@ import {
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid2";
 import Button from "@mui/material/Button";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 import { fieldAttrs } from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -21,9 +24,7 @@ import { LoginFormView } from "./LoginForm";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { v4 } from "uuid";
-import {
-	setLocalStorageCheckoutData,
-} from "../hooks/checkoutData";
+import { setLocalStorageCheckoutData } from "../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../types/Order";
 
 export interface IContactInformationFormValues {
@@ -31,7 +32,7 @@ export interface IContactInformationFormValues {
 	phone?: string;
 	first_name: string;
 	last_name: string;
-	receive_marketing_info?: boolean;
+	dob?: string;
 	register_me?: boolean;
 }
 
@@ -56,9 +57,6 @@ export function ContactFormView({
 	const fieldsList = getFieldsList();
 	const { onSubmit } = useSaveContactInfo();
 	const excludedFields = fieldsList.map(({ type }) => type);
-	// if (!order!.customer && !loggedInCustomer) {
-	// 	excludedFields.push('receive_marketing_info');
-	// }
 
 	return (
 		<Formik
@@ -103,30 +101,6 @@ export function ContactFormView({
 					<Grid container spacing={{ xs: 2, md: 3 }}>
 						{fieldsList.map(({ type, required }, i) => (
 							<Grid size={{ xs: 12, md: 6 }} key={i}>
-								{type === "first_name" && (
-									<TextField
-										label={t("contactForm.firstName")}
-										variant={"outlined"}
-										required={required}
-										{...fieldAttrs<IContactInformationFormValues>(
-											"first_name",
-											formikProps
-										)}
-										fullWidth
-									/>
-								)}
-								{type === "last_name" && (
-									<TextField
-										label={t("contactForm.lastName")}
-										variant={"outlined"}
-										required={required}
-										{...fieldAttrs<IContactInformationFormValues>(
-											"last_name",
-											formikProps
-										)}
-										fullWidth
-									/>
-								)}
 								{type === "email" && (
 									<TextField
 										label={t("contactForm.email")}
@@ -154,6 +128,59 @@ export function ContactFormView({
 										fullWidth
 									/>
 								)}
+								{type === "first_name" && (
+									<TextField
+										label={t("contactForm.firstName")}
+										variant={"outlined"}
+										required={required}
+										{...fieldAttrs<IContactInformationFormValues>(
+											"first_name",
+											formikProps
+										)}
+										fullWidth
+									/>
+								)}
+								{type === "last_name" && (
+									<TextField
+										label={t("contactForm.lastName")}
+										variant={"outlined"}
+										required={required}
+										{...fieldAttrs<IContactInformationFormValues>(
+											"last_name",
+											formikProps
+										)}
+										fullWidth
+									/>
+								)}
+								{type === "dob" && (
+									<LocalizationProvider dateAdapter={AdapterDayjs}>
+										<DatePicker
+											label={t("contactForm.dob")}
+											value={
+												formikProps.values.dob
+													? dayjs(formikProps.values.dob)
+													: null
+											}
+											onChange={(newValue) => {
+												formikProps.setFieldValue("dob", newValue ? dayjs(newValue).format('YYYY-MM-DD') : null);
+											}}
+											slotProps={{
+												textField: {
+													variant: "outlined",
+													required: required,
+													fullWidth: true,
+													name: "dob",
+													onBlur: formikProps.handleBlur,
+													error:
+														formikProps.touched.dob &&
+														Boolean(formikProps.errors.dob),
+													helperText:
+														formikProps.touched.dob && formikProps.errors.dob,
+												},
+											}}
+										/>
+									</LocalizationProvider>
+								)}
 							</Grid>
 						))}
 						{/* {!loggedInCustomer && (
@@ -166,15 +193,6 @@ export function ContactFormView({
 								/>
 							</Grid>
 						)} */}
-						{/* {excludedFields.includes('receive_marketing_info') &&
-						<Grid
-									xs={12}
-						>
-							<FormControlLabel control={
-								<Checkbox {...checkAttrs('receive_marketing_info', formikProps)} />
-							} label={t('contactForm.receiveMarketingInfo')}/>
-						</Grid>
-						} */}
 						<Grid size={{ xs: 12 }} sx={{ textAlign: "right" }}>
 							<NextStepBtn
 								stepper={stepper!}
@@ -205,6 +223,7 @@ const NextStepBtn = ({
 				size="large"
 				disabled={isSubmitting}
 				startIcon={<LocalShippingIcon />}
+				color="success"
 			>
 				{t("contactForm.continueToShipping")}
 			</Button>
@@ -233,7 +252,8 @@ const useSaveContactInfo = () => {
 		values: IContactInformationFormValues,
 		{ setSubmitting, setErrors }: FormikHelpers<IContactInformationFormValues>
 	) => {
-		const { receive_marketing_info, ...rest } = values;
+		const { email, first_name, last_name, phone, dob } = values;
+		console.log("ContactInformationForm: onSubmit", values);
 
 		// if (customer && authToken) {
 		// 	dispatch(setLoggedInCustomer(customer, authToken));
@@ -241,12 +261,12 @@ const useSaveContactInfo = () => {
 
 		const customer = {
 			id: v4(),
-			email: rest.email ?? null,
+			email: email ?? null,
 			created_at: new Date().toISOString(),
-			first_name: rest.first_name,
-			last_name: rest.last_name,
-			phone: rest.phone ?? null,
-			receive_marketing_info: false,
+			first_name: first_name,
+			last_name: last_name,
+			phone: phone ?? null,
+			dob: dob ?? "",
 			custom_attrs: null,
 			addresses: [],
 		};
@@ -267,40 +287,6 @@ const useSaveContactInfo = () => {
 			? "/shipping-address"
 			: "/payment";
 		navigate(nextUrl, { replace: true });
-		// 	.saveContactsData({
-		// 		order_id,
-		// 		...rest,
-		// 		receive_marketing_info: false,
-		// 	})
-		// 	.then(({ customer, authToken }) => {
-		// 		if (customer && authToken) {
-		// 			dispatch(setLoggedInCustomer(customer, authToken));
-		// 		}
-
-		// 		dispatch(setOrdersCustomer(customer));
-		// 		dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
-		// 	})
-		// 	.then(async () => {
-		// 		const order = await api!.adminOrder.updateOrder(order_id, {
-		// 			custom_attrs: {
-		// 				first_name: rest.first_name,
-		// 				last_name: rest.last_name,
-		// 			},
-		// 		});
-
-		// 		const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
-		// 			? "/shipping-address"
-		// 			: "/payment";
-		// 		navigate(nextUrl, { replace: true });
-		// 	})
-		// 	.catch((err) => {
-		// 		const {
-		// 			response: { data },
-		// 		} = err;
-		// 		setErrors(apiErrors2Formik(data));
-		// 	})
-		// 	.finally(() => setSubmitting(false));
-		// dispatch(addPromise(promise));
 	};
 
 	return {
@@ -345,6 +331,12 @@ const getFieldsList = () => {
 		show: true,
 	});
 
+	fields.push({
+		type: "dob",
+		required: true,
+		show: true,
+	});
+
 	return fields;
 };
 
@@ -354,7 +346,7 @@ const getInitialValues = (
 ) => {
 	const { customer } = order;
 	const initialValues: IContactInformationFormValues = {
-		receive_marketing_info: false,
+		dob: "",
 		register_me: false,
 		first_name: "",
 		last_name: "",
@@ -371,13 +363,17 @@ const getInitialValues = (
 		if (customer.phone) {
 			initialValues.phone = customer.phone;
 		}
-		
+
 		if (customer.first_name) {
 			initialValues.first_name = customer.first_name;
 		}
 
 		if (customer.last_name) {
 			initialValues.last_name = customer.last_name;
+		}
+
+		if (customer.dob) {
+			initialValues.dob = customer.dob;
 		}
 	}
 

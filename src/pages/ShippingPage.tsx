@@ -11,12 +11,23 @@ import {
 	SELF_PICKUP_INFO,
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
+import { cartHasTickets } from "../lib/products";
 
 const useInitShippingPage = () => {
 	const { isInited } = useInitCheckoutByCart();
 	const [shippingPage, setShippingPage] =
 		useState<null | ICheckoutShippingPageData>(null);
 	const { order } = useAppSelector((state) => state.app);
+	const cartItems = useAppSelector((state) => state.app.items);
+	const cartItemHasTickets = cartHasTickets();
+	
+	const showAllDeliveryOptions =
+		!cartItemHasTickets || (cartItems && cartItems.length > 1);
+
+	const options = [SELF_PICKUP_INFO]
+	if (showAllDeliveryOptions) {
+		options.push(DELIVERY_INFO, SHIPPING_DELIVERY_INFO);
+	}
 
 	useEffect(() => {
 		if (order && !shippingPage) {
@@ -41,7 +52,7 @@ const useInitShippingPage = () => {
 						],
 						delivery: [SELF_PICKUP_INFO, DELIVERY_INFO, SHIPPING_DELIVERY_INFO],
 					},
-					person: order.customer,
+					person: order.customer as any,
 					orderServiceDelivery: null,
 				};
 				setShippingPage(shippingPageData);
@@ -51,7 +62,7 @@ const useInitShippingPage = () => {
 
 	return {
 		isInited,
-		shippingPage,
+		shippingPage
 	};
 };
 

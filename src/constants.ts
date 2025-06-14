@@ -1,7 +1,5 @@
-import { TShippingAlias } from "boundless-api-client";
-
-export const SHIPPING_DELIVERY_ID = 3;
 export const DELIVERY_ID = 2;
+export const SHIPPING_DELIVERY_ID = 3;
 export const SELF_PICKUP_ID = 1;
 
 export const DELIVERY_COST = "4.00";
@@ -38,7 +36,7 @@ export const SELF_PICKUP_INFO = {
 	delivery_id: SELF_PICKUP_ID,
 	title: "Self Pickup",
 	description: "In Store Pick Up",
-	alias: TShippingAlias.selfPickup,
+	alias: "selfPickup",
 	shipping_id: SELF_PICKUP_ID,
 	shipping_config: null,
 	free_shipping_from: null,

@@ -34,6 +34,7 @@ import ShippingRatesField from "./shippingForm/ShippingRatesField";
 import { v4 } from "uuid";
 import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
 import { getOrderTaxes } from "../../lib/taxes";
+import { cartHasTickets } from "../../lib/products";
 
 const getFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData
@@ -348,7 +349,6 @@ const useSaveShippingForm = ({
 						total: updatedTotal,
 					});
 					
-					console.log("updatedOrder", updatedOrder);
 					dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 					dispatch(setTotal(updatedTotal));
 					dispatch(addFilledStep({ step: TCheckoutStep.shippingMethod }));
@@ -369,12 +369,13 @@ const useSaveShippingForm = ({
 };
 
 export default function ShippingForm({
-	shippingPage,
+	shippingPage
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
+
 
 	return (
 		<Formik
@@ -398,6 +399,11 @@ export default function ShippingForm({
 						<Typography variant="h5" sx={{ m: 2 }}>
 							{t("shippingForm.pageHeader")}
 						</Typography>
+						{cartHasTickets() && (
+							<Typography variant="body1" sx={{ m: 2 }}>
+								{"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."}
+							</Typography>
+						)}
 						<DeliverySelector options={shippingPage.options} />
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
@@ -412,6 +418,7 @@ export default function ShippingForm({
 									!delivery_id ||
 									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode)
 								}
+								color="success"
 							>
 								{t("shippingForm.continueToPayment")}
 							</Button>

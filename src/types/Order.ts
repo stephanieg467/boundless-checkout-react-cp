@@ -14,7 +14,7 @@ export interface IOrderWithCustmAttr {
 	paid_at: null | string;
 	publishing_status: TPublishingStatus;
 	created_at: string;
-	customer?: ICustomer;
+	customer?: ICovaCustomer;
 	discounts?: IOrderDiscount[];
 	paymentMethod?: IPaymentMethod;
 	services?: IOrderService[];
@@ -28,8 +28,14 @@ export interface IOrderWithCustmAttr {
 	delivery_time?: string;
 }
 
+export interface ICovaCustomer extends Omit<ICustomer, 'receive_marketing_info'> {
+	dob?: string;
+}
+
 export interface ICheckoutData {
 	order: IOrderWithCustmAttr | undefined;
 	total: ITotal | undefined;
 	items?: CovaCartItem[]
 }
+
+

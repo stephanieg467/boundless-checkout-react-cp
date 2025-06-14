@@ -6,6 +6,7 @@ import Loading from "../components/Loading";
 import PaymentMethodForm from "./paymentPage/PaymentMethodForm";
 import { useTranslation } from "react-i18next";
 import { CREDIT_CARD_PAYMENT_METHOD, PAY_IN_STORE_PAYMENT_METHOD } from "../constants";
+import { cartHasTickets } from "../lib/products";
 
 export default function PaymentPage() {
 	const { isInited, paymentPage } = useInitPaymentPage();
@@ -44,6 +45,7 @@ const useInitPaymentPage = () => {
 	const { order } = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
+	const cartItemHasTickets = cartHasTickets();
 
 	useEffect(() => {
 		if (isInited && order && !paymentPage) {
@@ -54,7 +56,7 @@ const useInitPaymentPage = () => {
 				}] as IPaymentMethod[]
 			} as IPaymentPageData;
 			
-			if (order.services?.find((service) => service.serviceDelivery?.title === "Self Pickup")) {
+			if (!cartItemHasTickets && order.services?.find((service) => service.serviceDelivery?.title === "Self Pickup")) {
 				paymentPageData.paymentMethods.push({
 					payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
 					title: "Pay in store",

@@ -11,7 +11,7 @@ import {
 import { ReactNode } from "react";
 import { TClickedElement } from "../../lib/elementEvents";
 import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
-import { IOrderWithCustmAttr } from "../../types/Order";
+import { ICovaCustomer, IOrderWithCustmAttr } from "../../types/Order";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -120,7 +120,7 @@ const appSlice = createSlice({
 			}
 			state.order = order;
 		},
-		setOrdersCustomer(state, action: PayloadAction<ICustomer>) {
+		setOrdersCustomer(state, action: PayloadAction<ICovaCustomer>) {
 			const customer = action.payload;
 			state.order!.customer = customer;
 		},
