@@ -21,7 +21,7 @@ export const DELIVERY_INFO = {
 export const SHIPPING_DELIVERY_INFO = {
 	delivery_id: SHIPPING_DELIVERY_ID,
 	title: "Shipping",
-	description: "Ship order to your address via Canada Post (available within Canada)",
+	description: "Ship order to your address via Canada Post (available within BC, Canada)",
 	alias: "shipping",
 	shipping_id: SHIPPING_DELIVERY_ID,
 	shipping_config: null,

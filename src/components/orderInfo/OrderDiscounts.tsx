@@ -1,5 +1,5 @@
 import React from 'react';
-import {Grid} from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {IDetailedOrder, IOrderDiscount, TDiscountType} from 'boundless-api-client';
 import PercentIcon from '@mui/icons-material/Percent';
 import useFormatCurrency from '../../hooks/useFormatCurrency';
@@ -19,20 +19,35 @@ export default function OrderDiscounts({order}: {order: IDetailedOrder}) {
 	};
 
 	return (
-		<div className='bdl-order-items__service-row'>
-			<h5 className='bdl-order-items__service-heading'>
+        <div className='bdl-order-items__service-row'>
+            <h5 className='bdl-order-items__service-heading'>
 				<PercentIcon className='bdl-order-items__service-ico' fontSize='small' />
 				{t('orderInfo.discounts.title')}
 			</h5>
-			<Grid container>
-				<Grid item sm={8} xs={12} className='bdl-order-items__service-cell bdl-order-items__service-cell_title'>
+            <Grid container>
+				<Grid
+                    className='bdl-order-items__service-cell bdl-order-items__service-cell_title'
+                    size={{
+                        sm: 8,
+                        xs: 12
+                    }}>
 					{discounts.map(discount => (
 						<div key={discount.discount_id}>{getDiscountTitleWithAmount(discount)}</div>
 					))}
 				</Grid>
-				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
+				<Grid
+                    className='bdl-order-items__service-cell'
+                    size={{
+                        sm: 2,
+                        xs: 12
+                    }}>
 				</Grid>
-				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
+				<Grid
+                    className='bdl-order-items__service-cell'
+                    size={{
+                        sm: 2,
+                        xs: 12
+                    }}>
 					<span className='bdl-order-items__label'>{t('orderInfo.discounts.total')} </span>
 					{order.discount_for_order &&
 					<span className='bdl-order-items__value'>
@@ -41,6 +56,6 @@ export default function OrderDiscounts({order}: {order: IDetailedOrder}) {
 					}
 				</Grid>
 			</Grid>
-		</div>
-	);
+        </div>
+    );
 }

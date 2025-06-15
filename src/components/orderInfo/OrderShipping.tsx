@@ -1,11 +1,12 @@
 import React, {useMemo} from 'react';
-import {Grid} from '@mui/material';
-import {IAddress, ICustomer, IOrderService, TAddressType} from 'boundless-api-client';
+import Grid from '@mui/material/Grid';
+import {IAddress, IOrderService, TAddressType} from 'boundless-api-client';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import useFormatCurrency from '../../hooks/useFormatCurrency';
 import {useTranslation} from 'react-i18next';
+import { ICovaCustomer } from '../../types/Order';
 
-export default function OrderShipping({services, customer, hasShipping}: {services: IOrderService[], customer: ICustomer | null, hasShipping: boolean}) {
+export default function OrderShipping({services, customer, hasShipping}: {services: IOrderService[], customer: ICovaCustomer | null, hasShipping: boolean}) {
 	const delivery = useMemo(() => services.find(service => service.is_delivery), [services]);
 	const shippingAddress = useMemo(() =>
 		customer?.addresses?.find(address => address.type === TAddressType.shipping) || null
@@ -17,27 +18,42 @@ export default function OrderShipping({services, customer, hasShipping}: {servic
 	if (!delivery) return null;
 
 	return (
-		<div className='bdl-order-items__service-row'>
-			<h5 className='bdl-order-items__service-heading'>
+        <div className='bdl-order-items__service-row'>
+            <h5 className='bdl-order-items__service-heading'>
 				<LocalShippingIcon className='bdl-order-items__service-ico' fontSize='small' />
 				{t('orderInfo.shipping.title')}
 			</h5>
-			<Grid container>
-				<Grid item sm={8} xs={12} className='bdl-order-items__service-cell bdl-order-items__service-cell_title'>
+            <Grid container>
+				<Grid
+                    className='bdl-order-items__service-cell bdl-order-items__service-cell_title'
+                    size={{
+                        sm: 8,
+                        xs: 12
+                    }}>
 					<div>{delivery.serviceDelivery?.delivery?.title || ''}</div>
 					{hasShipping && shippingAddress && <ShippingAddress address={shippingAddress} />}
 				</Grid>
-				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
+				<Grid
+                    className='bdl-order-items__service-cell'
+                    size={{
+                        sm: 2,
+                        xs: 12
+                    }}>
 				</Grid>
-				<Grid item sm={2} xs={12} className='bdl-order-items__service-cell'>
+				<Grid
+                    className='bdl-order-items__service-cell'
+                    size={{
+                        sm: 2,
+                        xs: 12
+                    }}>
 					<span className='bdl-order-items__label'>{t('orderInfo.shipping.total')} </span>
 					<span className='bdl-order-items__value'>
 						{delivery.total_price && formatCurrency(delivery.total_price)}
 					</span>
 				</Grid>
 			</Grid>
-		</div>
-	);
+        </div>
+    );
 }
 
 const ShippingAddress = ({address}: {address: IAddress}) => {

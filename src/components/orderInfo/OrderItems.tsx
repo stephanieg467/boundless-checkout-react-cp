@@ -1,4 +1,4 @@
-import { Grid } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import React from "react";
 import OrderDiscounts from "./OrderDiscounts";
 import OrderPayment from "./OrderPayment";
@@ -31,22 +31,37 @@ export default function OrderItems({
 	const itemsSubTotal = total.itemsSubTotal;
 
 	return (
-		<>
-			<div className="bdl-order-items">
+        <>
+            <div className="bdl-order-items">
 				<Grid container className="bdl-order-items__thead">
 					<Grid
-						item
-						sm={6}
-						xs={12}
-						className="bdl-order-items__thead-cell"
-					></Grid>
-					<Grid item sm={2} xs={12} className="bdl-order-items__thead-cell">
+                        className="bdl-order-items__thead-cell"
+                        size={{
+                            sm: 6,
+                            xs: 12
+                        }}></Grid>
+					<Grid
+                        className="bdl-order-items__thead-cell"
+                        size={{
+                            sm: 2,
+                            xs: 12
+                        }}>
 						Price
 					</Grid>
-					<Grid item sm={2} xs={12} className="bdl-order-items__thead-cell">
+					<Grid
+                        className="bdl-order-items__thead-cell"
+                        size={{
+                            sm: 2,
+                            xs: 12
+                        }}>
 						Qty
 					</Grid>
-					<Grid item sm={2} xs={12} className="bdl-order-items__thead-cell">
+					<Grid
+                        className="bdl-order-items__thead-cell"
+                        size={{
+                            sm: 2,
+                            xs: 12
+                        }}>
 						Total
 					</Grid>
 				</Grid>
@@ -74,6 +89,6 @@ export default function OrderItems({
 					<OrderTotalRow price={total_price} qty={itemsSubTotal.qty} />
 				)}
 			</div>
-		</>
-	);
+        </>
+    );
 }

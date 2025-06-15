@@ -24,8 +24,8 @@ export default function AddressFieldset({
 	const { t } = useTranslation();
 
 	return (
-		<Grid container spacing={2}>
-			<Grid item xs={6}>
+        <Grid container spacing={2}>
+            <Grid size={6}>
 				<TextField
 					label={t("addresses.firstName")}
 					variant={"outlined"}
@@ -34,7 +34,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "first_name", formikProps)}
 				/>
 			</Grid>
-			<Grid item xs={6}>
+            <Grid size={6}>
 				<TextField
 					label={t("addresses.lastName")}
 					variant={"outlined"}
@@ -43,8 +43,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "last_name", formikProps)}
 				/>
 			</Grid>
-
-			<Grid item xs={12}>
+            <Grid size={12}>
 				<TextField
 					label={t("addresses.addressLine1")}
 					variant={"outlined"}
@@ -53,8 +52,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "address_line_1", formikProps)}
 				/>
 			</Grid>
-
-			<Grid item xs={12}>
+            <Grid size={12}>
 				<TextField
 					label={t("addresses.addressLine2")}
 					variant={"outlined"}
@@ -63,8 +61,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
 				/>
 			</Grid>
-
-			<Grid item xs={6}>
+            <Grid size={6}>
 				<TextField
 					label={t("addresses.zip")}
 					variant={"outlined"}
@@ -73,7 +70,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "zip", formikProps)}
 				/>
 			</Grid>
-			<Grid item xs={6}>
+            <Grid size={6}>
 				<TextField
 					label={t("addresses.city")}
 					variant={"outlined"}
@@ -82,8 +79,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "city", formikProps)}
 				/>
 			</Grid>
-
-			<Grid item xs={6}>
+            <Grid size={6}>
 				<TextField
 					label={t("addresses.state")}
 					variant={"outlined"}
@@ -92,8 +88,8 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
-			{/* // @todo: Currently only supporting Canada. */}
-			{/* <Grid item xs={6}>
+            {/* // @todo: Currently only supporting Canada. */}
+            {/* <Grid item xs={6}>
 				<TextField
 					label={t("addresses.country")}
 					variant={"outlined"}
@@ -114,9 +110,8 @@ export default function AddressFieldset({
 					))}
 				</TextField>
 			</Grid> */}
-
-			{showPhone && (
-				<Grid item xs={12}>
+            {showPhone && (
+				<Grid size={12}>
 					<TextField
 						label={t("addresses.phone")}
 						variant={"outlined"}
@@ -125,8 +120,8 @@ export default function AddressFieldset({
 					/>
 				</Grid>
 			)}
-		</Grid>
-	);
+        </Grid>
+    );
 }
 
 interface IProps {

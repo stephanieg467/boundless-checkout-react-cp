@@ -14,7 +14,7 @@ export default function useInitCheckoutByCart() {
 		} else {
 			dispatch(setGlobalError('Cart ID is not passed to the Checkout component.'));
 		}
-	}, [cartId]);//eslint-disable-line
+	}, [cartId]); //eslint-disable-line
 
 	return {
 		isInited

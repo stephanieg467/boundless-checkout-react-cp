@@ -40,8 +40,8 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 	const {t} = useTranslation();
 
 	return (
-		<Formik initialValues={{email: '', password: ''}} onSubmit={onSubmit}>
-			{(formikProps) => (
+        <Formik initialValues={{email: '', password: ''}} onSubmit={onSubmit}>
+            {(formikProps) => (
 				<Form className={'bdl-login-form'}>
 					<Typography variant="h5" sx={{ mb: 2 }}>{t('loginForm.pageHeader')}</Typography>
 					<Typography align={'right'}
@@ -58,7 +58,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 							</Button>
 						</Typography>
 					<Grid container spacing={2}>
-						<Grid item xs={12}>
+						<Grid size={12}>
 							<Box sx={{display: 'flex', alignItems: 'flex-end'}}>
 								<AccountCircle sx={{color: 'action.active', mr: 1, my: 0.5}} />
 								<TextField label={t('loginForm.email')}
@@ -70,7 +70,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 								/>
 							</Box>
 						</Grid>
-						<Grid item xs={12}>
+						<Grid size={12}>
 							<Box sx={{display: 'flex', alignItems: 'flex-end'}}>
 								<VpnKeyIcon sx={{color: 'action.active', mr: 1, my: 0.5}} />
 								<TextField label={t('loginForm.password')}
@@ -82,7 +82,7 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 								/>
 							</Box>
 						</Grid>
-						<Grid item xs={12} sx={{textAlign: 'right'}}>
+						<Grid sx={{textAlign: 'right'}} size={12}>
 							<Button variant="contained"
 								startIcon={<LoginIcon />}
 								type={'submit'}
@@ -94,8 +94,8 @@ export function LoginFormView({setViewMode}: {setViewMode: (mode: TViewMode) => 
 					</Grid>
 				</Form>
 			)}
-		</Formik>
-	);
+        </Formik>
+    );
 }
 
 const useSaveLoginForm = (setViewMode: (mode: TViewMode) => void) => {
