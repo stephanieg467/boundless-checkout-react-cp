@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Form, Formik, FormikHelpers } from "formik";
+import { Form, Formik, FormikHelpers, FormikProps } from "formik";
+// import * as Yup from 'yup'; // Remove Yup import
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import {
 	ICheckoutStepper,
@@ -28,11 +29,11 @@ import { setLocalStorageCheckoutData } from "../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../types/Order";
 
 export interface IContactInformationFormValues {
-	email?: string;
-	phone?: string;
+	email: string; // Changed from optional to required for simplicity with custom validation
+	phone: string; // Changed from optional to required for simplicity with custom validation
 	first_name: string;
 	last_name: string;
-	dob?: string;
+	dob: string | null; // Ensure dob can be string or null
 	register_me?: boolean;
 }
 
@@ -40,6 +41,46 @@ export enum TViewMode {
 	contact = "contact",
 	login = "login",
 }
+
+// Custom validation function
+const validateContactForm = (values: IContactInformationFormValues) => {
+	const errors: Partial<Record<keyof IContactInformationFormValues, string>> = {};
+	const fields = getFieldsList();
+
+	const emailField = fields.find(field => field.type === 'email');
+	if (emailField?.required && !values.email) {
+		errors.email = 'Email is required';
+	} else if (values.email && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)) {
+		errors.email = 'Invalid email address';
+	}
+
+	const phoneField = fields.find(field => field.type === 'phone');
+	if (phoneField?.required && !values.phone) {
+		errors.phone = 'Phone is required';
+	}
+
+	if (!values.first_name) {
+		errors.first_name = 'First name is required';
+	}
+
+	if (!values.last_name) {
+		errors.last_name = 'Last name is required';
+	}
+
+	const dobField = fields.find(field => field.type === 'dob');
+	if (values.dob) {
+		const birthDate = dayjs(values.dob);
+		const today = dayjs();
+		const age = today.diff(birthDate, 'year');
+		if (age < 19) {
+			errors.dob = 'You must be at least 19 years old';
+		}
+	} else if (dobField?.required) {
+		errors.dob = 'Date of birth is required';
+	}
+
+	return errors;
+};
 
 export function ContactFormView({
 	setViewMode,
@@ -59,11 +100,12 @@ export function ContactFormView({
 	const excludedFields = fieldsList.map(({ type }) => type);
 
 	return (
-		<Formik
+		<Formik<IContactInformationFormValues>
 			initialValues={getInitialValues(order!, loggedInCustomer)}
+			validate={validateContactForm}
 			onSubmit={onSubmit}
 		>
-			{(formikProps) => (
+			{(formikProps: FormikProps<IContactInformationFormValues>) => (
 				<Form
 					className={clsx("bdl-contact-form", {
 						"two-fields": fieldsList.length === 2,
@@ -163,6 +205,7 @@ export function ContactFormView({
 											}
 											onChange={(newValue) => {
 												formikProps.setFieldValue("dob", newValue ? dayjs(newValue).format('YYYY-MM-DD') : null);
+												formikProps.setFieldTouched("dob", true); // Ensure field is marked touched for validation
 											}}
 											slotProps={{
 												textField: {
@@ -253,7 +296,6 @@ const useSaveContactInfo = () => {
 		{ setSubmitting, setErrors }: FormikHelpers<IContactInformationFormValues>
 	) => {
 		const { email, first_name, last_name, phone, dob } = values;
-		console.log("ContactInformationForm: onSubmit", values);
 
 		// if (customer && authToken) {
 		// 	dispatch(setLoggedInCustomer(customer, authToken));
@@ -343,41 +385,21 @@ const getFieldsList = () => {
 const getInitialValues = (
 	order: IOrderWithCustmAttr,
 	loggedInCustomer: ICustomer | null
-) => {
-	const { customer } = order;
-	const initialValues: IContactInformationFormValues = {
-		dob: "",
+): IContactInformationFormValues => {
+	const customer = order.customer || loggedInCustomer;
+
+	// Ensure a default empty string for email and phone if customer or their properties are null/undefined
+	// Also, handle dob correctly if it might not exist on customer.
+	const initialDob = customer && 'dob' in customer ? (customer as any).dob : null;
+
+	return {
+		email: customer?.email || "",
+		phone: customer?.phone || "",
+		first_name: customer?.first_name || "",
+		last_name: customer?.last_name || "",
+		dob: initialDob || null, // Use the safely accessed dob
 		register_me: false,
-		first_name: "",
-		last_name: "",
 	};
-
-	if (loggedInCustomer) {
-		initialValues.email = loggedInCustomer.email!;
-		initialValues.phone = loggedInCustomer.phone || "";
-	} else if (customer) {
-		if (customer.email) {
-			initialValues.email = customer.email;
-		}
-
-		if (customer.phone) {
-			initialValues.phone = customer.phone;
-		}
-
-		if (customer.first_name) {
-			initialValues.first_name = customer.first_name;
-		}
-
-		if (customer.last_name) {
-			initialValues.last_name = customer.last_name;
-		}
-
-		if (customer.dob) {
-			initialValues.dob = customer.dob;
-		}
-	}
-
-	return initialValues;
 };
 
 export default function ContactInformationForm() {

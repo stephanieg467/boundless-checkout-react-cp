@@ -20,9 +20,12 @@ const useInitShippingPage = () => {
 	const { order } = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state) => state.app.items);
 	const cartItemHasTickets = cartHasTickets();
+	const clonesInCart = cartItems?.some(
+		(item) => item.product.ClassificationName === "Clones"
+	)
 	
 	const showAllDeliveryOptions =
-		!cartItemHasTickets || (cartItems && cartItems.length > 1);
+		(!clonesInCart && !cartItemHasTickets) || (cartItems && cartItems.length > 1);
 
 	const options = [SELF_PICKUP_INFO]
 	if (showAllDeliveryOptions) {
@@ -50,7 +53,7 @@ const useInitShippingPage = () => {
 								title: "Canada",
 							},
 						],
-						delivery: [SELF_PICKUP_INFO, DELIVERY_INFO, SHIPPING_DELIVERY_INFO],
+						delivery: options,
 					},
 					person: order.customer as any,
 					orderServiceDelivery: null,
@@ -58,7 +61,7 @@ const useInitShippingPage = () => {
 				setShippingPage(shippingPageData);
 			}
 		}
-	}, [order]); //eslint-disable-line
+	}, [order, options]); //eslint-disable-line
 
 	return {
 		isInited,

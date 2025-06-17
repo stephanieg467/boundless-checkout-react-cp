@@ -18,7 +18,6 @@ export default function CartFooter({ open }: ICartFooterProps) {
 	const [totalTaxAmount, setTotalTaxAmount] = useState(0);
 
 	useEffect(() => {
-		console.log("CartFooter: total", total);
 		if (total) {
 			const totalTaxAmount = total.tax.totalTaxAmount;
 			const servicesSubTotal = Number(total.servicesSubTotal.price) || 0;

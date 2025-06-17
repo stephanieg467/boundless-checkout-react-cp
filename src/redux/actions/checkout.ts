@@ -35,7 +35,6 @@ export const initCheckoutByCart =
 			
 			let totalOrderTaxes = checkoutDataOrder?.tax_amount ?? cartTaxAmount;
 			// @todo: still needlessly calling getOrderTaxes even when taxes are already present in checkoutDataOrder
-			console.log("initCheckoutByCart totalOrderTaxes", totalOrderTaxes);
 			if (!totalOrderTaxes) {
 				totalOrderTaxes = await getOrderTaxes(items)
 			}
@@ -130,7 +129,6 @@ export const initCheckoutByCart =
 				} as unknown as ITotal,
 			};
 			dispatch(setCheckoutData(data));
-			console.log("initCheckoutByCart data", data);
 
 			// if (data.loggedInCustomer) {
 			// 	dispatch(

@@ -32,19 +32,54 @@ import { cartHasTickets } from "../../lib/products";
 // Helper functions for dynamic delivery times
 const getVancouverDateTime = () => {
 	const now = new Date();
-	const dateInVancouver = new Date(
-		now.toLocaleString("en-CA", { timeZone: "America/Vancouver" })
-	);
-	const dayOfWeek = dateInVancouver.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
-	const hourVancouver = dateInVancouver.getHours(); // 0-23
-	const minuteVancouver = dateInVancouver.getMinutes(); // 0-59
+	const options: Intl.DateTimeFormatOptions = {
+		timeZone: "America/Vancouver",
+		hour: 'numeric',    // Get hour in numeric format (e.g., "14")
+		minute: 'numeric',  // Get minute in numeric format (e.g., "30")
+		weekday: 'long',    // Get the full name of the weekday (e.g., "Monday")
+		hour12: false       // Use 24-hour format for the hour
+	};
+	const formatter = new Intl.DateTimeFormat("en-CA", options);
+	const parts = formatter.formatToParts(now);
+
+	let hourVancouver = 0;
+	let minuteVancouver = 0;
+	let weekdayName = "";
+
+	for (const part of parts) {
+		switch (part.type) {
+			case "hour":
+				// The hour might be '24' for midnight in some locales with hourCycle h24, map to 0.
+				// For hourCycle h23 (default for en-CA numeric), it's 0-23.
+				const hr = parseInt(part.value);
+				hourVancouver = hr === 24 ? 0 : hr;
+				break;
+			case "minute":
+				minuteVancouver = parseInt(part.value);
+				break;
+			case "weekday":
+				weekdayName = part.value;
+				break;
+		}
+	}
+
+	const dayMap: { [key: string]: number } = {
+		Sunday: 0,
+		Monday: 1,
+		Tuesday: 2,
+		Wednesday: 3,
+		Thursday: 4,
+		Friday: 5,
+		Saturday: 6,
+	};
+	const dayOfWeek = dayMap[weekdayName];
+
 	return { dayOfWeek, hourVancouver, minuteVancouver };
 };
 
 const shouldIncludeASAP = () => {
 	const { dayOfWeek, hourVancouver, minuteVancouver } = getVancouverDateTime();
 	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
-	console.log(`Current time in Vancouver: ${currentTimeInMinutes} minutes`);
 
 	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
 	if (dayOfWeek >= 0 && dayOfWeek <= 4) {

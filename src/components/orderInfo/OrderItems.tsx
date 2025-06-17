@@ -5,7 +5,7 @@ import OrderPayment from "./OrderPayment";
 import OrderRow from "./OrderRow";
 import OrderShipping from "./OrderShipping";
 import OrderTotalRow from "./OrderTotalRow";
-import OrderTaxes from "./OrderTaxes";
+import OrderInfo from "./OrderInfo";
 import { hasShipping } from "../../lib/shipping";
 import { IOrderWithCustmAttr } from "../../types/Order";
 import { CovaCartItem } from "../../types/cart";
@@ -31,37 +31,41 @@ export default function OrderItems({
 	const itemsSubTotal = total.itemsSubTotal;
 
 	return (
-        <>
-            <div className="bdl-order-items">
+		<>
+			<div className="bdl-order-items">
 				<Grid container className="bdl-order-items__thead">
 					<Grid
-                        className="bdl-order-items__thead-cell"
-                        size={{
-                            sm: 6,
-                            xs: 12
-                        }}></Grid>
+						className="bdl-order-items__thead-cell"
+						size={{
+							sm: 6,
+							xs: 12,
+						}}
+					></Grid>
 					<Grid
-                        className="bdl-order-items__thead-cell"
-                        size={{
-                            sm: 2,
-                            xs: 12
-                        }}>
+						className="bdl-order-items__thead-cell"
+						size={{
+							sm: 2,
+							xs: 12,
+						}}
+					>
 						Price
 					</Grid>
 					<Grid
-                        className="bdl-order-items__thead-cell"
-                        size={{
-                            sm: 2,
-                            xs: 12
-                        }}>
+						className="bdl-order-items__thead-cell"
+						size={{
+							sm: 2,
+							xs: 12,
+						}}
+					>
 						Qty
 					</Grid>
 					<Grid
-                        className="bdl-order-items__thead-cell"
-                        size={{
-                            sm: 2,
-                            xs: 12
-                        }}>
+						className="bdl-order-items__thead-cell"
+						size={{
+							sm: 2,
+							xs: 12,
+						}}
+					>
 						Total
 					</Grid>
 				</Grid>
@@ -84,11 +88,12 @@ export default function OrderItems({
 					/>
 				)}
 				{order.paymentMethod && <OrderPayment order={order} />}
-				{hasTaxes && <OrderTaxes order={order} />}
+				{order.tip ? <OrderInfo name="Tip" amount={order.tip} /> : null}
+				{order.tax_amount && <OrderInfo name="Tax" amount={order.tax_amount} />}
 				{total_price && (
 					<OrderTotalRow price={total_price} qty={itemsSubTotal.qty} />
 				)}
 			</div>
-        </>
-    );
+		</>
+	);
 }
