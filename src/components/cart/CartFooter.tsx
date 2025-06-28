@@ -1,17 +1,14 @@
 import { TDiscountType } from "boundless-api-client";
 import React, { useEffect, useState } from "react";
 import clsx from "clsx";
-import { useAppSelector } from "../../hooks/redux";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { useTranslation } from "react-i18next";
 import { hasShipping } from "../../lib/shipping";
-import { IOrderWithCustmAttr } from "../../types/Order";
+import { getCheckoutData } from "../../hooks/checkoutData";
 
 export default function CartFooter({ open }: ICartFooterProps) {
-	const order = useAppSelector(
-		(state) => state.app.order
-	) as IOrderWithCustmAttr;
-	const total = useAppSelector((state) => state.app.total);
+	const { order, total } = getCheckoutData() || {};
+	
 	const { formatCurrency } = useFormatCurrency();
 	const { t } = useTranslation();
 	const [totalPrice, setTotalPrice] = useState(0);
@@ -88,8 +85,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 					<h5 className="bdl-cart__footer-title">
 						{t("cart.footer.couponTitle", { amount: getDiscountAmount() })}
 						<span className="bdl-cart__footer-value">
-							{" "}
-							-{formatCurrency(total.discount)}
+							{" "}-{formatCurrency(total.discount)}
 						</span>
 					</h5>
 				</div>
@@ -99,8 +95,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 					<h5 className="bdl-cart__footer-title">
 						{isDelivery ? t("cart.footer.delivery") : t("cart.footer.shipping")}
 						<span className="bdl-cart__footer-value">
-							{" "}
-							{formatCurrency(total.servicesSubTotal.price)}
+							{" "}{formatCurrency(total.servicesSubTotal.price)}
 						</span>
 					</h5>
 				</div>
@@ -110,7 +105,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 				<h5 className="bdl-cart__footer-title">
 					Tax:
 					<span className="bdl-cart__footer-value">
-						{formatCurrency(totalTaxAmount ?? 0)}
+						{" "}{formatCurrency(totalTaxAmount ?? 0)}
 					</span>
 				</h5>
 			</div>

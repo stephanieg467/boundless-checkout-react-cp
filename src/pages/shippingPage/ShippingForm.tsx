@@ -296,7 +296,14 @@ const useSaveShippingForm = ({
 					const shippingPriceQuoteValue = Array.isArray(shippingPriceQuote)
 						? shippingPriceQuote[0]["price-details"]
 						: shippingPriceQuote["price-details"];
-					shippingRate = shippingPriceQuoteValue["base"].toString();
+
+					const adjustments = shippingPriceQuoteValue.adjustments?.adjustment || [];
+					let totalAdjustmentCost = 0;
+					for (const adjustment of adjustments) {
+						totalAdjustmentCost += Number(adjustment["adjustment-cost"]);
+					}
+					shippingRate = (totalAdjustmentCost + shippingPriceQuoteValue["base"]).toString();
+					console.log("shippingRate:", shippingRate);
 
 					shippingTaxes =
 						shippingPriceQuoteValue.taxes.gst + shippingPriceQuoteValue.taxes.pst+ shippingPriceQuoteValue.taxes.hst;

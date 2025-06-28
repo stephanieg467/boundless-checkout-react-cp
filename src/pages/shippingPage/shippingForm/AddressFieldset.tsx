@@ -1,7 +1,5 @@
 import React from "react";
-import {
-	IVWCountry,
-} from "boundless-api-client";
+import { IVWCountry } from "boundless-api-client";
 import Grid from "@mui/material/Grid";
 import { FormikProps, useFormikContext } from "formik";
 import TextField from "@mui/material/TextField";
@@ -11,6 +9,7 @@ import {
 	IShippingFormValues,
 } from "../../../types/shippingForm";
 import { useTranslation } from "react-i18next";
+import { PhoneInput } from "../../../components/PhoneInput";
 
 export default function AddressFieldset({
 	countries,
@@ -24,8 +23,8 @@ export default function AddressFieldset({
 	const { t } = useTranslation();
 
 	return (
-        <Grid container spacing={2}>
-            <Grid size={6}>
+		<Grid container spacing={2}>
+			<Grid size={6}>
 				<TextField
 					label={t("addresses.firstName")}
 					variant={"outlined"}
@@ -34,7 +33,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "first_name", formikProps)}
 				/>
 			</Grid>
-            <Grid size={6}>
+			<Grid size={6}>
 				<TextField
 					label={t("addresses.lastName")}
 					variant={"outlined"}
@@ -43,7 +42,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "last_name", formikProps)}
 				/>
 			</Grid>
-            <Grid size={12}>
+			<Grid size={12}>
 				<TextField
 					label={t("addresses.addressLine1")}
 					variant={"outlined"}
@@ -52,7 +51,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "address_line_1", formikProps)}
 				/>
 			</Grid>
-            <Grid size={12}>
+			<Grid size={12}>
 				<TextField
 					label={t("addresses.addressLine2")}
 					variant={"outlined"}
@@ -61,7 +60,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "address_line_2", formikProps)}
 				/>
 			</Grid>
-            <Grid size={6}>
+			<Grid size={6}>
 				<TextField
 					label={t("addresses.zip")}
 					variant={"outlined"}
@@ -70,7 +69,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "zip", formikProps)}
 				/>
 			</Grid>
-            <Grid size={6}>
+			<Grid size={6}>
 				<TextField
 					label={t("addresses.city")}
 					variant={"outlined"}
@@ -79,7 +78,7 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "city", formikProps)}
 				/>
 			</Grid>
-            <Grid size={6}>
+			<Grid size={6}>
 				<TextField
 					label={t("addresses.state")}
 					variant={"outlined"}
@@ -88,8 +87,8 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
-            {/* // @todo: Currently only supporting Canada. */}
-            {/* <Grid item xs={6}>
+			{/* // @todo: Currently only supporting Canada. */}
+			{/* <Grid item xs={6}>
 				<TextField
 					label={t("addresses.country")}
 					variant={"outlined"}
@@ -110,18 +109,21 @@ export default function AddressFieldset({
 					))}
 				</TextField>
 			</Grid> */}
-            {showPhone && (
+			{showPhone && (
 				<Grid size={12}>
 					<TextField
 						label={t("addresses.phone")}
 						variant={"outlined"}
 						fullWidth
 						{...addressFieldAttrs(keyPrefix, "phone", formikProps)}
+						InputProps={{
+							inputComponent: PhoneInput as any,
+						}}
 					/>
 				</Grid>
 			)}
-        </Grid>
-    );
+		</Grid>
+	);
 }
 
 interface IProps {

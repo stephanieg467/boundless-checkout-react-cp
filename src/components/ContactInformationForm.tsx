@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Form, Formik, FormikHelpers, FormikProps } from "formik";
-// import * as Yup from 'yup'; // Remove Yup import
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import {
 	ICheckoutStepper,
@@ -27,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { v4 } from "uuid";
 import { setLocalStorageCheckoutData } from "../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../types/Order";
+import { PhoneInput } from "./PhoneInput";
 
 export interface IContactInformationFormValues {
 	email: string; // Changed from optional to required for simplicity with custom validation
@@ -168,6 +168,9 @@ export function ContactFormView({
 											formikProps
 										)}
 										fullWidth
+										InputProps={{
+											inputComponent: PhoneInput as any,
+										}}
 									/>
 								)}
 								{type === "first_name" && (

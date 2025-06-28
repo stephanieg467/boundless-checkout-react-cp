@@ -58,7 +58,6 @@ export const initCheckoutByCart =
 				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 				discount_for_order: null,
 				tax_amount: totalOrderTaxes,
-				paid_at: "",
 				publishing_status: TPublishingStatus.published,
 				created_at: order?.created_at ?? new Date().toISOString(),
 				customer: checkoutDataOrder?.customer ?? undefined,

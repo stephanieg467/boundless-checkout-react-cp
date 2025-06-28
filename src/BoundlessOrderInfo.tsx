@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { IOrderWithCustmAttr } from "./types/Order";
 import { getCheckoutData } from "./hooks/checkoutData";
-import { DELIVERY_ID } from "./constants";
+import { SELF_PICKUP_ID } from "./constants";
 
 export default function BoundlessOrderInfo({
 	...restProps
@@ -43,8 +43,8 @@ const OrderInfo = ({
 	const checkoutData = getCheckoutData();
 	const {order, total, items} = checkoutData ?? {};
 	const { t } = useTranslation();
-	const isDelivery = order?.services?.some(
-			(service) => service.service_id === DELIVERY_ID
+	const isPayInStore = order?.services?.some(
+			(service) => service.service_id === SELF_PICKUP_ID
 		);
 
 	if (!order || !isInited) return <Loading />;
@@ -59,12 +59,12 @@ const OrderInfo = ({
 					<Typography variant="subtitle1" gutterBottom>
 						{t("orderInfo.orderStatus", { status: "Submitted" })}
 					</Typography>
-					{!isDelivery && (
+					{isPayInStore && (
 						<Typography variant="subtitle1" gutterBottom>
 							{t("orderInfo.paymentStatusPayInStore")}
 						</Typography>
 					)}
-					{isDelivery && order.paid_at && (
+					{!isPayInStore && (
 						<Typography variant="subtitle1" gutterBottom>
 							{t("orderInfo.paymentStatusPaid")}
 						</Typography>

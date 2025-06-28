@@ -47,9 +47,6 @@ export default function OrderTotalRow({
 					xs: 12,
 				}}
 			>
-				<span className="bdl-order-items__label">
-					{t("orderInfo.totalRow.price")}{" "}
-				</span>
 				<span className="bdl-order-items__value">{formatCurrency(price)}</span>
 			</Grid>
 		</Grid>

@@ -3,7 +3,6 @@ import Grid from "@mui/material/Grid";
 import { IAddress, IOrderService, TAddressType } from "boundless-api-client";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
 import { ICovaCustomer } from "../../types/Order";
 
 export default function OrderShipping({
@@ -28,7 +27,6 @@ export default function OrderShipping({
 	);
 
 	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
 
 	if (!delivery) return null;
 
@@ -39,7 +37,7 @@ export default function OrderShipping({
 					className="bdl-order-items__service-ico"
 					fontSize="small"
 				/>
-				{t("orderInfo.shipping.title")}
+				{delivery.serviceDelivery?.delivery?.title || ""}
 			</h5>
 			<Grid container>
 				<Grid
@@ -49,9 +47,8 @@ export default function OrderShipping({
 						xs: 12,
 					}}
 				>
-					<div>{delivery.serviceDelivery?.delivery?.title || ""}</div>
 					{hasShipping && shippingAddress && (
-						<ShippingAddress address={shippingAddress} />
+						<ShippingAddress address={shippingAddress} delivery={delivery} />
 					)}
 				</Grid>
 				<Grid
@@ -69,7 +66,7 @@ export default function OrderShipping({
 					}}
 				>
 					<span className="bdl-order-items__label">
-						{t("orderInfo.shipping.total")}{" "}
+						{`${delivery.serviceDelivery?.delivery?.title} total `}
 					</span>
 					<span className="bdl-order-items__value">
 						{delivery.total_price && formatCurrency(delivery.total_price)}
@@ -80,7 +77,7 @@ export default function OrderShipping({
 	);
 }
 
-const ShippingAddress = ({ address }: { address: IAddress }) => {
+const ShippingAddress = ({ address, delivery }: { address: IAddress, delivery: IOrderService }) => {
 	const fullName = [address.first_name || "", address.last_name || ""]
 		.join(" ")
 		.trim();
@@ -95,7 +92,7 @@ const ShippingAddress = ({ address }: { address: IAddress }) => {
 
 	return (
 		<>
-			<p className="bdl-order-items__address-heading">Ship to:</p>
+			<p className="bdl-order-items__address-heading">{`${delivery.serviceDelivery?.delivery?.title} to`}</p>
 			<address className="bdl-order-items__address">
 				{fullName && (
 					<p className="bdl-order-items__address-lane">{fullName}</p>

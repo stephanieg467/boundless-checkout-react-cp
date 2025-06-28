@@ -239,6 +239,7 @@ const PaymentMethods = ({
 						</Box>
 						<Box sx={{ mb: 2 }}>
 							<TextField
+								required={true}
 								label="Delivery time"
 								variant={"outlined"}
 								fullWidth
@@ -283,12 +284,8 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 				(method) => method.payment_method_id === payment_method_id
 			),
 			delivery_time: delivery_time || "",
-			tip: tip ? parseFloat(tip).toString() : 0,
+			tip: tip ? parseFloat(tip).toString() : "0",
 			payment_method_id: payment_method_id,
-			paid_at:
-				payment_method_id.toString() === PAY_IN_STORE_PAYMENT_METHOD
-					? new Date().toISOString()
-					: "",
 		};
 		let updatedTotal = { ...total };
 

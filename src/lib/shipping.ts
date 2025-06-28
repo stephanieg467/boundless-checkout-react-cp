@@ -70,7 +70,6 @@ export async function fetchShippingRates(
 			return await resp.json();
 		} catch (error) {
 			console.error("Failed to get shipping", error);
-			// @todo: test this.
 			throw new Error("Failed to get shipping rate");
 		}
 	};

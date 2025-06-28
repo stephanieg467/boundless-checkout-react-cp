@@ -11,7 +11,6 @@ export interface IOrderWithCustmAttr {
 	total_price: null | string;
 	discount_for_order: null | string;
 	tax_amount: null | string;
-	paid_at: null | string;
 	publishing_status: TPublishingStatus;
 	created_at: string;
 	customer?: ICovaCustomer;
