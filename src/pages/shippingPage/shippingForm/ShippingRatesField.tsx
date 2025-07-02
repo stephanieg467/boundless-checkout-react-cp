@@ -17,8 +17,7 @@ export default function ShippingRatesField() {
 		IShippingRateInfo[] | null
 	>();
 	const [loadingShippingRates, setLoadingShippingRates] = useState(false);
-	const [errorLoadingShippingRates, setErrorLoadingShippingRates] =
-		useState(false);
+	const [errorLoadingShippingRates, setErrorLoadingShippingRates] = useState(false);
 
 	const getShippingRates = async (zip: string) => {
 		try {
@@ -27,6 +26,7 @@ export default function ShippingRatesField() {
 			const response = await fetchShippingRates(zip, cartItems);
 
 			setAllShippingRates(response);
+			setErrorLoadingShippingRates(false);
 			setLoadingShippingRates(false);
 		} catch (error) {
 			setErrorLoadingShippingRates(true);
@@ -44,15 +44,16 @@ export default function ShippingRatesField() {
 				disabled={!shipping_address?.zip || loadingShippingRates}
 				onClick={() => getShippingRates(shipping_address?.zip ?? "")}
 				loading={loadingShippingRates}
+				color="success"
 			>
 				Calculate Shipping
 			</Button>
 			{errorLoadingShippingRates && (
 				<Box sx={{ mt: 2 , mb: 2 }}>
-					Error loading shipping rates. Please try again or contact 
-					<a href={`mailto:${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`}>
+					Error loading shipping rates. Please try again or contact
+					{" "}<a href={`mailto:${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`}>
 						{process.env.NEXT_PUBLIC_ADMIN_EMAIL}
-					</a>{" "}
+					</a>
 				</Box>
 			)}
 			{!loadingShippingRates &&

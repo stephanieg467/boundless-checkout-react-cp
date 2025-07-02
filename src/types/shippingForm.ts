@@ -72,5 +72,6 @@ export interface IShippingRateInfo {
   name: string;
   rate: number;
   shippingTaxes: number;
+  expectedDelivery: string;
 }
 

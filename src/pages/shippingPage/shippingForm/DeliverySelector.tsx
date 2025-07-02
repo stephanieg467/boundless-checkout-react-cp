@@ -6,6 +6,7 @@ import {
 	FormHelperText,
 	Radio,
 	RadioGroup,
+	Typography,
 } from "@mui/material";
 import { ICheckoutShippingPageData, IDelivery } from "boundless-api-client";
 import { IShippingFormValues } from "../../../types/shippingForm";
@@ -16,34 +17,45 @@ import { Box } from "@mui/system";
 type IInPros = Pick<ICheckoutShippingPageData, "options">;
 
 const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
+	const iconSx = {
+		height: "auto",
+		marginRight: "12px",
+		maxWidth: "50px",
+	};
+
 	return (
 		<span>
 			{delivery.title === "Self Pickup" && (
-				<StoreMallDirectoryIcon
-					className="bdl-shipping-form__shipping-img"
-					fontSize="large"
-				/>
+				<StoreMallDirectoryIcon fontSize="large" sx={iconSx} />
 			)}
 			{(delivery.title === "Shipping" || delivery.title === "Delivery") && (
-				<LocalShippingIcon
-					className="bdl-shipping-form__shipping-img"
-					fontSize="large"
-				/>
+				<LocalShippingIcon fontSize="large" sx={iconSx} />
 			)}
 		</span>
 	);
 };
 
 const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
-	let details = "";
-	if (delivery.description) {
-		details = delivery.description;
+	const details = delivery.description;
+	if (!details) {
+		return null;
 	}
 
 	return (
-		<div className="bdl-shipping-form__shipping-details">
-			{details && <div dangerouslySetInnerHTML={{ __html: details }} />}
-		</div>
+		<Box
+			sx={{
+				padding: "0 10px 0 0",
+			}}
+		>
+			<Typography variant="body1" component="div">
+				{details}
+			</Typography>
+			{delivery.title === "Delivery" && (
+				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+					Delivery fee: $4.00
+				</Typography>
+			)}
+		</Box>
 	);
 };
 
@@ -51,7 +63,13 @@ export default function DeliverySelector({ options }: IInPros) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 
 	return (
-		<Box className="bdl-shipping-form__address-form" sx={{ mb: 2 }}>
+		<Box
+			sx={{
+				mb: 2,
+				background: "#f8f9fa",
+				padding: "15px",
+			}}
+		>
 			<FormControl
 				component="fieldset"
 				error={Boolean("delivery_id" in formikProps.errors)}
@@ -64,14 +82,32 @@ export default function DeliverySelector({ options }: IInPros) {
 					{options.delivery.map((delivery) => (
 						<React.Fragment key={delivery.delivery_id}>
 							<FormControlLabel
-								className="bdl-shipping-form__shipping-item"
 								value={delivery.delivery_id}
-								control={<Radio size="small" />}
+								control={
+									<Radio
+										sx={{
+											color: "#133e20",
+											"&.Mui-checked": {
+												color: "#4a7c4d",
+											},
+										}}
+									/>
+								}
+								sx={{
+									mb: 1,
+									alignItems: "flex-start",
+								}}
 								label={
-									<div className="bdl-shipping-form__shipping-label">
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+										}}
+									>
 										<DeliveryDetails delivery={delivery} />
 										<DeliveryTitle delivery={delivery} />
-									</div>
+									</Box>
 								}
 							/>
 						</React.Fragment>

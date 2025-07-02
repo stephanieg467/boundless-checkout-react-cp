@@ -104,6 +104,7 @@ export function ContactFormView({
 			initialValues={getInitialValues(order!, loggedInCustomer)}
 			validate={validateContactForm}
 			onSubmit={onSubmit}
+			validateOnChange={false}
 		>
 			{(formikProps: FormikProps<IContactInformationFormValues>) => (
 				<Form
@@ -283,6 +284,7 @@ const NextStepBtn = ({
 			size="large"
 			disabled={isSubmitting}
 			startIcon={<PaymentIcon />}
+			color="success"
 		>
 			{t("contactForm.continueToPayment")}
 		</Button>

@@ -12,7 +12,7 @@ import {
 	TextField,
 	InputAdornment,
 } from "@mui/material";
-import PaymentIcon from "@mui/icons-material/Payment";
+import DoneIcon from "@mui/icons-material/Payment";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import ExtraErrors from "../../components/ExtraErrors";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ import {
 } from "../../hooks/checkoutData";
 import { fieldAttrs } from "../../lib/formUtils";
 import { RootState } from "../../redux/store";
-import { DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD } from "../../constants";
+import { DELIVERY_ID } from "../../constants";
 import { ITotal } from "boundless-api-client";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import { IOrderWithCustmAttr } from "../../types/Order";
@@ -34,10 +34,10 @@ const getVancouverDateTime = () => {
 	const now = new Date();
 	const options: Intl.DateTimeFormatOptions = {
 		timeZone: "America/Vancouver",
-		hour: 'numeric',    // Get hour in numeric format (e.g., "14")
-		minute: 'numeric',  // Get minute in numeric format (e.g., "30")
-		weekday: 'long',    // Get the full name of the weekday (e.g., "Monday")
-		hour12: false       // Use 24-hour format for the hour
+		hour: "numeric", // Get hour in numeric format (e.g., "14")
+		minute: "numeric", // Get minute in numeric format (e.g., "30")
+		weekday: "long", // Get the full name of the weekday (e.g., "Monday")
+		hour12: false, // Use 24-hour format for the hour
 	};
 	const formatter = new Intl.DateTimeFormat("en-CA", options);
 	const parts = formatter.formatToParts(now);
@@ -118,6 +118,28 @@ const getDynamicDeliveryTimes = () => {
 	return baseDeliveryTimes;
 };
 
+// Custom validation function
+const validatePaymentForm = (
+	values: IPaymentMethodFormValues,
+	isDelivery: boolean
+) => {
+	const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
+
+	if (!values.payment_method_id || values.payment_method_id === "0") {
+		errors.payment_method_id = "Payment method is required";
+	}
+
+	if (values.tip && parseFloat(values.tip) < 0) {
+		errors.tip = "Tip must be positive";
+	}
+
+	if (isDelivery && !values.delivery_time) {
+		errors.delivery_time = "Delivery time is required";
+	}
+
+	return errors;
+};
+
 export default function PaymentMethodForm({
 	paymentPage,
 }: {
@@ -125,9 +147,18 @@ export default function PaymentMethodForm({
 }) {
 	const { onSubmit } = useSavePaymentMethod(paymentPage);
 	const { t } = useTranslation();
+	const order = useAppSelector((state: RootState) => state.app.order);
+	const isDelivery =
+		order?.services?.some((service) => service.service_id === DELIVERY_ID) ||
+		false;
 
 	return (
-		<Formik initialValues={getFormInitialValues()} onSubmit={onSubmit}>
+		<Formik
+			initialValues={getFormInitialValues()}
+			onSubmit={onSubmit}
+			validateOnChange={false}
+			validate={(values) => validatePaymentForm(values, isDelivery)}
+		>
 			{(formikProps) => (
 				<Form className={"bdl-payment-form"}>
 					{Object.keys(formikProps.errors).length > 0 && (
@@ -153,10 +184,11 @@ export default function PaymentMethodForm({
 					<Box textAlign={"end"}>
 						<Button
 							variant="contained"
-							startIcon={<PaymentIcon />}
+							startIcon={<DoneIcon />}
 							type={"submit"}
 							disabled={formikProps.isSubmitting}
 							color="success"
+							size="large"
 						>
 							{t("paymentMethodForm.completeOrder")}
 						</Button>
@@ -204,7 +236,17 @@ const PaymentMethods = ({
 						return (
 							<FormControlLabel
 								value={payment_method_id}
-								control={<Radio required={true} />}
+								control={
+									<Radio
+										required={true}
+										sx={{
+											color: "#133e20",
+											"&.Mui-checked": {
+												color: "#4a7c4d",
+											},
+										}}
+									/>
+								}
 								label={title}
 								key={payment_method_id}
 							/>
@@ -249,7 +291,7 @@ const PaymentMethods = ({
 								}}
 								{...fieldAttrs("delivery_time", formikProps)}
 							>
-								<option>Select delivery time</option>
+								<option value=""></option>
 								{deliveryTimes.map((deliveryTime, idx) => (
 									<option key={idx} value={deliveryTime}>
 										{deliveryTime}

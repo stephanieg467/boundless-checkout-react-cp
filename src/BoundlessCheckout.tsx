@@ -26,7 +26,9 @@ export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps
 	}
 
 	componentDidMount() {
-		document.body.appendChild(this.el!);
+		if (this.el) {
+			document.body.appendChild(this.el);
+		}
 
 		const {onHide, onThankYouPage, cartId, basename, logo, onCheckoutInited} = this.props;
 		store.dispatch(setBasicProps({
@@ -64,7 +66,9 @@ export default class BoundlessCheckout extends Component<IBoundlessCheckoutProps
 
 	componentWillUnmount() {
 		clearAllBodyScrollLocks();
-		document.body.removeChild(this.el!);
+		if (this.el && this.el.parentNode === document.body) {
+			document.body.removeChild(this.el);
+		}
 	}
 
 	render(): ReactPortal|null {

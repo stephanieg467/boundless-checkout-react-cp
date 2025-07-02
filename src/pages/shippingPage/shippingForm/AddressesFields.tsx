@@ -39,6 +39,7 @@ export default function AddressesFields({
 						control={
 							<Checkbox
 								value={true}
+								color="success"
 								{...checkAttrs("billing_address_the_same", formikProps)}
 							/>
 						}

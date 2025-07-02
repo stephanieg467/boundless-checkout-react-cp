@@ -8,6 +8,7 @@ import {
 import { Form, Formik, FormikHelpers } from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
 import { Button, Typography } from "@mui/material";
+import PaymentIcon from "@mui/icons-material/Payment";
 import { Box } from "@mui/system";
 import { IShippingFormValues, IShippingRate } from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
@@ -289,7 +290,7 @@ const useSaveShippingForm = ({
 				const shippingPriceQuote = orderShippingRate
 					? orderShippingRate["price-quotes"]["price-quote"]
 					: null;
-				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.20 : 0;
+				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.2 : 0;
 				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
 
 				if (delivery_id === SHIPPING_DELIVERY_ID && shippingPriceQuote) {
@@ -297,23 +298,31 @@ const useSaveShippingForm = ({
 						? shippingPriceQuote[0]["price-details"]
 						: shippingPriceQuote["price-details"];
 
-					const adjustments = shippingPriceQuoteValue.adjustments?.adjustment || [];
+					const adjustments =
+						shippingPriceQuoteValue.adjustments?.adjustment || [];
 					let totalAdjustmentCost = 0;
 					for (const adjustment of adjustments) {
 						totalAdjustmentCost += Number(adjustment["adjustment-cost"]);
 					}
-					shippingRate = (totalAdjustmentCost + shippingPriceQuoteValue["base"]).toString();
-					console.log("shippingRate:", shippingRate);
+					shippingRate = (
+						totalAdjustmentCost + shippingPriceQuoteValue["base"]
+					).toString();
 
 					shippingTaxes =
-						shippingPriceQuoteValue.taxes.gst + shippingPriceQuoteValue.taxes.pst+ shippingPriceQuoteValue.taxes.hst;
+						shippingPriceQuoteValue.taxes.gst +
+						shippingPriceQuoteValue.taxes.pst +
+						shippingPriceQuoteValue.taxes.hst;
 				}
 
-				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : '';
-				
+				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : "";
+
 				const updatedOrder = {
 					...order,
-					total_price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
+					total_price: (
+						Number(order.total_price) +
+						Number(shippingRate) +
+						shippingTaxes
+					).toString(),
 					tax_amount: (Number(totalOrderTaxes) + shippingTaxes).toString(),
 					service_total_price: shippingRate,
 					servicesSubTotal: {
@@ -336,14 +345,20 @@ const useSaveShippingForm = ({
 				if (total) {
 					const updatedTotal = {
 						...total,
-						price: (Number(order.total_price) + Number(shippingRate) + shippingTaxes).toString(),
+						price: (
+							Number(order.total_price) +
+							Number(shippingRate) +
+							shippingTaxes
+						).toString(),
 						tax: {
 							...total.tax,
 							shipping: {
 								...total.tax.shipping,
 								shippingTaxes: shippingTaxes.toString(),
 							} as any,
-							totalTaxAmount: (Number(totalOrderTaxes) + shippingTaxes).toString(),
+							totalTaxAmount: (
+								Number(totalOrderTaxes) + shippingTaxes
+							).toString(),
 						},
 						servicesSubTotal: {
 							...total.servicesSubTotal,
@@ -355,7 +370,7 @@ const useSaveShippingForm = ({
 						order: updatedOrder as unknown as IOrderWithCustmAttr,
 						total: updatedTotal,
 					});
-					
+
 					dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 					dispatch(setTotal(updatedTotal));
 					dispatch(addFilledStep({ step: TCheckoutStep.shippingMethod }));
@@ -376,13 +391,12 @@ const useSaveShippingForm = ({
 };
 
 export default function ShippingForm({
-	shippingPage
+	shippingPage,
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
-
 
 	return (
 		<Formik
@@ -408,7 +422,9 @@ export default function ShippingForm({
 						</Typography>
 						{cartHasTickets() && (
 							<Typography variant="body1" sx={{ m: 2 }}>
-								{"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."}
+								{
+									"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."
+								}
 							</Typography>
 						)}
 						<DeliverySelector options={shippingPage.options} />
@@ -426,6 +442,8 @@ export default function ShippingForm({
 									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode)
 								}
 								color="success"
+								size="large"
+								startIcon={<PaymentIcon />}
 							>
 								{t("shippingForm.continueToPayment")}
 							</Button>

@@ -6,6 +6,7 @@ import {
 	FormHelperText,
 	Radio,
 	RadioGroup,
+	Typography,
 } from "@mui/material";
 import {
 	IShippingFormValues,
@@ -22,16 +23,25 @@ const ShippingTitle = ({
 	const { formatCurrency } = useFormatCurrency();
 
 	return (
-		<span>
-			{shippingRate.name}
-			<small className="bdl-shipping-form__price">
+		<Box>
+			<Typography variant="body1" gutterBottom component="div">
+				{shippingRate.name}
+			</Typography>
+			<Typography variant="body2" gutterBottom color="text.secondary" component="div">
 				{formatCurrency(shippingRate.rate)}
-			</small>
-		</span>
+			</Typography>
+      <Typography variant="caption" gutterBottom color="text.secondary" component="div">
+        `Expected delivery: ${shippingRate.expectedDelivery}`
+      </Typography>
+		</Box>
 	);
 };
 
-export default function ShippingRates({ rates }: { rates: IShippingRateInfo[]; }) {
+export default function ShippingRates({
+	rates,
+}: {
+	rates: IShippingRateInfo[];
+}) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 	const { errors, values, handleChange } = formikProps;
 
@@ -42,10 +52,7 @@ export default function ShippingRates({ rates }: { rates: IShippingRateInfo[]; }
 				component="fieldset"
 				error={Boolean("serviceCode" in errors)}
 			>
-				<RadioGroup
-					name="serviceCode"
-					onChange={handleChange}
-				>
+				<RadioGroup name="serviceCode" onChange={handleChange}>
 					{rates.map((shippingRate, i) => (
 						<React.Fragment key={i}>
 							<FormControlLabel
