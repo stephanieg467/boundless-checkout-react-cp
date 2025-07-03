@@ -9,9 +9,8 @@ import {
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid"; // Changed from Grid2
 import Button from "@mui/material/Button";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import { fieldAttrs } from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
@@ -199,34 +198,40 @@ export function ContactFormView({
 									/>
 								)}
 								{type === "dob" && (
-									<LocalizationProvider dateAdapter={AdapterDayjs}>
-										<DatePicker
-											label={t("contactForm.dob")}
-											value={
-												formikProps.values.dob
-													? dayjs(formikProps.values.dob)
-													: null
-											}
-											onChange={(newValue) => {
-												formikProps.setFieldValue("dob", newValue ? dayjs(newValue).format('YYYY-MM-DD') : null);
-												formikProps.setFieldTouched("dob", true); // Ensure field is marked touched for validation
-											}}
-											slotProps={{
-												textField: {
-													variant: "outlined",
-													required: required,
-													fullWidth: true,
-													name: "dob",
-													onBlur: formikProps.handleBlur,
-													error:
-														formikProps.touched.dob &&
-														Boolean(formikProps.errors.dob),
-													helperText:
-														formikProps.touched.dob && formikProps.errors.dob,
-												},
-											}}
-										/>
-									</LocalizationProvider>
+									<DatePicker
+										selected={
+											formikProps.values.dob
+												? new Date(formikProps.values.dob)
+												: null
+										}
+										onChange={(date: Date | null) => {
+											formikProps.setFieldValue("dob", date ? dayjs(date).format('YYYY-MM-DD') : null);
+										}}
+										placeholderText={t("contactForm.dob")}
+										dateFormat="MM/dd/yyyy"
+										showYearDropdown
+										yearDropdownItemNumber={100}
+										scrollableYearDropdown
+										maxDate={new Date()}
+										portalId="date-picker-portal"
+										popperClassName="react-datepicker-popper-high-z"
+										popperPlacement="bottom-start"
+										customInput={
+											<TextField
+												variant="outlined"
+												required={required}
+												fullWidth
+												name="dob"
+												onBlur={formikProps.handleBlur}
+												error={
+													Boolean(formikProps.errors.dob)
+												}
+												helperText={
+													formikProps.errors.dob
+												}
+											/>
+										}
+									/>
 								)}
 							</Grid>
 						))}

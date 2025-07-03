@@ -11,11 +11,6 @@ export default function FooterMenu() {
 			url: baseUrl,
 			isActive: false,
 		},
-		// {
-		// 	title: 'Shop',
-		// 	url: baseUrl + 'shop',
-		// 	isActive: true,
-		// },
 		{
 			title: 'Menu',
 			url: baseUrl + 'menu',

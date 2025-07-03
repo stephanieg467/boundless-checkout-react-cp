@@ -38,6 +38,8 @@ export default function CheckoutLayout({children}: {children: ReactNode | ReactN
 				</Container>
 			</main>
             <Footer />
+            {/* Portal for date picker to ensure proper z-index layering */}
+            <div id="date-picker-portal"></div>
         </section>
     );
 }

@@ -1,6 +1,6 @@
 {
   "name": "boundless-checkout-react-cp",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "The official checkout React component for CC.",
   "keywords": [
     "cms",
@@ -101,7 +101,6 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mui/icons-material": "^7.0.0",
     "@mui/material": "~7.1.1",
-    "@mui/x-date-pickers": "^7.29.4",
     "@reduxjs/toolkit": "^1.7.1",
     "@tanem/react-nprogress": "^5.0.55",
     "await-to-js": "^3.0.0",
@@ -114,6 +113,7 @@
     "formik": "^2.2.9",
     "i18next": "^23.4.4",
     "js-cookie": "^3.0.1",
+    "react-datepicker": "^8.4.0",
     "react-i18next": "^13.1.2",
     "react-imask": "^7.6.1",
     "react-redux": "^8.1.2",
