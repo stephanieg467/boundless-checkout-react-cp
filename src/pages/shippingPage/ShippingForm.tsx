@@ -37,6 +37,30 @@ import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
 import { getOrderTaxes } from "../../lib/taxes";
 import { cartHasTickets } from "../../lib/products";
 
+// Function to validate if postal code is a Penticton postal code
+const isPentictonPostalCode = (postalCode: string): boolean => {
+	if (!postalCode) return false;
+	// Remove spaces and convert to uppercase
+	const cleanedCode = postalCode.replace(/\s+/g, '').toUpperCase();
+	// Penticton postal codes start with V2A
+	return cleanedCode.startsWith('V2A');
+};
+
+// Custom validation function for shipping form
+const validateShippingForm = (values: IShippingFormValues) => {
+	const errors: any = {};
+
+	// Validate Penticton postal code for Delivery method
+	if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
+		if (!isPentictonPostalCode(values.shipping_address.zip)) {
+			// Use flattened key structure that the form expects
+			errors['shipping_address.zip'] = 'Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.';
+		}
+	}
+
+	return errors;
+};
+
 const getFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData
 ): IShippingFormValues => {
@@ -402,6 +426,7 @@ export default function ShippingForm({
 		<Formik
 			initialValues={getFormInitialValues(shippingPage)}
 			onSubmit={onSubmit}
+			validate={validateShippingForm}
 		>
 			{(formikProps) => {
 				const { values } = formikProps;

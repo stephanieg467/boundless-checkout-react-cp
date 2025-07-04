@@ -1,10 +1,6 @@
 import {
 	IDelivery,
 	TShippingAlias,
-	IDetailedOrder,
-	BoundlessClient,
-	ICartItem,
-	ITotal,
 	IOrder,
 } from "boundless-api-client";
 import { IShippingRate, IShippingRateInfo } from "../types/shippingForm";

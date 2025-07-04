@@ -28,11 +28,11 @@ import { IOrderWithCustmAttr } from "../types/Order";
 import { PhoneInput } from "./PhoneInput";
 
 export interface IContactInformationFormValues {
-	email: string; // Changed from optional to required for simplicity with custom validation
-	phone: string; // Changed from optional to required for simplicity with custom validation
+	email: string;
+	phone: string;
 	first_name: string;
 	last_name: string;
-	dob: string | null; // Ensure dob can be string or null
+	dob: string | null;
 	register_me?: boolean;
 }
 
@@ -201,11 +201,18 @@ export function ContactFormView({
 									<DatePicker
 										selected={
 											formikProps.values.dob
-												? new Date(formikProps.values.dob)
+												? new Date(formikProps.values.dob + 'T00:00:00')
 												: null
 										}
 										onChange={(date: Date | null) => {
-											formikProps.setFieldValue("dob", date ? dayjs(date).format('YYYY-MM-DD') : null);
+											if (date) {
+												const year = date.getFullYear();
+												const month = String(date.getMonth() + 1).padStart(2, '0');
+												const day = String(date.getDate()).padStart(2, '0');
+												formikProps.setFieldValue("dob", `${year}-${month}-${day}`);
+											} else {
+												formikProps.setFieldValue("dob", null);
+											}
 										}}
 										placeholderText={t("contactForm.dob")}
 										dateFormat="MM/dd/yyyy"
