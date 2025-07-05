@@ -223,8 +223,10 @@ export function ContactFormView({
 										portalId="date-picker-portal"
 										popperClassName="react-datepicker-popper-high-z"
 										popperPlacement="bottom-start"
+										required={required}
 										customInput={
 											<TextField
+												label={t("contactForm.dob")}
 												variant="outlined"
 												required={required}
 												fullWidth

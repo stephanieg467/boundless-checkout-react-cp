@@ -24,15 +24,17 @@ const ShippingTitle = ({
 
 	return (
 		<Box>
-			<Typography variant="body1" gutterBottom component="div">
-				{shippingRate.name}
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+				<Typography variant="body1" component="span" sx={{ fontWeight: '600' }}>
+					{shippingRate.name}
+				</Typography>
+				<Typography variant="body2" color="text.secondary" component="span">
+					{formatCurrency(shippingRate.rate)}
+				</Typography>
+			</Box>
+			<Typography variant="body2" color="text.secondary" component="div">
+				Expected delivery: {shippingRate.expectedDelivery}
 			</Typography>
-			<Typography variant="body2" gutterBottom color="text.secondary" component="div">
-				{formatCurrency(shippingRate.rate)}
-			</Typography>
-      <Typography variant="caption" gutterBottom color="text.secondary" component="div">
-        `Expected delivery: ${shippingRate.expectedDelivery}`
-      </Typography>
 		</Box>
 	);
 };
@@ -46,7 +48,7 @@ export default function ShippingRates({
 	const { errors, values, handleChange } = formikProps;
 
 	return (
-		<Box sx={{ mb: 2 }}>
+		<Box sx={{ mb: 2, mt: 2 }}>
 			<FormControl
 				required={true}
 				component="fieldset"
@@ -61,6 +63,10 @@ export default function ShippingRates({
 								checked={values.serviceCode === shippingRate.name}
 								control={<Radio size="small" required />}
 								label={<ShippingTitle shippingRate={shippingRate} />}
+								sx={{
+									mb: 1,
+									alignItems: "flex-start",
+								}}
 							/>
 						</React.Fragment>
 					))}
