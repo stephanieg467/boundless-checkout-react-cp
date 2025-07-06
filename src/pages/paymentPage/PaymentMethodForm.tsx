@@ -11,6 +11,7 @@ import {
 	Box,
 	TextField,
 	InputAdornment,
+	FormLabel,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Payment";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
@@ -28,6 +29,8 @@ import { ITotal } from "boundless-api-client";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import { IOrderWithCustmAttr } from "../../types/Order";
 import { cartHasTickets } from "../../lib/products";
+import { t } from "i18next";
+import { hasShipping } from "../../lib/shipping";
 
 // Helper functions for dynamic delivery times
 const getVancouverDateTime = () => {
@@ -217,6 +220,7 @@ const PaymentMethods = ({
 	paymentMethods: IPaymentMethod[];
 }) => {
 	const order = useAppSelector((state: RootState) => state.app.order);
+	const orderHasShipping = hasShipping(order as IOrderWithCustmAttr);
 	const isDelivery = order?.services?.some(
 		(service) => service.service_id === DELIVERY_ID
 	);
@@ -225,9 +229,24 @@ const PaymentMethods = ({
 	return (
 		<Box sx={{ mb: 2 }}>
 			<FormControl
+				required
 				variant="outlined"
 				error={Boolean("payment_method_id" in formikProps.errors)}
 			>
+				{!orderHasShipping && (
+					<FormLabel
+						component="legend"
+						sx={{
+							color: "#000",
+							fontWeight: "600",
+							"&.Mui-focused": {
+								color: "#000",
+							},
+						}}
+					>
+						Select a payment method
+					</FormLabel>
+				)}
 				<RadioGroup
 					name="payment_method_id"
 					onChange={formikProps.handleChange}
@@ -238,7 +257,6 @@ const PaymentMethods = ({
 								value={payment_method_id}
 								control={
 									<Radio
-										required={true}
 										sx={{
 											color: "#133e20",
 											"&.Mui-checked": {

@@ -41,9 +41,9 @@ import { cartHasTickets } from "../../lib/products";
 const isPentictonPostalCode = (postalCode: string): boolean => {
 	if (!postalCode) return false;
 	// Remove spaces and convert to uppercase
-	const cleanedCode = postalCode.replace(/\s+/g, '').toUpperCase();
+	const cleanedCode = postalCode.replace(/\s+/g, "").toUpperCase();
 	// Penticton postal codes start with V2A
-	return cleanedCode.startsWith('V2A');
+	return cleanedCode.startsWith("V2A");
 };
 
 // Custom validation function for shipping form
@@ -54,7 +54,8 @@ const validateShippingForm = (values: IShippingFormValues) => {
 	if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
 		if (!isPentictonPostalCode(values.shipping_address.zip)) {
 			// Use flattened key structure that the form expects
-			errors['shipping_address.zip'] = 'Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.';
+			errors["shipping_address.zip"] =
+				"Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.";
 		}
 	}
 
@@ -297,7 +298,7 @@ const useSaveShippingForm = ({
 							data: [
 								{
 									field: "serviceCode",
-									message: "Unable to set shipping rate",
+									message: `Unable to set shipping rate. Please try again or contact ${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`,
 								},
 							],
 						},

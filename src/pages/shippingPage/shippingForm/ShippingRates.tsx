@@ -4,6 +4,7 @@ import {
 	FormControl,
 	FormControlLabel,
 	FormHelperText,
+	FormLabel,
 	Radio,
 	RadioGroup,
 	Typography,
@@ -24,8 +25,15 @@ const ShippingTitle = ({
 
 	return (
 		<Box>
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-				<Typography variant="body1" component="span" sx={{ fontWeight: '600' }}>
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					gap: 1,
+				}}
+			>
+				<Typography variant="body1" component="span" sx={{ fontWeight: "600" }}>
 					{shippingRate.name}
 				</Typography>
 				<Typography variant="body2" color="text.secondary" component="span">
@@ -54,6 +62,18 @@ export default function ShippingRates({
 				component="fieldset"
 				error={Boolean("serviceCode" in errors)}
 			>
+				<FormLabel 
+					component="legend"
+					sx={{
+						color: "#000",
+						fontWeight: "600",
+						"&.Mui-focused": {
+							color: "#000",
+						},
+					}}
+				>
+					Shipping Rate
+				</FormLabel>
 				<RadioGroup name="serviceCode" onChange={handleChange}>
 					{rates.map((shippingRate, i) => (
 						<React.Fragment key={i}>
@@ -61,7 +81,17 @@ export default function ShippingRates({
 								className="bdl-shipping-form__shipping-item"
 								value={shippingRate.name}
 								checked={values.serviceCode === shippingRate.name}
-								control={<Radio size="small" required />}
+								control={
+									<Radio
+										size="small"
+										sx={{
+											color: "#133e20",
+											"&.Mui-checked": {
+												color: "#4a7c4d",
+											},
+										}}
+									/>
+								}
 								label={<ShippingTitle shippingRate={shippingRate} />}
 								sx={{
 									mb: 1,
