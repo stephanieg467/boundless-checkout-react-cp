@@ -13,7 +13,7 @@ import {
 	InputAdornment,
 	FormLabel,
 } from "@mui/material";
-import DoneIcon from "@mui/icons-material/Payment";
+import DoneIcon from "@mui/icons-material/Done";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import ExtraErrors from "../../components/ExtraErrors";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,6 @@ import { ITotal } from "boundless-api-client";
 import { setOrder, setTotal } from "../../redux/reducers/app";
 import { IOrderWithCustmAttr } from "../../types/Order";
 import { cartHasTickets } from "../../lib/products";
-import { t } from "i18next";
 import { hasShipping } from "../../lib/shipping";
 
 // Helper functions for dynamic delivery times

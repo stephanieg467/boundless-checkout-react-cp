@@ -12,6 +12,7 @@ import { ICheckoutShippingPageData, IDelivery } from "boundless-api-client";
 import { IShippingFormValues } from "../../../types/shippingForm";
 import StoreMallDirectoryIcon from "@mui/icons-material/StoreMallDirectory";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { Box } from "@mui/system";
 
 type IInPros = Pick<ICheckoutShippingPageData, "options">;
@@ -28,7 +29,10 @@ const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 			{delivery.title === "Self Pickup" && (
 				<StoreMallDirectoryIcon fontSize="large" sx={iconSx} />
 			)}
-			{(delivery.title === "Shipping" || delivery.title === "Delivery") && (
+			{delivery.title === "Delivery" && (
+				<DirectionsCarIcon fontSize="large" sx={iconSx} />
+			)}
+			{delivery.title === "Shipping" && (
 				<LocalShippingIcon fontSize="large" sx={iconSx} />
 			)}
 		</span>

@@ -46,6 +46,15 @@ const isPentictonPostalCode = (postalCode: string): boolean => {
 	return cleanedCode.startsWith("V2A");
 };
 
+// Function to validate if postal code is a British Columbia postal code
+const isBCPostalCode = (postalCode: string): boolean => {
+	if (!postalCode) return false;
+	// Remove spaces and convert to uppercase
+	const cleanedCode = postalCode.replace(/\s+/g, "").toUpperCase();
+	// BC postal codes start with V and follow the pattern V#A#A#
+	return /^V\d[A-Z]\d[A-Z]\d$/.test(cleanedCode);
+};
+
 // Custom validation function for shipping form
 const validateShippingForm = (values: IShippingFormValues) => {
 	const errors: any = {};
@@ -53,9 +62,16 @@ const validateShippingForm = (values: IShippingFormValues) => {
 	// Validate Penticton postal code for Delivery method
 	if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
 		if (!isPentictonPostalCode(values.shipping_address.zip)) {
-			// Use flattened key structure that the form expects
 			errors["shipping_address.zip"] =
 				"Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.";
+		}
+	}
+
+	// Validate BC postal code for Shipping method
+	if (values.delivery_id === SHIPPING_DELIVERY_ID && values.shipping_address?.zip) {
+		if (!isBCPostalCode(values.shipping_address.zip)) {
+			errors["shipping_address.zip"] =
+				"Shipping is only available within British Columbia. Please enter a valid BC postal code.";
 		}
 	}
 

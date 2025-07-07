@@ -51,7 +51,7 @@
 
 	&__show-summary {
 		align-items: center;
-		color: $checkout-link-color;
+		color: $front-link-color;
 		display: flex;
 		font-size: $checkout-font-size-medium;
 		text-decoration: none;
@@ -85,12 +85,12 @@
 	}
 
 	&__discount-rm-link {
-		color: $checkout-link-color;
+		color: $front-link-color;
 		text-align: end;
 		text-decoration: none;
 
 		&:active {
-			color: $checkout-link-color;
+			color: $front-link-color;
 		}
 
 		&:hover {
