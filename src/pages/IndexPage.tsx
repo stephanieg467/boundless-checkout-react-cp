@@ -10,6 +10,8 @@ export default function IndexPage() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		// @todo: should redirect to the correct step based on the current state
+		console.log("IndexPage: isInited", isInited, "stepper", stepper);
 		if (isInited && stepper) {
 			let urlPath = getPathByStep(stepper.currentStep);
 

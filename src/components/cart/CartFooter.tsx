@@ -5,9 +5,11 @@ import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { useTranslation } from "react-i18next";
 import { hasShipping } from "../../lib/shipping";
 import { getCheckoutData } from "../../hooks/checkoutData";
+import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
 
 export default function CartFooter({ open }: ICartFooterProps) {
-	const { order, total } = getCheckoutData() || {};
+	let { order, total } = getCheckoutData() || {};
+	const cart = getCartOrRetrieve();
 	
 	const { formatCurrency } = useFormatCurrency();
 	const { t } = useTranslation();
@@ -25,9 +27,12 @@ export default function CartFooter({ open }: ICartFooterProps) {
 			setTotalPrice(servicesSubTotal + itemsSubTotal - discount + tax);
 			setTotalTaxAmount(Number(totalTaxAmount));
 		} else {
-			setTotalPrice(0);
+			const cartTotal = Number(cart?.total?.total || 0);
+			const cartTaxAmount = Number(cart?.taxAmount || 0);
+			setTotalPrice(cartTotal + cartTaxAmount);
+			setTotalTaxAmount(cartTaxAmount);
 		}
-	}, [total]);
+	}, [total, cart]);
 
 	const getDiscountAmount = () => {
 		if (!order?.discounts || !order?.discounts.length) return "";
@@ -61,15 +66,13 @@ export default function CartFooter({ open }: ICartFooterProps) {
 	// 	dispatch(addPromise(promise));
 	// };
 
-	if (!order || !total) return null;
-
-	const hasDiscount = total.discount != "0";
-	const orderHasShipping = hasShipping(order);
-	const isDelivery = order.services?.[0]?.serviceDelivery?.delivery?.title === "Delivery";
+	const hasDiscount = total && total.discount != "0";
+	const orderHasShipping = order && hasShipping(order);
+	const isDelivery = order?.services?.[0]?.serviceDelivery?.delivery?.title === "Delivery";
 
 	return (
 		<div className={clsx("bdl-cart__footer", { open })}>
-			{(orderHasShipping || hasDiscount) && (
+			{(orderHasShipping || hasDiscount) && total && (
 				<div className="bdl-cart__footer-row">
 					<h5 className="bdl-cart__footer-title">
 						{t("cart.footer.subTotal")}
@@ -90,7 +93,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 					</h5>
 				</div>
 			)}
-			{orderHasShipping && (
+			{orderHasShipping && total && (
 				<div className="bdl-cart__footer-row">
 					<h5 className="bdl-cart__footer-title">
 						{isDelivery ? t("cart.footer.delivery") : t("cart.footer.shipping")}

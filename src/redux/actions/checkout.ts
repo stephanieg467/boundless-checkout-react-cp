@@ -34,7 +34,6 @@ export const initCheckoutByCart =
 			const checkoutDataOrder = checkoutData?.order;
 			
 			let totalOrderTaxes = checkoutDataOrder?.tax_amount ?? cartTaxAmount;
-			// @todo: still needlessly calling getOrderTaxes even when taxes are already present in checkoutDataOrder
 			if (!totalOrderTaxes) {
 				totalOrderTaxes = await getOrderTaxes(items)
 			}
@@ -56,6 +55,7 @@ export const initCheckoutByCart =
 				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
 				payment_mark_up: null,
 				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
+				tip: checkoutDataOrder?.tip ?? "0.00",
 				discount_for_order: null,
 				tax_amount: totalOrderTaxes,
 				publishing_status: TPublishingStatus.published,
@@ -81,6 +81,7 @@ export const initCheckoutByCart =
 					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
 					serviceCode: checkoutDataOrder?.custom_attrs?.serviceCode ?? "",
 					serviceRate: checkoutDataOrder?.custom_attrs?.serviceRate ?? "0.00",
+					checkoutInited: true,
 				}
 			};
 

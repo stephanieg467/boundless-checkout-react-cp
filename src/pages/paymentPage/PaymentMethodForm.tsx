@@ -345,6 +345,10 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 			delivery_time: delivery_time || "",
 			tip: tip ? parseFloat(tip).toString() : "0",
 			payment_method_id: payment_method_id,
+			custom_attrs: {
+				...checkoutDataOrder.custom_attrs,
+				checkoutCompleted: true,
+			},
 		};
 		let updatedTotal = { ...total };
 
