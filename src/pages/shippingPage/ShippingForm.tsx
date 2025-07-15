@@ -36,6 +36,13 @@ import { v4 } from "uuid";
 import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
 import { getOrderTaxes } from "../../lib/taxes";
 import { cartHasTickets } from "../../lib/products";
+import FreeShippingBanner from "../../components/FreeShippingBanner";
+
+// Helper function to check if order qualifies for free shipping
+const qualifiesForFreeShipping = (itemsSubTotal: string): boolean => {
+	const subtotal = Number(itemsSubTotal);
+	return subtotal >= 100;
+};
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -170,23 +177,14 @@ const useSaveShippingForm = ({
 			billing_address_the_same,
 		} = values;
 
-		const service = (delivery_id: number, rate: IShippingRate | null) => {
+		const service = (delivery_id: number, rate: IShippingRate | null, finalRate: string) => {
 			switch (delivery_id) {
 				case SHIPPING_DELIVERY_ID:
-					const shippingPriceQuote = rate
-						? rate["price-quotes"]["price-quote"]
-						: null;
-					const shippingRate = Array.isArray(shippingPriceQuote)
-						? shippingPriceQuote[0]["price-details"]["base"].toString()
-						: shippingPriceQuote
-						? shippingPriceQuote["price-details"]["base"].toString()
-						: "";
-
 					return {
 						order_service_id: v4(),
 						service_id: SHIPPING_DELIVERY_ID,
 						qty: 1,
-						total_price: shippingRate,
+						total_price: finalRate,
 						item_price_id: "",
 						is_delivery: true,
 						serviceDelivery: {
@@ -203,7 +201,7 @@ const useSaveShippingForm = ({
 						order_service_id: v4(),
 						service_id: DELIVERY_ID,
 						qty: 1,
-						total_price: DELIVERY_COST,
+						total_price: finalRate,
 						item_price_id: "",
 						is_delivery: true,
 						serviceDelivery: {
@@ -357,29 +355,41 @@ const useSaveShippingForm = ({
 
 				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : "";
 
+				// Check if order qualifies for free shipping
+				const itemsSubTotal = order.total_price ? 
+					(Number(order.total_price) - Number(order.service_total_price || 0)).toString() : 
+					"0";
+				const freeShippingApplies = qualifiesForFreeShipping(itemsSubTotal);
+				
+				// Apply free shipping if qualifies
+				const finalShippingRate = freeShippingApplies ? "0.00" : shippingRate;
+				const finalShippingTaxes = freeShippingApplies ? 0 : shippingTaxes;
+
 				const updatedOrder = {
 					...order,
 					total_price: (
 						Number(order.total_price) +
-						Number(shippingRate) +
-						shippingTaxes
+						Number(finalShippingRate) +
+						finalShippingTaxes
 					).toString(),
-					tax_amount: (Number(totalOrderTaxes) + shippingTaxes).toString(),
-					service_total_price: shippingRate,
+					tax_amount: (Number(totalOrderTaxes) + finalShippingTaxes).toString(),
+					service_total_price: finalShippingRate,
 					servicesSubTotal: {
 						qty: 1,
-						price: shippingRate,
+						price: finalShippingRate,
 					},
 					customer: {
 						...order.customer,
 						email: order.customer?.email ?? null,
 					},
-					services: [service(delivery_id, orderShippingRate)],
+					services: [service(delivery_id, orderShippingRate, finalShippingRate)],
 					custom_attrs: {
 						...order.custom_attrs,
 						serviceCode: serviceCode,
-						shippingRate: shippingRate,
-						shippingTax: shippingTaxes,
+						shippingRate: finalShippingRate,
+						originalShippingRate: shippingRate, // Store original rate for display
+						shippingTax: finalShippingTaxes,
+						freeShippingApplied: freeShippingApplies,
 					},
 				};
 
@@ -388,22 +398,22 @@ const useSaveShippingForm = ({
 						...total,
 						price: (
 							Number(order.total_price) +
-							Number(shippingRate) +
-							shippingTaxes
+							Number(finalShippingRate) +
+							finalShippingTaxes
 						).toString(),
 						tax: {
 							...total.tax,
 							shipping: {
 								...total.tax.shipping,
-								shippingTaxes: shippingTaxes.toString(),
+								shippingTaxes: finalShippingTaxes.toString(),
 							} as any,
 							totalTaxAmount: (
-								Number(totalOrderTaxes) + shippingTaxes
+								Number(totalOrderTaxes) + finalShippingTaxes
 							).toString(),
 						},
 						servicesSubTotal: {
 							...total.servicesSubTotal,
-							price: shippingRate,
+							price: finalShippingRate,
 						},
 					};
 
@@ -453,6 +463,7 @@ export default function ShippingForm({
 
 				return (
 					<Form className={"bdl-shipping-form"}>
+						<FreeShippingBanner />
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}

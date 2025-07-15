@@ -15,6 +15,13 @@ import {
 } from "../../../types/shippingForm";
 import { Box } from "@mui/system";
 import useFormatCurrency from "../../../hooks/useFormatCurrency";
+import { useAppSelector } from "../../../hooks/redux";
+
+// Helper function to check if order qualifies for free shipping
+const qualifiesForFreeShipping = (itemsSubTotal: string): boolean => {
+	const subtotal = Number(itemsSubTotal);
+	return subtotal >= 100;
+};
 
 const ShippingTitle = ({
 	shippingRate,
@@ -22,6 +29,11 @@ const ShippingTitle = ({
 	shippingRate: IShippingRateInfo;
 }) => {
 	const { formatCurrency } = useFormatCurrency();
+	const { total } = useAppSelector((state) => state.app);
+	
+	// Check if free shipping applies
+	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
+	const freeShippingApplies = qualifiesForFreeShipping(itemsSubTotal);
 
 	return (
 		<Box>
@@ -37,12 +49,28 @@ const ShippingTitle = ({
 					{shippingRate.name}
 				</Typography>
 				<Typography variant="body2" color="text.secondary" component="span">
-					{formatCurrency(shippingRate.rate)}
+					{freeShippingApplies ? (
+						<>
+							<span style={{ textDecoration: 'line-through', color: '#999' }}>
+								{formatCurrency(shippingRate.rate)}
+							</span>
+							<span style={{ color: '#4a7c4d', fontWeight: 'bold', marginLeft: '8px' }}>
+								FREE
+							</span>
+						</>
+					) : (
+						formatCurrency(shippingRate.rate)
+					)}
 				</Typography>
 			</Box>
 			<Typography variant="body2" color="text.secondary" component="div">
 				Expected delivery: {shippingRate.expectedDelivery}
 			</Typography>
+			{freeShippingApplies && (
+				<Typography variant="body2" sx={{ color: '#4a7c4d', fontWeight: 'bold', mt: 0.5 }}>
+					Free shipping applied (Order over $100)
+				</Typography>
+			)}
 		</Box>
 	);
 };

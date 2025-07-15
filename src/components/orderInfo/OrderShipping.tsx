@@ -4,6 +4,7 @@ import { IAddress, IOrderService, TAddressType } from "boundless-api-client";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { ICovaCustomer } from "../../types/Order";
+import { useAppSelector } from "../../hooks/redux";
 
 export default function OrderShipping({
 	services,
@@ -27,6 +28,11 @@ export default function OrderShipping({
 	);
 
 	const { formatCurrency } = useFormatCurrency();
+	const { order } = useAppSelector((state) => state.app);
+
+	// Check if free shipping was applied
+	const freeShippingApplied = order?.custom_attrs?.freeShippingApplied === true;
+	const originalShippingRate = order?.custom_attrs?.originalShippingRate;
 
 	if (!delivery) return null;
 
@@ -69,7 +75,18 @@ export default function OrderShipping({
 						{`${delivery.serviceDelivery?.delivery?.title} total `}
 					</span>
 					<span className="bdl-order-items__value">
-						{delivery.total_price && formatCurrency(delivery.total_price)}
+						{delivery.total_price && Number(delivery.total_price) === 0 && freeShippingApplied ? (
+							<>
+								<span style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>
+									{formatCurrency(originalShippingRate || "0.00")}
+								</span>
+								<span style={{ color: '#4a7c4d', fontWeight: 'bold' }}>
+									FREE
+								</span>
+							</>
+						) : (
+							delivery.total_price && formatCurrency(delivery.total_price)
+						)}
 					</span>
 				</Grid>
 			</Grid>

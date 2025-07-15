@@ -10,6 +10,7 @@ import CartFooter from './cart/CartFooter';
 import CartDiscountForm from './cart/CartDiscountForm';
 import useFormatCurrency from '../hooks/useFormatCurrency';
 import {useTranslation} from 'react-i18next';
+import FreeShippingBanner from './FreeShippingBanner';
 
 export default function Cart() {
 	const order = useAppSelector((state: RootState) => state.app.order);
@@ -50,12 +51,14 @@ export default function Cart() {
 				</h4>
 			</div>
 			<div className={clsx('bdl-cart__full', {open: fullOpened})}>
+				<FreeShippingBanner />
 				<CartItems />
 			</div>
 			{hasCouponCampaigns && !hasDisounts && <div className='bdl-cart__discount'>
 				<CartDiscountForm />
 			</div>}
 			<CartFooter open={fullOpened} />
+			<FreeShippingBanner />
 		</div >
 	);
 }

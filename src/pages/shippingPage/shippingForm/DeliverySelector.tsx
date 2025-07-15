@@ -14,8 +14,7 @@ import StoreMallDirectoryIcon from "@mui/icons-material/StoreMallDirectory";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { Box } from "@mui/system";
-
-type IInPros = Pick<ICheckoutShippingPageData, "options">;
+import { useAppSelector } from "../../../hooks/redux";
 
 const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -40,7 +39,13 @@ const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 };
 
 const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
+	const { total } = useAppSelector((state) => state.app);
 	const details = delivery.description;
+	
+	// Check if free shipping applies
+	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
+	const freeShippingApplies = qualifiesForFreeShipping(itemsSubTotal);
+	
 	if (!details) {
 		return null;
 	}
@@ -56,12 +61,36 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 			</Typography>
 			{delivery.title === "Delivery" && (
 				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-					Delivery fee: $4.00
+					{freeShippingApplies ? (
+						<>
+							<span style={{ textDecoration: 'line-through', color: '#999' }}>
+								Delivery fee: $4.00
+							</span>
+							<span style={{ color: '#4a7c4d', fontWeight: 'bold', marginLeft: '8px' }}>
+								FREE (Order over $100)
+							</span>
+						</>
+					) : (
+						"Delivery fee: $4.00"
+					)}
+				</Typography>
+			)}
+			{delivery.title === "Shipping" && freeShippingApplies && (
+				<Typography variant="body2" sx={{ mt: 1, color: '#4a7c4d', fontWeight: 'bold' }}>
+					FREE SHIPPING (Order over $100)
 				</Typography>
 			)}
 		</Box>
 	);
 };
+
+// Helper function to check if order qualifies for free shipping
+const qualifiesForFreeShipping = (itemsSubTotal: string): boolean => {
+	const subtotal = Number(itemsSubTotal);
+	return subtotal >= 100;
+};
+
+type IInPros = Pick<ICheckoutShippingPageData, "options">;
 
 export default function DeliverySelector({ options }: IInPros) {
 	const formikProps = useFormikContext<IShippingFormValues>();
