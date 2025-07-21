@@ -10,7 +10,7 @@ import ExtraErrors from "../../components/ExtraErrors";
 import { Button, Typography } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import { Box } from "@mui/system";
-import { IShippingFormValues, IShippingRate } from "../../types/shippingForm";
+import { IShippingFormValues } from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
 import { addFilledStep, setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import { isPickUpDelivery, getOrderShippingRate } from "../../lib/shipping";
+import { isPickUpDelivery, getOrderShippingRate, qualifiesForFreeShipping } from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
 import { RootState } from "../../redux/store";
 import { IOrderWithCustmAttr } from "../../types/Order";
@@ -36,13 +36,6 @@ import { v4 } from "uuid";
 import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
 import { getOrderTaxes } from "../../lib/taxes";
 import { cartHasTickets } from "../../lib/products";
-import FreeShippingBanner from "../../components/FreeShippingBanner";
-
-// Helper function to check if order qualifies for free shipping
-const qualifiesForFreeShipping = (itemsSubTotal: string): boolean => {
-	const subtotal = Number(itemsSubTotal);
-	return subtotal >= 100;
-};
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -75,7 +68,10 @@ const validateShippingForm = (values: IShippingFormValues) => {
 	}
 
 	// Validate BC postal code for Shipping method
-	if (values.delivery_id === SHIPPING_DELIVERY_ID && values.shipping_address?.zip) {
+	if (
+		values.delivery_id === SHIPPING_DELIVERY_ID &&
+		values.shipping_address?.zip
+	) {
 		if (!isBCPostalCode(values.shipping_address.zip)) {
 			errors["shipping_address.zip"] =
 				"Shipping is only available within British Columbia. Please enter a valid BC postal code.";
@@ -98,6 +94,7 @@ const getFormInitialValues = (
 				? order.services[0].service_id
 				: SELF_PICKUP_ID,
 		serviceCode: "",
+		deliveryInstructions: "",
 		shipping_address: getEmptyAddressFields(shippingPage.shippingAddress),
 		billing_address: getEmptyAddressFields(shippingPage.billingAddress),
 		billing_address_the_same: false,
@@ -177,7 +174,7 @@ const useSaveShippingForm = ({
 			billing_address_the_same,
 		} = values;
 
-		const service = (delivery_id: number, rate: IShippingRate | null, finalRate: string) => {
+		const service = (delivery_id: number, finalRate: string) => {
 			switch (delivery_id) {
 				case SHIPPING_DELIVERY_ID:
 					return {
@@ -355,12 +352,8 @@ const useSaveShippingForm = ({
 
 				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : "";
 
-				// Check if order qualifies for free shipping
-				const itemsSubTotal = order.total_price ? 
-					(Number(order.total_price) - Number(order.service_total_price || 0)).toString() : 
-					"0";
-				const freeShippingApplies = qualifiesForFreeShipping(itemsSubTotal);
-				
+				const freeShippingApplies = qualifiesForFreeShipping(total);
+
 				// Apply free shipping if qualifies
 				const finalShippingRate = freeShippingApplies ? "0.00" : shippingRate;
 				const finalShippingTaxes = freeShippingApplies ? 0 : shippingTaxes;
@@ -382,14 +375,15 @@ const useSaveShippingForm = ({
 						...order.customer,
 						email: order.customer?.email ?? null,
 					},
-					services: [service(delivery_id, orderShippingRate, finalShippingRate)],
+					services: [service(delivery_id, finalShippingRate)],
 					custom_attrs: {
 						...order.custom_attrs,
 						serviceCode: serviceCode,
 						shippingRate: finalShippingRate,
-						originalShippingRate: shippingRate, // Store original rate for display
+						originalShippingRate: shippingRate,
 						shippingTax: finalShippingTaxes,
 						freeShippingApplied: freeShippingApplies,
+						deliveryInstructions: values.deliveryInstructions || "",
 					},
 				};
 
@@ -446,6 +440,9 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
+	const { total } = useAppSelector((state) => state.app);
+	const freeShippingApplies = qualifiesForFreeShipping(total);
+	
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
 
@@ -463,7 +460,6 @@ export default function ShippingForm({
 
 				return (
 					<Form className={"bdl-shipping-form"}>
-						<FreeShippingBanner />
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}
@@ -484,7 +480,7 @@ export default function ShippingForm({
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
-						{delivery_id === SHIPPING_DELIVERY_ID && <ShippingRatesField />}
+						{delivery_id === SHIPPING_DELIVERY_ID && !freeShippingApplies && <ShippingRatesField />}
 						<Box textAlign={"end"}>
 							<Button
 								variant="contained"
@@ -492,7 +488,7 @@ export default function ShippingForm({
 								disabled={
 									formikProps.isSubmitting ||
 									!delivery_id ||
-									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode)
+									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode && !freeShippingApplies)
 								}
 								color="success"
 								size="large"

@@ -17,8 +17,8 @@ export default function AddressFieldset({
 	keyPrefix,
 }: IProps) {
 	const formikProps = useFormikContext<IShippingFormValues>();
-	const { values } = formikProps;
-	values.delivery_id = Number(values.delivery_id);
+	const { values, handleChange } = formikProps;
+	// values.delivery_id = Number(values.delivery_id);
 
 	const { t } = useTranslation();
 
@@ -110,7 +110,7 @@ export default function AddressFieldset({
 				</TextField>
 			</Grid> */}
 			{showPhone && (
-				<Grid size={12}>
+				<Grid size={6}>
 					<TextField
 						label={t("addresses.phone")}
 						variant={"outlined"}
@@ -119,6 +119,20 @@ export default function AddressFieldset({
 						InputProps={{
 							inputComponent: PhoneInput as any,
 						}}
+					/>
+				</Grid>
+			)}
+			{keyPrefix === "shipping_address" && (
+				<Grid size={12}>
+					<TextField
+						label={"Delivery Instructions"}
+						name={"deliveryInstructions"}
+						variant={"outlined"}
+						fullWidth
+						multiline
+						rows={2}
+						value={values.deliveryInstructions || ""}
+						onChange={handleChange}
 					/>
 				</Grid>
 			)}

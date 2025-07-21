@@ -98,7 +98,7 @@ export default function CartFooter({ open }: ICartFooterProps) {
 					<h5 className="bdl-cart__footer-title">
 						{isDelivery ? t("cart.footer.delivery") : t("cart.footer.shipping")}
 						<span className="bdl-cart__footer-value">
-							{Number(total.servicesSubTotal.price) === 0 && Number(total.itemsSubTotal.price) >= 100 ? (
+							{Number(total.itemsSubTotal.price) >= 100 ? (
 								<>
 									<span style={{ textDecoration: 'line-through', color: '#999' }}>
 										{formatCurrency(isDelivery ? "4.00" : "0.00")}

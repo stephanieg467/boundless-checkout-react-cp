@@ -27,7 +27,7 @@ const FreeShippingBanner: React.FC = () => {
 				}}
 			>
 				<Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-					🎉 Congratulations! You qualify for FREE SHIPPING on this order!
+					Congratulations! You qualify for FREE SHIPPING on this order!
 				</Typography>
 			</Alert>
 		);
@@ -49,7 +49,7 @@ const FreeShippingBanner: React.FC = () => {
 			>
 				<Box>
 					<Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-						🚚 Free shipping on orders over {formatCurrency(freeShippingThreshold)}
+						Free shipping on orders over {formatCurrency(freeShippingThreshold)}
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
 						Add {formatCurrency(remainingForFreeShipping)} more to qualify for free shipping!

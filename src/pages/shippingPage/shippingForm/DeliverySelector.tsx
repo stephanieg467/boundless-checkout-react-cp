@@ -15,6 +15,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { Box } from "@mui/system";
 import { useAppSelector } from "../../../hooks/redux";
+import { qualifiesForFreeShipping } from "../../../lib/shipping";
 
 const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -42,9 +43,7 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 	const { total } = useAppSelector((state) => state.app);
 	const details = delivery.description;
 	
-	// Check if free shipping applies
-	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
-	const freeShippingApplies = qualifiesForFreeShipping(itemsSubTotal);
+	const freeShippingApplies = qualifiesForFreeShipping(total);
 	
 	if (!details) {
 		return null;
@@ -82,12 +81,6 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 			)}
 		</Box>
 	);
-};
-
-// Helper function to check if order qualifies for free shipping
-const qualifiesForFreeShipping = (itemsSubTotal: string): boolean => {
-	const subtotal = Number(itemsSubTotal);
-	return subtotal >= 100;
 };
 
 type IInPros = Pick<ICheckoutShippingPageData, "options">;

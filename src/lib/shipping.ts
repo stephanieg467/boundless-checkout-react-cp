@@ -2,6 +2,7 @@ import {
 	IDelivery,
 	TShippingAlias,
 	IOrder,
+	ITotal,
 } from "boundless-api-client";
 import { IShippingRate, IShippingRateInfo } from "../types/shippingForm";
 import { IOrderWithCustmAttr } from "../types/Order";
@@ -108,3 +109,10 @@ export async function getOrderShippingRate(
 	}
 	return null;
 }
+
+// Helper function to check if order qualifies for free shipping
+export const qualifiesForFreeShipping = (total: ITotal | undefined): boolean => {
+	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
+	const subtotal = Number(itemsSubTotal);
+	return subtotal >= 100;
+};
