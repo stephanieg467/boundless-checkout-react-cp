@@ -11,6 +11,6 @@ export const cartHasTickets = () => {
   const cartItems = useAppSelector((state) => state.app.items);
   
   return cartItems?.some(
-		(item) => item.product.ClassificationName === "CBD (for Dutchie)"
+		(item) => item.product.ClassificationName === "Workshops"
 	);
 }

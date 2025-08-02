@@ -3,7 +3,7 @@ import CheckoutLayout from "../layout/CheckoutLayout";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import { useAppSelector } from "../hooks/redux";
-import { ICheckoutShippingPageData } from "boundless-api-client";
+import { ICheckoutShippingPageData, TCheckoutStep } from "boundless-api-client";
 import ShippingForm from "./shippingPage/ShippingForm";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,6 +12,7 @@ import {
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
 import { cartHasTickets } from "../lib/products";
+import { useNavigate } from "react-router-dom";
 
 const useInitShippingPage = () => {
 	const { isInited } = useInitCheckoutByCart();
@@ -19,18 +20,28 @@ const useInitShippingPage = () => {
 		useState<null | ICheckoutShippingPageData>(null);
 	const { order } = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state) => state.app.items);
+	const { stepper } = useAppSelector((state) => state.app);
+	const navigate = useNavigate();
+
 	const cartItemHasTickets = cartHasTickets();
 	const clonesInCart = cartItems?.some(
 		(item) => item.product.ClassificationName === "Clones"
-	)
-	
-	const showAllDeliveryOptions =
-		(!clonesInCart && !cartItemHasTickets) || (cartItems && cartItems.length > 1);
+	);
 
-	const options = [SELF_PICKUP_INFO]
+	const showAllDeliveryOptions =
+		(!clonesInCart && !cartItemHasTickets) ||
+		(cartItems && cartItems.length > 1);
+
+	const options = [SELF_PICKUP_INFO];
 	if (showAllDeliveryOptions) {
 		options.push(DELIVERY_INFO, SHIPPING_DELIVERY_INFO);
 	}
+
+	useEffect(() => {
+		if (stepper && !stepper.filledSteps.includes(TCheckoutStep.contactInfo)) {
+			navigate('/info');
+		}
+	}, [stepper, navigate]);
 
 	useEffect(() => {
 		if (order && !shippingPage) {
@@ -65,7 +76,7 @@ const useInitShippingPage = () => {
 
 	return {
 		isInited,
-		shippingPage
+		shippingPage,
 	};
 };
 

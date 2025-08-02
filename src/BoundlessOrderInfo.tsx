@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { IOrderWithCustmAttr } from "./types/Order";
 import { getCheckoutData } from "./hooks/checkoutData";
-import { SELF_PICKUP_ID } from "./constants";
+import { PAY_IN_STORE_PAYMENT_METHOD, SELF_PICKUP_ID } from "./constants";
 
 export default function BoundlessOrderInfo({
 	...restProps
@@ -45,7 +45,7 @@ const OrderInfo = ({
 	const { t } = useTranslation();
 	const isPayInStore = order?.services?.some(
 			(service) => service.service_id === SELF_PICKUP_ID
-		);
+		) && order.payment_method_id == PAY_IN_STORE_PAYMENT_METHOD;
 
 	if (!order || !isInited) return <Loading />;
 
