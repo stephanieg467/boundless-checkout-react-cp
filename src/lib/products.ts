@@ -1,7 +1,7 @@
 import { useAppSelector } from "../hooks/redux"
-import { CovaProduct } from "../types/cart"
+import { CleanedCovaProduct } from "../types/cart"
 
-export const covaProductPrice = (product: CovaProduct): string => {
+export const covaProductPrice = (product: CleanedCovaProduct): string => {
   const price = product.Prices[0]?.Price
   const discountedPrice = product.discountedPrice
   return discountedPrice ? discountedPrice : price.toString()

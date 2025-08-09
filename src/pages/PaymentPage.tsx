@@ -5,8 +5,13 @@ import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import PaymentMethodForm from "./paymentPage/PaymentMethodForm";
 import { useTranslation } from "react-i18next";
-import { CREDIT_CARD_PAYMENT_METHOD, PAY_IN_STORE_PAYMENT_METHOD } from "../constants";
+import {
+	CREDIT_CARD_PAYMENT_METHOD,
+	PAY_IN_STORE_PAYMENT_METHOD,
+} from "../constants";
 import { cartHasTickets } from "../lib/products";
+import { getCheckoutData } from "../hooks/checkoutData";
+import { useNavigate } from "react-router-dom";
 
 export default function PaymentPage() {
 	const { isInited, paymentPage } = useInitPaymentPage();
@@ -44,19 +49,34 @@ const useInitPaymentPage = () => {
 	const { isInited } = useInitCheckoutByCart();
 	const { order } = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
+	const checkoutData = getCheckoutData();
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
 	const cartItemHasTickets = cartHasTickets();
 
 	useEffect(() => {
+		if (!checkoutData) {
+			navigate("/info");
+		}
+	}, [checkoutData, navigate]);
+
+	useEffect(() => {
 		if (isInited && order && !paymentPage) {
 			const paymentPageData = {
-				paymentMethods: [{
-					payment_method_id: CREDIT_CARD_PAYMENT_METHOD,
-					title: "Credit Card",
-				}] as IPaymentMethod[]
+				paymentMethods: [
+					{
+						payment_method_id: CREDIT_CARD_PAYMENT_METHOD,
+						title: "Credit Card",
+					},
+				] as IPaymentMethod[],
 			} as IPaymentPageData;
-			
-			if (!cartItemHasTickets && order.services?.find((service) => service.serviceDelivery?.title === "Self Pickup")) {
+
+			if (
+				!cartItemHasTickets &&
+				order.services?.find(
+					(service) => service.serviceDelivery?.title === "Self Pickup"
+				)
+			) {
 				paymentPageData.paymentMethods.push({
 					payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
 					title: "Pay in store",

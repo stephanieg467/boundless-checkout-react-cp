@@ -89,8 +89,26 @@ export interface CovaProduct {
 	};
 }
 
+export interface CleanedCovaProduct extends Pick<CovaProduct, 
+	| 'ProductId'
+	| 'Slug'
+	| 'ClassificationId'
+	| 'ClassificationName'
+	| 'Name'
+	| 'ShortDescription'
+	| 'LongDescription'
+	| 'HeroShotUri'
+	| 'ProductSpecifications'
+	| 'Assets'
+	| 'Availability'
+	| 'Prices'
+	| 'discountedPrice'
+	| 'discount'
+	| 'UpdatedDateUtc'
+> {}
+
 export interface CovaCartItem {
-  product: CovaProduct;
+  product: CleanedCovaProduct;
   qty: number;
   originalQty?: number;
   total: string;
