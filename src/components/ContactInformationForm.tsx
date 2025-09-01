@@ -118,7 +118,6 @@ export function ContactFormView({
 			validate={validateContactForm}
 			onSubmit={onSubmit}
 			validateOnChange={false}
-			validateOnBlur={true}
 		>
 			{(formikProps: FormikProps<IContactInformationFormValues>) => (
 				<Form
@@ -227,8 +226,6 @@ export function ContactFormView({
 												} else {
 													formikProps.setFieldValue("dob", null);
 												}
-												// Trigger validation on change
-												formikProps.setFieldTouched("dob", true);
 											}}
 											onClose={() => {
 												// Mark field as touched when picker closes
@@ -242,7 +239,6 @@ export function ContactFormView({
 													error: Boolean(formikProps.touched.dob && formikProps.errors.dob),
 													helperText: formikProps.touched.dob && formikProps.errors.dob ? formikProps.errors.dob : "",
 													name: "dob",
-													onBlur: () => formikProps.setFieldTouched("dob", true)
 												}
 											}}
 										/>
