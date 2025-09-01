@@ -7,10 +7,8 @@ import {
 	ICustomer,
 } from "boundless-api-client";
 import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid"; // Changed from Grid2
+import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import { fieldAttrs } from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
@@ -23,9 +21,15 @@ import { LoginFormView } from "./LoginForm";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { v4 } from "uuid";
-import { setLocalStorageCheckoutData } from "../hooks/checkoutData";
+import {
+	getCheckoutData,
+	setLocalStorageCheckoutData,
+} from "../hooks/checkoutData";
 import { IOrderWithCustmAttr } from "../types/Order";
 import { PhoneInput } from "./PhoneInput";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -43,39 +47,49 @@ export enum TViewMode {
 
 // Custom validation function
 const validateContactForm = (values: IContactInformationFormValues) => {
-	const errors: Partial<Record<keyof IContactInformationFormValues, string>> = {};
+	const errors: Partial<Record<keyof IContactInformationFormValues, string>> =
+		{};
 	const fields = getFieldsList();
 
-	const emailField = fields.find(field => field.type === 'email');
+	const emailField = fields.find((field) => field.type === "email");
 	if (emailField?.required && !values.email) {
-		errors.email = 'Email is required';
-	} else if (values.email && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)) {
-		errors.email = 'Invalid email address';
+		errors.email = "Email is required";
+	} else if (
+		values.email &&
+		!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)
+	) {
+		errors.email = "Invalid email address";
 	}
 
-	const phoneField = fields.find(field => field.type === 'phone');
+	const phoneField = fields.find((field) => field.type === "phone");
 	if (phoneField?.required && !values.phone) {
-		errors.phone = 'Phone is required';
+		errors.phone = "Phone is required";
 	}
 
 	if (!values.first_name) {
-		errors.first_name = 'First name is required';
+		errors.first_name = "First name is required";
 	}
 
 	if (!values.last_name) {
-		errors.last_name = 'Last name is required';
+		errors.last_name = "Last name is required";
 	}
 
-	const dobField = fields.find(field => field.type === 'dob');
-	if (values.dob) {
+	const dobField = fields.find((field) => field.type === "dob");
+	if (dobField?.required && !values.dob) {
+		errors.dob = "Date of birth is required";
+	} else if (values.dob) {
 		const birthDate = dayjs(values.dob);
 		const today = dayjs();
-		const age = today.diff(birthDate, 'year');
-		if (age < 19) {
-			errors.dob = 'You must be at least 19 years old';
+		
+		// Check if the date is valid
+		if (!birthDate.isValid()) {
+			errors.dob = "Please enter a valid date";
+		} else {
+			const age = today.diff(birthDate, "year");
+			if (age < 19) {
+				errors.dob = "You must be at least 19 years old";
+			}
 		}
-	} else if (dobField?.required) {
-		errors.dob = 'Date of birth is required';
 	}
 
 	return errors;
@@ -104,6 +118,7 @@ export function ContactFormView({
 			validate={validateContactForm}
 			onSubmit={onSubmit}
 			validateOnChange={false}
+			validateOnBlur={true}
 		>
 			{(formikProps: FormikProps<IContactInformationFormValues>) => (
 				<Form
@@ -198,49 +213,40 @@ export function ContactFormView({
 									/>
 								)}
 								{type === "dob" && (
-									<DatePicker
-										selected={
-											formikProps.values.dob
-												? new Date(formikProps.values.dob + 'T00:00:00')
-												: null
-										}
-										onChange={(date: Date | null) => {
-											if (date) {
-												const year = date.getFullYear();
-												const month = String(date.getMonth() + 1).padStart(2, '0');
-												const day = String(date.getDate()).padStart(2, '0');
-												formikProps.setFieldValue("dob", `${year}-${month}-${day}`);
-											} else {
-												formikProps.setFieldValue("dob", null);
+									<LocalizationProvider dateAdapter={AdapterDayjs}>
+										<DatePicker
+											label={t("contactForm.dob")}
+											value={
+												formikProps.values.dob
+													? dayjs(formikProps.values.dob)
+													: null
 											}
-										}}
-										placeholderText={t("contactForm.dob")}
-										dateFormat="MM/dd/yyyy"
-										showYearDropdown
-										yearDropdownItemNumber={100}
-										scrollableYearDropdown
-										maxDate={new Date()}
-										portalId="date-picker-portal"
-										popperClassName="react-datepicker-popper-high-z"
-										popperPlacement="bottom-start"
-										required={required}
-										customInput={
-											<TextField
-												label={t("contactForm.dob")}
-												variant="outlined"
-												required={required}
-												fullWidth
-												name="dob"
-												onBlur={formikProps.handleBlur}
-												error={
-													Boolean(formikProps.errors.dob)
+											onChange={(date) => {
+												if (date) {
+													formikProps.setFieldValue("dob", date.format("YYYY-MM-DD"));
+												} else {
+													formikProps.setFieldValue("dob", null);
 												}
-												helperText={
-													formikProps.errors.dob
+												// Trigger validation on change
+												formikProps.setFieldTouched("dob", true);
+											}}
+											onClose={() => {
+												// Mark field as touched when picker closes
+												formikProps.setFieldTouched("dob", true);
+											}}
+											maxDate={dayjs()}
+											slotProps={{
+												textField: {
+													required: required,
+													fullWidth: true,
+													error: Boolean(formikProps.touched.dob && formikProps.errors.dob),
+													helperText: formikProps.touched.dob && formikProps.errors.dob ? formikProps.errors.dob : "",
+													name: "dob",
+													onBlur: () => formikProps.setFieldTouched("dob", true)
 												}
-											/>
-										}
-									/>
+											}}
+										/>
+									</LocalizationProvider>
 								)}
 							</Grid>
 						))}
@@ -306,7 +312,9 @@ const NextStepBtn = ({
 };
 
 const useSaveContactInfo = () => {
-	const { order, stepper, total } = useAppSelector((state) => state.app);
+	const { stepper } = useAppSelector((state) => state.app);
+	const { order, total } = getCheckoutData() || {};
+
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
@@ -409,7 +417,8 @@ const getInitialValues = (
 
 	// Ensure a default empty string for email and phone if customer or their properties are null/undefined
 	// Also, handle dob correctly if it might not exist on customer.
-	const initialDob = customer && 'dob' in customer ? (customer as any).dob : null;
+	const initialDob =
+		customer && "dob" in customer ? (customer as any).dob : null;
 
 	return {
 		email: customer?.email || "",
