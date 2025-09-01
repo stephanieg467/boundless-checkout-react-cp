@@ -13,26 +13,3 @@
 		color: #737373;
 	}
 }
-
-// Fix for react-datepicker z-index issues - ensure it appears above footer and other elements
-.react-datepicker__tab-loop {
-	z-index: 9999 !important;
-}
-
-.react-datepicker-popper {
-	z-index: 9999 !important;
-}
-
-.react-datepicker-popper-high-z {
-	z-index: 9999 !important;
-}
-
-.react-datepicker {
-	z-index: 9999 !important;
-}
-
-// Ensure the portal div has proper positioning
-#date-picker-portal {
-	position: relative;
-	z-index: 9999;
-}
