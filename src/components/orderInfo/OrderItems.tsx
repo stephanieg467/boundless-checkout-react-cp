@@ -72,6 +72,7 @@ export default function OrderItems({
 				{items.map((item) => (
 					<OrderRow item={item} key={item.product.ProductId} />
 				))}
+				<OrderDiscounts order={order} />
 				{showSubtotal && (
 					<OrderTotalRow
 						price={itemsSubTotal.price}
@@ -79,7 +80,6 @@ export default function OrderItems({
 						isSubTotal
 					/>
 				)}
-				{/* <OrderDiscounts order={order} /> */}
 				{order.services && (
 					<OrderShipping
 						services={order.services}

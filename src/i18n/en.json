@@ -72,11 +72,10 @@
 		},
 		"footer": {
 			"subTotal": "Subtotal:",
-			"couponTitle": "Coupon {{amount}}",
+			"couponTitle": "Coupon: {{amount}}",
 			"shipping": "Shipping:",
 			"delivery": "Delivery:",
-			"total": "Total:",
-			"removeCoupon": "Remove coupon"
+			"total": "Total:"
 		},
 		"items": {
 			"cartEmpty": "Your cart is empty"
@@ -111,8 +110,5 @@
 			"qty": "Qty:",
 			"price": "Price:"
 		}
-	},
-	"form": {
-		"areYouSure": "Are you sure?"
 	}
 }

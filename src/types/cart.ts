@@ -1,4 +1,11 @@
-import { ICurrency, ILocaleSettings, ICustomer, ICheckoutStepper, ITotal } from "boundless-api-client";
+import {
+	ICurrency,
+	ILocaleSettings,
+	ICustomer,
+	ICheckoutStepper,
+	ITotal,
+	ICartTotal,
+} from "boundless-api-client";
 import { IOrderWithCustmAttr } from "./Order";
 
 export interface CovaProduct {
@@ -35,12 +42,12 @@ export interface CovaProduct {
 		DisplayName: string;
 	}>;
 	Assets: Array<{
-    Id: string;
-    Name: string;
-    Uri: string;
-    Type: string;
-    IsHidden: boolean;
-  }>;
+		Id: string;
+		Name: string;
+		Uri: string;
+		Type: string;
+		IsHidden: boolean;
+	}>;
 	Availability: Array<{
 		LocationId: number;
 		RoomId: number;
@@ -73,8 +80,9 @@ export interface CovaProduct {
 		SalePrices: Array<any>;
 		UpdatedDateUtc: string;
 	}>;
-  discountedPrice?: string;
-  discount?: number;
+	discountedPrice?: string;
+	couponPrice?: string;
+	discount?: number;
 	CreatedDateUtc: string;
 	UpdatedDateUtc: string;
 	ApplicableTaxRates: Array<string>;
@@ -89,39 +97,54 @@ export interface CovaProduct {
 	};
 }
 
-export interface CleanedCovaProduct extends Pick<CovaProduct, 
-	| 'ProductId'
-	| 'Slug'
-	| 'ClassificationId'
-	| 'ClassificationName'
-	| 'Name'
-	| 'ShortDescription'
-	| 'LongDescription'
-	| 'HeroShotUri'
-	| 'ProductSpecifications'
-	| 'Assets'
-	| 'Availability'
-	| 'Prices'
-	| 'discountedPrice'
-	| 'discount'
-	| 'UpdatedDateUtc'
-> {}
+export interface CleanedCovaProduct
+	extends Pick<
+		CovaProduct,
+		| "ProductId"
+		| "Slug"
+		| "ClassificationId"
+		| "ClassificationName"
+		| "Name"
+		| "ShortDescription"
+		| "LongDescription"
+		| "HeroShotUri"
+		| "ProductSpecifications"
+		| "Assets"
+		| "Availability"
+		| "Prices"
+		| "discountedPrice"
+		| "couponPrice"
+		| "discount"
+		| "UpdatedDateUtc"
+	> {}
+
+export interface Cart {
+	id: string;
+	total: ICartTotal;
+	items?: CovaCartItem[];
+	taxAmount?: number;
+}
 
 export interface CovaCartItem {
-  product: CleanedCovaProduct;
-  qty: number;
-  originalQty?: number;
-  total: string;
-  thcGrams?: number | null;
+	product: CleanedCovaProduct;
+	qty: number;
+	originalQty?: number;
+	total: string | number;
+	thcGrams?: number | null;
 }
 
 export interface CovaCheckoutInitData {
-		items: CovaCartItem[];
-		order: IOrderWithCustmAttr;
-		currency: ICurrency;
-		localeSettings: ILocaleSettings;
-		loggedInCustomer: ICustomer | null;
-		hasCouponCampaigns: boolean;
-		stepper: ICheckoutStepper;
-		total: ITotal;
+	items: CovaCartItem[];
+	order: IOrderWithCustmAttr;
+	currency: ICurrency;
+	localeSettings: ILocaleSettings;
+	loggedInCustomer: ICustomer | null;
+	stepper: ICheckoutStepper;
+	total: ITotal;
+}
+
+export interface Coupon {
+	code: string;
+	type: string;
+	value: string;
 }

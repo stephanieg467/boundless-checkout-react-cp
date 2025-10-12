@@ -1,14 +1,16 @@
 import React from "react";
-import { useAppSelector } from "../../hooks/redux";
 import { getProductImg } from "../../lib/images";
-import { RootState } from "../../redux/store";
 import currency from "currency.js";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import { useTranslation } from "react-i18next";
 import { covaProductPrice } from "../../lib/products";
+import { useAppSelector } from "../../hooks/redux";
+import { RootState } from "../../redux/store";
 
 export default function CartItems() {
-	const cartItems = useAppSelector((state: RootState) => state.app.items);
+	const cartItems = useAppSelector(
+		(state: RootState) => state.app.items
+	);
 	const { formatCurrency } = useFormatCurrency();
 	const { t } = useTranslation();
 
@@ -23,14 +25,19 @@ export default function CartItems() {
 	return (
 		<ul className="bdl-cart-item__list">
 			{cartItems?.map((item) => {
-				const product = item.product
+				const product = item.product;
 				const price = covaProductPrice(product);
 
 				return (
 					<li className="bdl-cart-item" key={product.ProductId}>
 						{product.HeroShotUri ? (
 							<div className="bdl-cart-item__img">
-								<img {...getProductImg({path: product.HeroShotUri, width: 60, height: 60}, 200)} />
+								<img
+									{...getProductImg(
+										{ path: product.HeroShotUri, width: 60, height: 60 },
+										200
+									)}
+								/>
 							</div>
 						) : (
 							<div className="bdl-cart-item__img no-image" />
@@ -48,17 +55,11 @@ export default function CartItems() {
 								)} */}
 							</h5>
 							<div className="bdl-cart-item__price">
-								{price &&
-									formatCurrency(price)}{" "}
-								x {item.qty} pcs
+								{price && formatCurrency(price)} x {item.qty} pcs
 							</div>
 							<div className="bdl-cart-item__total">
 								{price &&
-									formatCurrency(
-										currency(price)
-											.multiply(item.qty)
-											.toString()
-									)}
+									formatCurrency(currency(price).multiply(item.qty).toString())}
 							</div>
 						</div>
 					</li>

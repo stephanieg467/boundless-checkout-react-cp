@@ -18,7 +18,11 @@ import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
 import { addFilledStep, setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import { isPickUpDelivery, getOrderShippingRate, qualifiesForFreeShipping } from "../../lib/shipping";
+import {
+	isPickUpDelivery,
+	getOrderShippingRate,
+	qualifiesForFreeShipping,
+} from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
 import { RootState } from "../../redux/store";
 import { IOrderWithCustmAttr } from "../../types/Order";
@@ -33,8 +37,10 @@ import {
 } from "../../constants";
 import ShippingRatesField from "./shippingForm/ShippingRatesField";
 import { v4 } from "uuid";
-import { setLocalStorageCheckoutData } from "../../hooks/checkoutData";
-import { getOrderTaxes } from "../../lib/taxes";
+import {
+	getCheckoutData,
+	setLocalStorageCheckoutData,
+} from "../../hooks/checkoutData";
 import { cartHasTickets } from "../../lib/products";
 
 // Function to validate if postal code is a Penticton postal code
@@ -95,8 +101,11 @@ const getFormInitialValues = (
 				: SELF_PICKUP_ID,
 		serviceCode: "",
 		deliveryInstructions: "",
-		shipping_address: getEmptyAddressFields(shippingPage.shippingAddress),
-		billing_address: getEmptyAddressFields(shippingPage.billingAddress),
+		shipping_address: getEmptyAddressFields(
+			shippingPage.shippingAddress,
+			order
+		),
+		billing_address: getEmptyAddressFields(shippingPage.billingAddress, order),
 		billing_address_the_same: false,
 	};
 
@@ -108,10 +117,11 @@ const getFormInitialValues = (
 };
 
 const getEmptyAddressFields = (
-	address: IAddress | null = null
+	address: IAddress | null = null,
+	order: IOrderWithCustmAttr | null = null
 ): IAddressFields => {
-	let first_name,
-		last_name,
+	let first_name = order ? order.customer?.first_name || null : null,
+		last_name = order ? order.customer?.last_name || null : null,
 		company,
 		address_line_1,
 		address_line_2,
@@ -155,7 +165,6 @@ const useSaveShippingForm = ({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) => {
-	const { order, total } = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state: RootState) => state.app.items);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
@@ -164,6 +173,7 @@ const useSaveShippingForm = ({
 		values: IShippingFormValues,
 		{ setSubmitting, setErrors }: FormikHelpers<IShippingFormValues>
 	) => {
+		const { order, total } = getCheckoutData() || {};
 		if (!order) return;
 
 		const {
@@ -234,8 +244,6 @@ const useSaveShippingForm = ({
 
 		const promise = Promise.resolve()
 			.then(() => {
-				if (!order) return;
-
 				const addresses = [];
 
 				if (!isPickUpDelivery(delivery_id, shippingPage.options.delivery)) {
@@ -350,22 +358,26 @@ const useSaveShippingForm = ({
 						shippingPriceQuoteValue.taxes.hst;
 				}
 
-				const totalOrderTaxes = cartItems ? await getOrderTaxes(cartItems) : "";
-
 				const freeShippingApplies = qualifiesForFreeShipping(total);
 
 				// Apply free shipping if qualifies
 				const finalShippingRate = freeShippingApplies ? "0.00" : shippingRate;
 				const finalShippingTaxes = freeShippingApplies ? 0 : shippingTaxes;
 
+				const totalOrderTaxes = (
+					Number(order.tax_amount) + finalShippingTaxes
+				).toString();
+
+				const totalOrderPrice = (
+					Number(total?.itemsSubTotal.price) +
+					Number(total?.tax.totalTaxAmount) +
+					finalShippingTaxes
+				).toFixed(2);
+
 				const updatedOrder = {
 					...order,
-					total_price: (
-						Number(order.total_price) +
-						Number(finalShippingRate) +
-						finalShippingTaxes
-					).toString(),
-					tax_amount: (Number(totalOrderTaxes) + finalShippingTaxes).toString(),
+					total_price: totalOrderPrice,
+					tax_amount: totalOrderTaxes,
 					service_total_price: finalShippingRate,
 					servicesSubTotal: {
 						qty: 1,
@@ -385,25 +397,19 @@ const useSaveShippingForm = ({
 						freeShippingApplied: freeShippingApplies,
 						deliveryInstructions: values.deliveryInstructions || "",
 					},
-				};
+				} as unknown as IOrderWithCustmAttr;
 
 				if (total) {
 					const updatedTotal = {
 						...total,
-						price: (
-							Number(order.total_price) +
-							Number(finalShippingRate) +
-							finalShippingTaxes
-						).toString(),
+						price: totalOrderPrice,
 						tax: {
 							...total.tax,
 							shipping: {
 								...total.tax.shipping,
 								shippingTaxes: finalShippingTaxes.toString(),
 							} as any,
-							totalTaxAmount: (
-								Number(totalOrderTaxes) + finalShippingTaxes
-							).toString(),
+							totalTaxAmount: totalOrderTaxes,
 						},
 						servicesSubTotal: {
 							...total.servicesSubTotal,
@@ -412,11 +418,11 @@ const useSaveShippingForm = ({
 					};
 
 					setLocalStorageCheckoutData({
-						order: updatedOrder as unknown as IOrderWithCustmAttr,
+						order: updatedOrder,
 						total: updatedTotal,
 					});
 
-					dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
+					dispatch(setOrder(updatedOrder));
 					dispatch(setTotal(updatedTotal));
 					dispatch(addFilledStep({ step: TCheckoutStep.shippingMethod }));
 				}
@@ -442,7 +448,7 @@ export default function ShippingForm({
 }) {
 	const { total } = useAppSelector((state) => state.app);
 	const freeShippingApplies = qualifiesForFreeShipping(total);
-	
+
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
 
@@ -480,7 +486,9 @@ export default function ShippingForm({
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
-						{delivery_id === SHIPPING_DELIVERY_ID && !freeShippingApplies && <ShippingRatesField />}
+						{delivery_id === SHIPPING_DELIVERY_ID && !freeShippingApplies && (
+							<ShippingRatesField />
+						)}
 						<Box textAlign={"end"}>
 							<Button
 								variant="contained"
@@ -488,7 +496,9 @@ export default function ShippingForm({
 								disabled={
 									formikProps.isSubmitting ||
 									!delivery_id ||
-									(delivery_id === SHIPPING_DELIVERY_ID && !serviceCode && !freeShippingApplies)
+									(delivery_id === SHIPPING_DELIVERY_ID &&
+										!serviceCode &&
+										!freeShippingApplies)
 								}
 								color="success"
 								size="large"

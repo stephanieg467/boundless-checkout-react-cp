@@ -56,20 +56,20 @@ export const initCheckoutByCart =
 				payment_mark_up: null,
 				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 				tip: checkoutDataOrder?.tip ?? "0.00",
-				discount_for_order: null,
+				discount_for_order: checkoutDataOrder?.discount_for_order ? checkoutDataOrder?.discount_for_order : null,
+				discounts: checkoutDataOrder?.discounts ? checkoutDataOrder?.discounts : [],
 				tax_amount: totalOrderTaxes,
 				publishing_status: TPublishingStatus.published,
 				created_at: order?.created_at ?? new Date().toISOString(),
 				customer: checkoutDataOrder?.customer ?? undefined,
-				discounts: [],
 				services: checkoutDataOrder?.services ?? [],
 				tax_calculations: {
 					price: totalOrderTaxes,
 					itemsSubTotal: {
-						price: cartTotal.total,
+						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
 						qty: cartTotal.qty,
 					},
-					discount: "",
+					discount: checkoutDataOrder?.discount_for_order ?? '0',
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
@@ -78,6 +78,7 @@ export const initCheckoutByCart =
 					},
 				} as unknown as ITotal,
 				custom_attrs: {
+					...checkoutDataOrder?.custom_attrs,
 					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
 					serviceCode: checkoutDataOrder?.custom_attrs?.serviceCode ?? "",
 					serviceRate: checkoutDataOrder?.custom_attrs?.serviceRate ?? "0.00",
@@ -103,7 +104,6 @@ export const initCheckoutByCart =
 						symbol: "$",
 					},
 				},
-				hasCouponCampaigns: false,
 				stepper: {
 					filledSteps: stepper?.filledSteps ?? [],
 					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
@@ -116,10 +116,10 @@ export const initCheckoutByCart =
 				total: {
 					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 					itemsSubTotal: {
-						price: cartTotal.total,
+						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
 						qty: cartTotal.qty,
 					},
-					discount: "0",
+					discount: checkoutDataOrder?.discount_for_order ?? '0',
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {

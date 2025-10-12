@@ -18,7 +18,6 @@ export default function AddressFieldset({
 }: IProps) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 	const { values, handleChange } = formikProps;
-	// values.delivery_id = Number(values.delivery_id);
 
 	const { t } = useTranslation();
 

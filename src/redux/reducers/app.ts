@@ -2,7 +2,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
 	ICheckoutStepper,
 	TCheckoutStep,
-	ICustomer,
 	ICurrency,
 	ILocaleSettings,
 	ISystemTax,
@@ -12,6 +11,8 @@ import { ReactNode } from "react";
 import { TClickedElement } from "../../lib/elementEvents";
 import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
 import { ICovaCustomer, IOrderWithCustmAttr } from "../../types/Order";
+import { getCheckoutData, setLocalStorageCheckoutData } from "../../hooks/checkoutData";
+import { setCart } from "../../hooks/getCartOrRetrieve";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -76,18 +77,18 @@ const appSlice = createSlice({
 						| "currency"
 						| "localeSettings"
 						| "stepper"
-						| "hasCouponCampaigns"
 						| "total"
 					>
 				>
 			>
 		) {
+			setLocalStorageCheckoutData(action.payload);
+			
 			const {
 				items,
 				order,
 				currency,
 				stepper,
-				hasCouponCampaigns,
 				total,
 			} = action.payload;
 
@@ -98,7 +99,6 @@ const appSlice = createSlice({
 				currency,
 				stepper,
 				isInited: true,
-				hasCouponCampaigns,
 				total,
 			};
 		},
@@ -128,6 +128,8 @@ const appSlice = createSlice({
 			state.globalError = action.payload;
 		},
 		resetAppState() {
+			const { order } = getCheckoutData() || {};
+			if (order && order.custom_attrs.originalCart) setCart(order.custom_attrs.originalCart);
 			localStorage.removeItem("cc_checkout_data")
 			return { ...initialState };
 		},
@@ -186,7 +188,6 @@ export interface IAppState {
 	taxSettings?: ISystemTax;
 	logo?: string | ReactNode;
 	stepper?: ICheckoutStepper | null;
-	hasCouponCampaigns?: boolean;
 	onCheckoutInited?: TOnCheckoutInited;
 	total?: ITotal;
 }
