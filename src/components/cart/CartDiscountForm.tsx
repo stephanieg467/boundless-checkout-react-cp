@@ -34,10 +34,7 @@ export default function CartDiscountForm() {
 	const { order, total } = getCheckoutData() || {};
 	const cart = getCartOrRetrieve();
 
-	const {
-		customer,
-		isSuccess: isCustomerSuccess,
-	} = useCustomer(order);
+	const { customer, isSuccess: isCustomerSuccess } = useCustomer(order);
 
 	const {
 		isSuccess,
@@ -119,7 +116,7 @@ export default function CartDiscountForm() {
 			const usedCoupons = customer?.ReferralSource?.split(",").map((code) =>
 				code.trim().toLowerCase()
 			);
-			
+
 			if (usedCoupons.includes(valueCode)) {
 				errors.code = "Coupon code has already been used";
 				return errors;
@@ -158,11 +155,13 @@ export default function CartDiscountForm() {
 					let lineDollarAmount = roundedPrice * item.qty;
 					if (discount > 0) {
 						const originalLineDollarAmount = lineDollarAmount;
-						lineDollarAmount -= discount;
-						discount =
-							originalLineDollarAmount < discount
-								? discount - originalLineDollarAmount
-								: 0;
+						if (originalLineDollarAmount < discount) {
+							lineDollarAmount = 0;
+							discount = discount - originalLineDollarAmount;
+						} else {
+							lineDollarAmount -= discount;
+							discount = 0;
+						}
 					}
 					return {
 						...item,
