@@ -22,7 +22,11 @@ import {
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
 import { getOrderTaxes } from "../../lib/taxes";
-import { covaProductPrice } from "../../lib/products";
+import {
+	cartPromotionItems,
+	covaProductPrice,
+	isPromotionItem,
+} from "../../lib/products";
 import { getCartOrRetrieve, setCart } from "../../hooks/getCartOrRetrieve";
 import { ITotal } from "boundless-api-client";
 import { useQuery } from "@tanstack/react-query";
@@ -87,6 +91,9 @@ export default function CartDiscountForm() {
 		},
 	});
 
+	if (cart?.items?.length === 1 && isPromotionItem(cart.items[0].product))
+		return null;
+
 	if (isError) {
 		console.error("Failed to fetch coupon products:", error);
 		return null;
@@ -140,15 +147,31 @@ export default function CartDiscountForm() {
 			setSubmitting(false);
 			return;
 		}
+		const cartPromoItems = cartPromotionItems(cart);
 		let discount =
 			coupon.type === "Percent"
 				? Number(total.itemsSubTotal.price) * (Number(coupon.value) / 100)
 				: Number(coupon.value);
-		const discountValue = discount;
+
+		const cartPromoItemsSubtotal = cartPromoItems.reduce(
+			(accumulator, currentValue) => accumulator + Number(currentValue.total),
+			0
+		);
+		const subTotalWithoutPromoItems =
+			Number(total.itemsSubTotal.price) - cartPromoItemsSubtotal;
+		if (cartPromoItems.length > 0 && coupon.type === "Percent") {
+			discount = subTotalWithoutPromoItems * (Number(coupon.value) / 100);
+		}
+		const discountValue = subTotalWithoutPromoItems < discount ? subTotalWithoutPromoItems : discount;
 
 		const promise = Promise.resolve()
 			.then(async () => {
 				const discountedCartItems = cart.items!.map((item) => {
+					if (isPromotionItem(item.product)) {
+						return {
+							...item,
+						};
+					}
 					const product = item.product;
 					const finalPrice = covaProductPrice(product);
 					const roundedPrice = Number.parseFloat(Number(finalPrice).toFixed(2));
@@ -175,7 +198,7 @@ export default function CartDiscountForm() {
 				});
 
 				const newSubTotal = discountedCartItems.reduce(
-					(acc, item) => acc + (item.total || 0),
+					(acc, item) => acc + Number(item.total || 0),
 					0
 				);
 				const shippingTaxes = total.tax.shipping?.shippingTaxes;
