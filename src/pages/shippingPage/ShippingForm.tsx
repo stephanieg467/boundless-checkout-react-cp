@@ -371,6 +371,7 @@ const useSaveShippingForm = ({
 				const totalOrderPrice = (
 					Number(total?.itemsSubTotal.price) +
 					Number(total?.tax.totalTaxAmount) +
+					Number(finalShippingRate) +
 					finalShippingTaxes
 				).toFixed(2);
 
