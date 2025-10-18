@@ -364,15 +364,19 @@ const useSaveShippingForm = ({
 				const finalShippingRate = freeShippingApplies ? "0.00" : shippingRate;
 				const finalShippingTaxes = freeShippingApplies ? 0 : shippingTaxes;
 
+				let currentTaxes = Number(order.tax_amount);
+				// Handle case where user changed delivery type.
+				if (order.custom_attrs.shippingTax) {
+					currentTaxes -= Number(order.custom_attrs.shippingTax);
+				}
 				const totalOrderTaxes = (
-					Number(order.tax_amount) + finalShippingTaxes
+					currentTaxes + finalShippingTaxes
 				).toString();
 
 				const totalOrderPrice = (
 					Number(total?.itemsSubTotal.price) +
-					Number(total?.tax.totalTaxAmount) +
-					Number(finalShippingRate) +
-					finalShippingTaxes
+					Number(totalOrderTaxes) +
+					Number(finalShippingRate)
 				).toFixed(2);
 
 				const updatedOrder = {
