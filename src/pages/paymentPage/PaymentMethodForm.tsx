@@ -79,27 +79,43 @@ const getVancouverDateTime = () => {
 	return { dayOfWeek, hourVancouver, minuteVancouver };
 };
 
-const shouldIncludeASAP = () => {
+const shouldIncludeDeliveryTime = (time: 'ASAP' | '8pm - 8:30pm' | '9pm - 9:30pm'): string => {
 	const { dayOfWeek, hourVancouver, minuteVancouver } = getVancouverDateTime();
 	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
 
 	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
 	if (dayOfWeek >= 0 && dayOfWeek <= 4) {
+		if (time === '9pm - 9:30pm') return '';
+		
 		const startTime = 9 * 60; // 9:00 AM
-		const endTime = 20 * 60 + 30; // 8:30 PM
-		return currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime;
+		const endTime = time === 'ASAP' ? 20 * 60 + 30 : 20 * 60; // 8:30 PM or 8:00 PM
+		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+
+		if (time === 'ASAP') return '';
+		if (time === '8pm - 8:30pm' && currentTimeInMinutes > endTime + 30) return time;
 	}
 	// Friday (5) to Saturday (6): 9:00 AM (540 min) to 9:30 PM (1290 min)
 	else if (dayOfWeek >= 5 && dayOfWeek <= 6) {
+		if (time === '8pm - 8:30pm') return time;
+		
 		const startTime = 9 * 60; // 9:00 AM
-		const endTime = 21 * 60 + 30; // 9:30 PM
-		return currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime;
+		let endTime;
+		if (time === 'ASAP') {
+			endTime = 21 * 60 + 30; // 9:30 PM
+		} else { // '9pm - 9:30pm'
+			endTime = 21 * 60; // 9:00 PM
+		}
+		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+
+		if (time === 'ASAP') return '';
+		if (time === '9pm - 9:30pm' && currentTimeInMinutes > endTime + 30) return time;
 	}
-	return false; // Outside defined days
+	return '';
 };
 
 const getDynamicDeliveryTimes = () => {
 	const baseDeliveryTimes = [
+		shouldIncludeDeliveryTime("ASAP"),
 		"9am - 10am",
 		"10am - 11am",
 		"11am - 12pm",
@@ -111,13 +127,11 @@ const getDynamicDeliveryTimes = () => {
 		"5pm - 6pm",
 		"6pm - 7pm",
 		"7pm - 8pm",
-		"8pm - 8:30pm",
+		shouldIncludeDeliveryTime("8pm - 8:30pm"),
+		shouldIncludeDeliveryTime("9pm - 9:30pm")
 	];
 
-	if (shouldIncludeASAP()) {
-		return ["ASAP", ...baseDeliveryTimes];
-	}
-	return baseDeliveryTimes;
+	return baseDeliveryTimes.filter(item => item !== "");
 };
 
 // Custom validation function
@@ -306,6 +320,7 @@ const PaymentMethods = ({
 								slotProps={{
 									select: { native: true },
 								}}
+                helperText="Orders placed after hours of operation will be delivered the next day."
 								{...fieldAttrs("delivery_time", formikProps)}
 							>
 								<option value=""></option>

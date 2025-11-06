@@ -320,7 +320,7 @@ export default function CartDiscountForm() {
 								}
 								{...restProps}
 							/>
-							<FormHelperText id="my-helper-text">
+							<FormHelperText id="discount-form-helper-text">
 								{helperText || ""}
 							</FormHelperText>
 						</FormControl>
