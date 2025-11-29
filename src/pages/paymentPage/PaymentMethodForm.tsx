@@ -39,6 +39,9 @@ const getVancouverDateTime = () => {
 		hour: "numeric", // Get hour in numeric format (e.g., "14")
 		minute: "numeric", // Get minute in numeric format (e.g., "30")
 		weekday: "long", // Get the full name of the weekday (e.g., "Monday")
+		year: "numeric",
+		month: "numeric",
+		day: "numeric",
 		hour12: false, // Use 24-hour format for the hour
 	};
 	const formatter = new Intl.DateTimeFormat("en-CA", options);
@@ -47,6 +50,9 @@ const getVancouverDateTime = () => {
 	let hourVancouver = 0;
 	let minuteVancouver = 0;
 	let weekdayName = "";
+	let year = 0;
+	let month = 0;
+	let day = 0;
 
 	for (const part of parts) {
 		switch (part.type) {
@@ -62,6 +68,15 @@ const getVancouverDateTime = () => {
 			case "weekday":
 				weekdayName = part.value;
 				break;
+			case "year":
+				year = parseInt(part.value);
+				break;
+			case "month":
+				month = parseInt(part.value);
+				break;
+			case "day":
+				day = parseInt(part.value);
+				break;
 		}
 	}
 
@@ -76,12 +91,36 @@ const getVancouverDateTime = () => {
 	};
 	const dayOfWeek = dayMap[weekdayName];
 
-	return { dayOfWeek, hourVancouver, minuteVancouver };
+	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
 };
 
-const shouldIncludeDeliveryTime = (time: 'ASAP' | '8pm - 8:30pm' | '9pm - 9:30pm'): string => {
-	const { dayOfWeek, hourVancouver, minuteVancouver } = getVancouverDateTime();
+const shouldIncludeDeliveryTime = (time: 'ASAP' | '8pm - 8:30pm' | '9pm - 9:30pm' | '4pm - 4:30pm'): string => {
+	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } = getVancouverDateTime();
 	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
+
+	// Special Schedule for November 29th, 2025
+	if (year === 2025 && month === 11 && day === 29) {
+		if (time === '8pm - 8:30pm' || time === '9pm - 9:30pm') return '';
+
+		const startTime = 9 * 60; // 9:00 AM
+		// Close at 4:30 PM
+		
+		if (time === 'ASAP') {
+			const endTime = 16 * 60 + 30; // 4:30 PM
+			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+			return '';
+		}
+
+		if (time === '4pm - 4:30pm') {
+			const endTime = 16 * 60; // 4:00 PM (Start of the last slot window logic)
+			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+			
+			// If we are past the slot start time (plus buffer logic similar to original code)
+			if (currentTimeInMinutes > endTime + 30) return time;
+		}
+		
+		return '';
+	}
 
 	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
 	if (dayOfWeek >= 0 && dayOfWeek <= 4) {
@@ -114,6 +153,9 @@ const shouldIncludeDeliveryTime = (time: 'ASAP' | '8pm - 8:30pm' | '9pm - 9:30pm
 };
 
 const getDynamicDeliveryTimes = () => {
+	const { year, month, day } = getVancouverDateTime();
+	const isNov29 = year === 2025 && month === 11 && day === 29;
+
 	const baseDeliveryTimes = [
 		shouldIncludeDeliveryTime("ASAP"),
 		"9am - 10am",
@@ -123,13 +165,20 @@ const getDynamicDeliveryTimes = () => {
 		"1pm - 2pm",
 		"2pm - 3pm",
 		"3pm - 4pm",
-		"4pm - 5pm",
-		"5pm - 6pm",
-		"6pm - 7pm",
-		"7pm - 8pm",
-		shouldIncludeDeliveryTime("8pm - 8:30pm"),
-		shouldIncludeDeliveryTime("9pm - 9:30pm")
 	];
+
+	if (isNov29) {
+		baseDeliveryTimes.push(shouldIncludeDeliveryTime("4pm - 4:30pm"));
+	} else {
+		baseDeliveryTimes.push(
+			"4pm - 5pm",
+			"5pm - 6pm",
+			"6pm - 7pm",
+			"7pm - 8pm",
+			shouldIncludeDeliveryTime("8pm - 8:30pm"),
+			shouldIncludeDeliveryTime("9pm - 9:30pm")
+		);
+	}
 
 	return baseDeliveryTimes.filter(item => item !== "");
 };
