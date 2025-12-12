@@ -5,6 +5,7 @@
 /.env
 /runtime
 /src/tmp.ts
+.npmrc
 
 npm-debug.log*
 yarn-debug.log*
