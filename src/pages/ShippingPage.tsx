@@ -13,6 +13,7 @@ import {
 } from "../constants";
 import { cartHasTickets } from "../lib/products";
 import { useNavigate } from "react-router-dom";
+import { getVancouverDateTime } from "../lib/deliveryTimes";
 
 const useInitShippingPage = () => {
 	const { isInited } = useInitCheckoutByCart();
@@ -32,14 +33,21 @@ const useInitShippingPage = () => {
 		(!clonesInCart && !cartItemHasTickets) ||
 		(cartItems && cartItems.length > 1);
 
-	const options = [SELF_PICKUP_INFO];
+	const { year, month, day } = getVancouverDateTime();
+	const isDec24OrIsDec25 =
+		year === 2025 && month === 12 && (day === 24 || day === 25);
+
+	const deliveryOptions = [SELF_PICKUP_INFO];
 	if (showAllDeliveryOptions) {
-		options.push(DELIVERY_INFO, SHIPPING_DELIVERY_INFO);
+		if (!isDec24OrIsDec25) {
+			deliveryOptions.push(DELIVERY_INFO);
+		}
+		deliveryOptions.push(SHIPPING_DELIVERY_INFO);
 	}
 
 	useEffect(() => {
 		if (stepper && !stepper.filledSteps.includes(TCheckoutStep.contactInfo)) {
-			navigate('/info');
+			navigate("/info");
 		}
 	}, [stepper, navigate]);
 
@@ -64,7 +72,7 @@ const useInitShippingPage = () => {
 								title: "Canada",
 							},
 						],
-						delivery: options,
+						delivery: deliveryOptions,
 					},
 					person: order.customer as any,
 					orderServiceDelivery: null,
@@ -72,7 +80,7 @@ const useInitShippingPage = () => {
 				setShippingPage(shippingPageData);
 			}
 		}
-	}, [order, options]); //eslint-disable-line
+	}, [order, deliveryOptions]); //eslint-disable-line
 
 	return {
 		isInited,
