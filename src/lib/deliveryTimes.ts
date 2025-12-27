@@ -61,90 +61,83 @@ export const getVancouverDateTime = () => {
 	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
 };
 
-export const shouldIncludeDeliveryTime = (time: 'ASAP' | '8pm - 8:30pm' | '9pm - 9:30pm' | '5pm - 5:30pm'): string => {
-	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } = getVancouverDateTime();
+export const shouldIncludeDeliveryTime = (
+	time: "ASAP" | "8pm - 8:30pm" | "9pm - 9:30pm"
+): string => {
+	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } =
+		getVancouverDateTime();
 	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
 
-	// Special Schedule for Dec 22, 2025 (Closed after 5:30pm)
-	if (year === 2025 && month === 12 && day === 22) {
-		const startTime = 9 * 60; // 9:00 AM
-		const endTime = 17 * 60 + 30; // 5:30 PM
-		
-		if (time === 'ASAP') {
-			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
-			return '';
-		}
-
-		if (time === '5pm - 5:30pm') {
-			const slotStartTime = 17 * 60; // 5:00 PM
-			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= slotStartTime) return time;
-			if (currentTimeInMinutes > slotStartTime + 30) return time;
-		}
-		
-		return '';
-	}
-
-	// Special Schedule for Dec 26, 2025 (Starts at 5pm)
-	if (year === 2025 && month === 12 && day === 26) {
+	// Special Schedule for Dec 27, 2025 (Delivery only available from 5pm to 9:30pm)
+	if (year === 2025 && month === 12 && day === 27) {
 		const startTime = 17 * 60; // 5:00 PM
-		const endTime = 21 * 60 + 30; // Friday close 9:30 PM
-		
-		if (time === 'ASAP') {
-			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
-			return '';
+
+		let endTime;
+		if (time === "ASAP") {
+			endTime = 21 * 60 + 30; // 9:30 PM
+		} else {
+			endTime = 21 * 60; // 9:00 PM
 		}
 
-		if (time === '8pm - 8:30pm') return time;
-
-		if (time === '9pm - 9:30pm') {
-			const slotStartTime = 21 * 60; // 9:00 PM
-			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= slotStartTime) return time;
-			if (currentTimeInMinutes > slotStartTime + 30) return time;
+		if (time === "ASAP") {
+			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
+				return time;
+			return "";
 		}
-		
-		return '';
+
+		return time;
 	}
 
 	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
 	if (dayOfWeek >= 0 && dayOfWeek <= 4) {
-		if (time === '9pm - 9:30pm') return '';
-		
-		const startTime = 9 * 60; // 9:00 AM
-		const endTime = time === 'ASAP' ? 20 * 60 + 30 : 20 * 60; // 8:30 PM or 8:00 PM
-		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+		if (time === "9pm - 9:30pm") return "";
 
-		if (time === 'ASAP') return '';
-		if (time === '8pm - 8:30pm' && currentTimeInMinutes > endTime + 30) return time;
+		const startTime = 9 * 60; // 9:00 AM
+		const endTime = time === "ASAP" ? 20 * 60 + 30 : 20 * 60; // 8:30 PM or 8:00 PM
+		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
+			return time;
+
+		if (time === "ASAP") return "";
+		if (time === "8pm - 8:30pm" && currentTimeInMinutes > endTime + 30)
+			return time;
 	}
 	// Friday (5) to Saturday (6): 9:00 AM (540 min) to 9:30 PM (1290 min)
 	else if (dayOfWeek >= 5 && dayOfWeek <= 6) {
-		if (time === '8pm - 8:30pm') return time;
-		
+		if (time === "8pm - 8:30pm") return time;
+
 		const startTime = 9 * 60; // 9:00 AM
 		let endTime;
-		if (time === 'ASAP') {
+		if (time === "ASAP") {
 			endTime = 21 * 60 + 30; // 9:30 PM
-		} else { // '9pm - 9:30pm'
+		} else {
+			// '9pm - 9:30pm'
 			endTime = 21 * 60; // 9:00 PM
 		}
-		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime) return time;
+		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
+			return time;
 
-		if (time === 'ASAP') return '';
-		if (time === '9pm - 9:30pm' && currentTimeInMinutes > endTime + 30) return time;
+		if (time === "ASAP") return "";
+		if (time === "9pm - 9:30pm" && currentTimeInMinutes > endTime + 30)
+			return time;
 	}
-	return '';
+	return "";
 };
 
 export const getDynamicDeliveryTimes = () => {
 	const { year, month, day } = getVancouverDateTime();
-	const isDec22 = year === 2025 && month === 12 && day === 22;
-	const isDec26 = year === 2025 && month === 12 && day === 26;
+	const isDec27 = year === 2025 && month === 12 && day === 27;
 
-	const baseDeliveryTimes = [
-		shouldIncludeDeliveryTime("ASAP"),
-	];
+	const baseDeliveryTimes = [shouldIncludeDeliveryTime("ASAP")];
 
-	if (!isDec26) {
+	if (isDec27) {
+		baseDeliveryTimes.push(
+			"5pm - 6pm",
+			"6pm - 7pm",
+			"7pm - 8pm",
+			shouldIncludeDeliveryTime("8pm - 8:30pm"),
+			shouldIncludeDeliveryTime("9pm - 9:30pm")
+		);
+	} else {
 		baseDeliveryTimes.push(
 			"9am - 10am",
 			"10am - 11am",
@@ -152,20 +145,8 @@ export const getDynamicDeliveryTimes = () => {
 			"12pm - 1pm",
 			"1pm - 2pm",
 			"2pm - 3pm",
-			"3pm - 4pm"
-		);
-	}
-
-	if (isDec22) {
-		baseDeliveryTimes.push(
+			"3pm - 4pm",
 			"4pm - 5pm",
-			shouldIncludeDeliveryTime("5pm - 5:30pm")
-		);
-	} else {
-		if (!isDec26) {
-			baseDeliveryTimes.push("4pm - 5pm");
-		}
-		baseDeliveryTimes.push(
 			"5pm - 6pm",
 			"6pm - 7pm",
 			"7pm - 8pm",
@@ -174,5 +155,5 @@ export const getDynamicDeliveryTimes = () => {
 		);
 	}
 
-	return baseDeliveryTimes.filter(item => item !== "");
+	return baseDeliveryTimes.filter((item) => item !== "");
 };
