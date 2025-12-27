@@ -16,6 +16,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { Box } from "@mui/system";
 import { useAppSelector } from "../../../hooks/redux";
 import { qualifiesForFreeShipping } from "../../../lib/shipping";
+import { SHIPPING_COST } from "../../../constants";
 
 const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -42,9 +43,9 @@ const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 	const { total } = useAppSelector((state) => state.app);
 	const details = delivery.description;
-	
+
 	const freeShippingApplies = qualifiesForFreeShipping(total);
-	
+
 	if (!details) {
 		return null;
 	}
@@ -62,10 +63,16 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
 					{freeShippingApplies ? (
 						<>
-							<span style={{ textDecoration: 'line-through', color: '#999' }}>
+							<span style={{ textDecoration: "line-through", color: "#999" }}>
 								Delivery fee: $4.00
 							</span>
-							<span style={{ color: '#4a7c4d', fontWeight: 'bold', marginLeft: '8px' }}>
+							<span
+								style={{
+									color: "#4a7c4d",
+									fontWeight: "bold",
+									marginLeft: "8px",
+								}}
+							>
 								FREE (Order over $100)
 							</span>
 						</>
@@ -74,9 +81,26 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 					)}
 				</Typography>
 			)}
-			{delivery.title === "Shipping" && freeShippingApplies && (
-				<Typography variant="body2" sx={{ mt: 1, color: '#4a7c4d', fontWeight: 'bold' }}>
-					FREE SHIPPING (Order over $100)
+			{delivery.title === "Shipping" && (
+				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+					{freeShippingApplies ? (
+						<>
+							<span style={{ textDecoration: "line-through", color: "#999" }}>
+								{`Shipping fee: $${SHIPPING_COST}`}
+							</span>
+							<span
+								style={{
+									color: "#4a7c4d",
+									fontWeight: "bold",
+									marginLeft: "8px",
+								}}
+							>
+								FREE SHIPPING (Order over $100)
+							</span>
+						</>
+					) : (
+						`Shipping fee: $${SHIPPING_COST}`
+					)}
 				</Typography>
 			)}
 		</Box>

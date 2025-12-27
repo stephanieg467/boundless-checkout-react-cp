@@ -13,18 +13,13 @@ import { Box } from "@mui/system";
 import { IShippingFormValues } from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
-import { useNavigate } from 'react-router';
+import { useNavigate } from "react-router";
 import { addPromise } from "../../redux/actions/xhr";
 import { apiErrors2Formik } from "../../lib/formUtils";
 import { addFilledStep, setOrder, setTotal } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import {
-	isPickUpDelivery,
-	getOrderShippingRate,
-	qualifiesForFreeShipping,
-} from "../../lib/shipping";
+import { isPickUpDelivery, qualifiesForFreeShipping } from "../../lib/shipping";
 import { useTranslation } from "react-i18next";
-import { RootState } from "../../redux/store";
 import { IOrderWithCustmAttr } from "../../types/Order";
 import {
 	DELIVERY_COST,
@@ -34,8 +29,8 @@ import {
 	SELF_PICKUP_INFO,
 	SHIPPING_DELIVERY_ID,
 	SHIPPING_DELIVERY_INFO,
+	SHIPPING_COST,
 } from "../../constants";
-import ShippingRatesField from "./shippingForm/ShippingRatesField";
 import { v4 } from "uuid";
 import {
 	getCheckoutData,
@@ -99,7 +94,6 @@ const getFormInitialValues = (
 			order.services[0].service_id != null
 				? order.services[0].service_id
 				: SELF_PICKUP_ID,
-		serviceCode: "",
 		deliveryInstructions: "",
 		shipping_address: getEmptyAddressFields(
 			shippingPage.shippingAddress,
@@ -165,7 +159,6 @@ const useSaveShippingForm = ({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) => {
-	const cartItems = useAppSelector((state: RootState) => state.app.items);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
@@ -178,7 +171,6 @@ const useSaveShippingForm = ({
 
 		const {
 			delivery_id,
-			serviceCode,
 			shipping_address,
 			billing_address,
 			billing_address_the_same,
@@ -297,65 +289,15 @@ const useSaveShippingForm = ({
 					} as IOrderWithCustmAttr,
 				};
 			})
-			.then(async (result) => {
+			.then((result) => {
 				if (!result) throw new Error("Order data is missing");
 				const { order } = result;
-
-				const orderShippingRate = await getOrderShippingRate(
-					order,
-					cartItems,
-					serviceCode
-				);
-
-				if (
-					delivery_id === SHIPPING_DELIVERY_ID &&
-					orderShippingRate &&
-					!("price-quotes" in orderShippingRate)
-				) {
-					const error = {
-						response: {
-							data: [
-								{
-									field: "serviceCode",
-									message: `Unable to set shipping rate. Please try again or contact ${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`,
-								},
-							],
-						},
-					};
-					throw error;
-				}
-
-				return { orderShippingRate, order };
-			})
-			.then(async (result) => {
-				if (!result) throw new Error("Order data is missing");
-
-				const { orderShippingRate, order } = result;
-				const shippingPriceQuote = orderShippingRate
-					? orderShippingRate["price-quotes"]["price-quote"]
-					: null;
 				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.2 : 0;
 				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
 
-				if (delivery_id === SHIPPING_DELIVERY_ID && shippingPriceQuote) {
-					const shippingPriceQuoteValue = Array.isArray(shippingPriceQuote)
-						? shippingPriceQuote[0]["price-details"]
-						: shippingPriceQuote["price-details"];
-
-					const adjustments =
-						shippingPriceQuoteValue.adjustments?.adjustment || [];
-					let totalAdjustmentCost = 0;
-					for (const adjustment of adjustments) {
-						totalAdjustmentCost += Number(adjustment["adjustment-cost"]);
-					}
-					shippingRate = (
-						totalAdjustmentCost + shippingPriceQuoteValue["base"]
-					).toString();
-
-					shippingTaxes =
-						shippingPriceQuoteValue.taxes.gst +
-						shippingPriceQuoteValue.taxes.pst +
-						shippingPriceQuoteValue.taxes.hst;
+				if (delivery_id === SHIPPING_DELIVERY_ID) {
+					shippingRate = SHIPPING_COST;
+					shippingTaxes = 0;
 				}
 
 				const freeShippingApplies = qualifiesForFreeShipping(total);
@@ -369,9 +311,7 @@ const useSaveShippingForm = ({
 				if (order.custom_attrs.shippingTax) {
 					currentTaxes -= Number(order.custom_attrs.shippingTax);
 				}
-				const totalOrderTaxes = (
-					currentTaxes + finalShippingTaxes
-				).toString();
+				const totalOrderTaxes = (currentTaxes + finalShippingTaxes).toString();
 
 				const totalOrderPrice = (
 					Number(total?.itemsSubTotal.price) +
@@ -395,7 +335,6 @@ const useSaveShippingForm = ({
 					services: [service(delivery_id, finalShippingRate)],
 					custom_attrs: {
 						...order.custom_attrs,
-						serviceCode: serviceCode,
 						shippingRate: finalShippingRate,
 						originalShippingRate: shippingRate,
 						shippingTax: finalShippingTaxes,
@@ -451,6 +390,7 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
+	console.log("Rendering ShippingForm1");
 	const { total } = useAppSelector((state) => state.app);
 	const freeShippingApplies = qualifiesForFreeShipping(total);
 
@@ -467,7 +407,7 @@ export default function ShippingForm({
 				const { values } = formikProps;
 				values.delivery_id = Number(values.delivery_id);
 
-				const { delivery_id, serviceCode } = values;
+				const { delivery_id } = values;
 
 				return (
 					<Form className={"bdl-shipping-form"}>
@@ -491,19 +431,13 @@ export default function ShippingForm({
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
-						{delivery_id === SHIPPING_DELIVERY_ID && !freeShippingApplies && (
-							<ShippingRatesField />
-						)}
 						<Box textAlign={"end"}>
 							<Button
 								variant="contained"
 								type={"submit"}
 								disabled={
 									formikProps.isSubmitting ||
-									!delivery_id ||
-									(delivery_id === SHIPPING_DELIVERY_ID &&
-										!serviceCode &&
-										!freeShippingApplies)
+									!delivery_id
 								}
 								color="success"
 								size="large"

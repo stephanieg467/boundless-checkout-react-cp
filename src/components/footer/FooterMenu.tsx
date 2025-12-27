@@ -14,7 +14,7 @@ export default function FooterMenu() {
 		{
 			title: 'Menu',
 			url: baseUrl + 'menu',
-			isActive: true,
+			isActive: false,
 		},
 		// {
 		// 	title: 'News & Events',
