@@ -58,13 +58,13 @@ export const getVancouverDateTime = () => {
 	};
 	const dayOfWeek = dayMap[weekdayName];
 
-	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
+	return {dayOfWeek, hourVancouver, minuteVancouver, year, month, day};
 };
 
 export const shouldIncludeDeliveryTime = (
 	time: "ASAP" | "8pm - 8:30pm" | "9pm - 9:30pm"
 ): string => {
-	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } =
+	const {dayOfWeek, hourVancouver, minuteVancouver, year, month, day} =
 		getVancouverDateTime();
 	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
 
@@ -124,7 +124,7 @@ export const shouldIncludeDeliveryTime = (
 };
 
 export const getDynamicDeliveryTimes = () => {
-	const { year, month, day } = getVancouverDateTime();
+	const {year, month, day} = getVancouverDateTime();
 	const isDec27 = year === 2025 && month === 12 && day === 27;
 
 	const baseDeliveryTimes = [shouldIncludeDeliveryTime("ASAP")];

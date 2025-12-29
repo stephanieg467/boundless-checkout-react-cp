@@ -1,19 +1,19 @@
-import { AppThunk } from "../store";
+import {AppThunk} from "../store";
 import {
 	setCheckoutData,
 	setCheckoutInited,
 	setGlobalError,
 } from "../reducers/app";
-import { TClickedElement } from "../../lib/elementEvents";
-import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
-import { ITotal, TCheckoutStep, TPublishingStatus } from "boundless-api-client";
-import { getCheckoutData } from "../../hooks/checkoutData";
-import { IOrderWithCustmAttr } from "../../types/Order";
-import { getOrderTaxes } from "../../lib/taxes";
+import {TClickedElement} from "../../lib/elementEvents";
+import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
+import {ITotal, TCheckoutStep, TPublishingStatus} from "boundless-api-client";
+import {getCheckoutData} from "../../hooks/checkoutData";
+import {IOrderWithCustmAttr} from "../../types/Order";
+import {getOrderTaxes} from "../../lib/taxes";
 
 export const initCheckoutByCart =
 	(): AppThunk => async (dispatch, getState) => {
-		const { cartId, onCheckoutInited, onHide, order, stepper } = getState().app;
+		const {cartId, onCheckoutInited, onHide, order, stepper} = getState().app;
 
 		// const customerAuthToken = Cookie.get(userCookieName);
 
@@ -29,7 +29,7 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const { items, total: cartTotal, taxAmount: cartTaxAmount } = cart;
+			const {items, total: cartTotal} = cart;
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 			
@@ -37,7 +37,7 @@ export const initCheckoutByCart =
 			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
 			console.log("totalOrderTaxes =", totalOrderTaxes);
 			if (!totalOrderTaxes) {
-				totalOrderTaxes = await getOrderTaxes(items)
+				totalOrderTaxes = await getOrderTaxes(items);
 			}
 
 			const tax = {
@@ -71,7 +71,7 @@ export const initCheckoutByCart =
 						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
 						qty: cartTotal.qty,
 					},
-					discount: checkoutDataOrder?.discount_for_order ?? '0',
+					discount: checkoutDataOrder?.discount_for_order ?? "0",
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
@@ -89,7 +89,7 @@ export const initCheckoutByCart =
 
 			const data = {
 				items: items,
-				order: { ...initialOrder } as unknown as IOrderWithCustmAttr,
+				order: {...initialOrder} as unknown as IOrderWithCustmAttr,
 				currency: {
 					currency_id: 0,
 					alias: "CAD",
@@ -120,7 +120,7 @@ export const initCheckoutByCart =
 						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
 						qty: cartTotal.qty,
 					},
-					discount: checkoutDataOrder?.discount_for_order ?? '0',
+					discount: checkoutDataOrder?.discount_for_order ?? "0",
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
@@ -141,7 +141,7 @@ export const initCheckoutByCart =
 			// 	}
 			// }
 
-			dispatch(setCheckoutInited({ isInited: true }));
+			dispatch(setCheckoutInited({isInited: true}));
 
 			if (onCheckoutInited) {
 				onCheckoutInited(data);

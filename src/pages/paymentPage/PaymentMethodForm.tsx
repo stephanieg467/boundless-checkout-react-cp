@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Formik, FormikHelpers, FormikProps } from "formik";
+import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
 	Typography,
 	Radio,
@@ -14,23 +14,23 @@ import {
 	FormLabel,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
-import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import {useAppDispatch, useAppSelector} from "../../hooks/redux";
 import ExtraErrors from "../../components/ExtraErrors";
-import { useTranslation } from "react-i18next";
-import { IPaymentMethod, IPaymentPageData } from "../PaymentPage";
+import {useTranslation} from "react-i18next";
+import {IPaymentMethod, IPaymentPageData} from "../PaymentPage";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import { fieldAttrs } from "../../lib/formUtils";
-import { RootState } from "../../redux/store";
-import { DELIVERY_ID } from "../../constants";
-import { ITotal } from "boundless-api-client";
-import { setOrder, setTotal } from "../../redux/reducers/app";
-import { IOrderWithCustmAttr } from "../../types/Order";
-import { cartHasTickets } from "../../lib/products";
-import { hasShipping } from "../../lib/shipping";
-import { getDynamicDeliveryTimes } from "../../lib/deliveryTimes";
+import {fieldAttrs} from "../../lib/formUtils";
+import {RootState} from "../../redux/store";
+import {DELIVERY_ID} from "../../constants";
+import {ITotal} from "boundless-api-client";
+import {setOrder, setTotal} from "../../redux/reducers/app";
+import {IOrderWithCustmAttr} from "../../types/Order";
+import {cartHasTickets} from "../../lib/products";
+import {hasShipping} from "../../lib/shipping";
+import {getDynamicDeliveryTimes} from "../../lib/deliveryTimes";
 
 // Custom validation function
 const validatePaymentForm = (
@@ -59,8 +59,8 @@ export default function PaymentMethodForm({
 }: {
 	paymentPage: IPaymentPageData;
 }) {
-	const { onSubmit } = useSavePaymentMethod(paymentPage);
-	const { t } = useTranslation();
+	const {onSubmit} = useSavePaymentMethod(paymentPage);
+	const {t} = useTranslation();
 	const order = useAppSelector((state: RootState) => state.app.order);
 	const isDelivery =
 		order?.services?.some((service) => service.service_id === DELIVERY_ID) ||
@@ -81,11 +81,11 @@ export default function PaymentMethodForm({
 							errors={formikProps.errors}
 						/>
 					)}
-					<Typography variant="h5" sx={{ mb: 2 }}>
+					<Typography variant="h5" sx={{mb: 2}}>
 						{t("paymentMethodForm.pageHeader")}
 					</Typography>
 					{cartHasTickets() && (
-						<Typography variant="body1" sx={{ m: 2 }}>
+						<Typography variant="body1" sx={{m: 2}}>
 							{
 								"Please note, due to limited seating, to reserve your seats, we require payment by credit card online OR you can come in store to purchase your tickets in person by credit, cash or debit. Seats must be purchased prior to event date. We look forward to hosting you!"
 							}
@@ -138,7 +138,7 @@ const PaymentMethods = ({
 	const deliveryTimes = getDynamicDeliveryTimes();
 
 	return (
-		<Box sx={{ mb: 2 }}>
+		<Box sx={{mb: 2}}>
 			<FormControl
 				required
 				variant="outlined"
@@ -162,7 +162,7 @@ const PaymentMethods = ({
 					name="payment_method_id"
 					onChange={formikProps.handleChange}
 				>
-					{paymentMethods.map(({ payment_method_id, title }) => {
+					{paymentMethods.map(({payment_method_id, title}) => {
 						return (
 							<FormControlLabel
 								value={payment_method_id}
@@ -189,7 +189,7 @@ const PaymentMethods = ({
 				)}
 				{isDelivery && (
 					<>
-						<Box sx={{ mb: 2, mt: 2 }}>
+						<Box sx={{mb: 2, mt: 2}}>
 							<TextField
 								label="Tip"
 								type="number"
@@ -208,7 +208,7 @@ const PaymentMethods = ({
 								}}
 							/>
 						</Box>
-						<Box sx={{ mb: 2 }}>
+						<Box sx={{mb: 2}}>
 							<TextField
 								required={true}
 								label="Delivery time"
@@ -216,7 +216,7 @@ const PaymentMethods = ({
 								fullWidth
 								select
 								slotProps={{
-									select: { native: true },
+									select: {native: true},
 								}}
 								helperText="Orders placed after hours of operation will be delivered the next day."
 								{...fieldAttrs("delivery_time", formikProps)}
@@ -237,18 +237,18 @@ const PaymentMethods = ({
 };
 
 const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
-	const { order, onThankYouPage, total } = useAppSelector((state) => state.app);
+	const {order, onThankYouPage, total} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 
 	const onSubmit = (
 		values: IPaymentMethodFormValues,
-		{ setSubmitting }: FormikHelpers<IPaymentMethodFormValues>
+		{setSubmitting}: FormikHelpers<IPaymentMethodFormValues>
 	) => {
-		const { order: checkoutDataOrder } = getCheckoutData() || {};
+		const {order: checkoutDataOrder} = getCheckoutData() || {};
 
 		if (!order || !checkoutDataOrder) return;
 
-		const { payment_method_id, tip, delivery_time } = values;
+		const {payment_method_id, tip, delivery_time} = values;
 
 		let updatedOrder = {
 			...checkoutDataOrder,
@@ -263,7 +263,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 				checkoutCompleted: true,
 			},
 		};
-		let updatedTotal = { ...total };
+		let updatedTotal = {...total};
 
 		if (tip) {
 			updatedOrder = {
@@ -288,7 +288,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 		dispatch(setTotal(updatedTotal as unknown as ITotal));
 
-		onThankYouPage!({ orderId: checkoutDataOrder.id });
+		onThankYouPage!({orderId: checkoutDataOrder.id});
 		setSubmitting(false);
 	};
 

@@ -1,10 +1,10 @@
-import React, { useMemo } from "react";
+import React, {useMemo} from "react";
 import Grid from "@mui/material/Grid";
-import { IAddress, IOrderService, TAddressType } from "boundless-api-client";
+import {IAddress, IOrderService, TAddressType} from "boundless-api-client";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { ICovaCustomer } from "../../types/Order";
-import { useAppSelector } from "../../hooks/redux";
+import {ICovaCustomer} from "../../types/Order";
+import {useAppSelector} from "../../hooks/redux";
 
 export default function OrderShipping({
 	services,
@@ -27,8 +27,8 @@ export default function OrderShipping({
 		[customer]
 	);
 
-	const { formatCurrency } = useFormatCurrency();
-	const { order } = useAppSelector((state) => state.app);
+	const {formatCurrency} = useFormatCurrency();
+	const {order} = useAppSelector((state) => state.app);
 
 	// Check if free shipping was applied
 	const freeShippingApplied = order?.custom_attrs?.freeShippingApplied === true;
@@ -77,10 +77,10 @@ export default function OrderShipping({
 					<span className="bdl-order-items__value">
 						{delivery.total_price && Number(delivery.total_price) === 0 && freeShippingApplied ? (
 							<>
-								<span style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>
+								<span style={{textDecoration: "line-through", color: "#999", marginRight: "8px"}}>
 									{formatCurrency(originalShippingRate || "0.00")}
 								</span>
-								<span style={{ color: '#4a7c4d', fontWeight: 'bold' }}>
+								<span style={{color: "#4a7c4d", fontWeight: "bold"}}>
 									FREE
 								</span>
 							</>
@@ -94,7 +94,7 @@ export default function OrderShipping({
 	);
 }
 
-const ShippingAddress = ({ address, delivery }: { address: IAddress, delivery: IOrderService }) => {
+const ShippingAddress = ({address, delivery}: { address: IAddress, delivery: IOrderService }) => {
 	const fullName = [address.first_name || "", address.last_name || ""]
 		.join(" ")
 		.trim();

@@ -5,8 +5,6 @@ const tsParser = require("@typescript-eslint/parser");
 const typescriptEslint = require("@typescript-eslint/eslint-plugin");
 const reactHooks = require("eslint-plugin-react-hooks");
 
-const { fixupPluginRules } = require("@eslint/compat");
-
 const js = require("@eslint/js");
 
 const { FlatCompat } = require("@eslint/eslintrc");
@@ -29,7 +27,7 @@ module.exports = defineConfig([
 			},
 
 			parser: tsParser,
-			ecmaVersion: 2019,
+			ecmaVersion: 2022,
 			sourceType: "module",
 			parserOptions: {},
 		},
@@ -46,7 +44,7 @@ module.exports = defineConfig([
 
 		rules: {
 			semi: ["error", "always"],
-			quotes: ["error", "single"],
+			quotes: ["error", "double"],
 			"no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
 			"object-curly-spacing": ["error", "never"],
 			"array-bracket-spacing": ["error", "never"],
