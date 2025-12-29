@@ -1,19 +1,19 @@
 import React from "react";
 import Grid from "@mui/material/Grid";
-import { IOrderDiscount } from "boundless-api-client";
+import {IOrderDiscount} from "boundless-api-client";
 import PercentIcon from "@mui/icons-material/Percent";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
-import { IOrderWithCustmAttr } from "../../types/Order";
+import {useTranslation} from "react-i18next";
+import {IOrderWithCustmAttr} from "../../types/Order";
 
 export default function OrderDiscounts({
 	order,
 }: {
 	order: IOrderWithCustmAttr;
 }) {
-	const { formatCurrency } = useFormatCurrency();
+	const {formatCurrency} = useFormatCurrency();
 	const discounts = order.discounts;
-	const { t } = useTranslation();
+	const {t} = useTranslation();
 
 	if (!discounts?.length) return null;
 

@@ -1,10 +1,10 @@
-import React, {ReactNode} from 'react';
-import ReactDOM, {Root} from 'react-dom/client';
-import BoundlessCheckout, {IBoundlessCheckoutProps} from './BoundlessCheckout';
-import BoundlessOrderInfo, {BoundlessOrderInfoProps} from './BoundlessOrderInfo';
-import {store} from './redux/store';
-import {resetState} from './redux/actions/app';
-import {initI18n} from './i18n/funcs';
+import React, {ReactNode} from "react";
+import ReactDOM, {Root} from "react-dom/client";
+import BoundlessCheckout, {IBoundlessCheckoutProps} from "./BoundlessCheckout";
+import BoundlessOrderInfo, {BoundlessOrderInfoProps} from "./BoundlessOrderInfo";
+import {store} from "./redux/store";
+import {resetState} from "./redux/actions/app";
+import {initI18n} from "./i18n/funcs";
 initI18n();
 
 export class StarterWrapper {
@@ -26,7 +26,7 @@ export class StarterWrapper {
 	}
 }
 
-export function startCheckout(el: HTMLElement, props: Omit<IBoundlessCheckoutProps, 'show' | 'logo'> & {
+export function startCheckout(el: HTMLElement, props: Omit<IBoundlessCheckoutProps, "show" | "logo"> & {
 	logoSrc?: string,
 	logoText?: string
 }): StarterWrapper {
@@ -34,7 +34,7 @@ export function startCheckout(el: HTMLElement, props: Omit<IBoundlessCheckoutPro
 	if (props.logoText !== undefined) {
 		logo = props.logoText;
 	} else if (props.logoSrc) {
-		logo = <img src={props.logoSrc} className={'bdl-header__img-logo'} />;
+		logo = <img src={props.logoSrc} className={"bdl-header__img-logo"} />;
 	}
 
 	const wrapper = new StarterWrapper(el, <BoundlessCheckout

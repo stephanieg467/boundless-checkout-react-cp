@@ -6,7 +6,7 @@ import {
 	ITotal,
 	ICartTotal,
 } from "boundless-api-client";
-import { IOrderWithCustmAttr } from "./Order";
+import {IOrderWithCustmAttr} from "./Order";
 
 export interface CovaProduct {
 	ProductId: string;

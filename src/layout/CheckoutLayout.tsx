@@ -1,19 +1,19 @@
-import React, {ReactNode} from 'react';
-import Container from '@mui/material/Container';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import Grid from '@mui/material/Grid'; // Changed from Grid2
-import Cart from '../components/Cart';
-import LoadingLine from '../components/LoadingLine';
-import CheckoutProgress from '../components/CheckoutProgress';
+import React, {ReactNode} from "react";
+import Container from "@mui/material/Container";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import Grid from "@mui/material/Grid"; // Changed from Grid2
+import Cart from "../components/Cart";
+import LoadingLine from "../components/LoadingLine";
+import CheckoutProgress from "../components/CheckoutProgress";
 
 export default function CheckoutLayout({children}: {children: ReactNode | ReactNode[]}) {
 	return (
-        <section className={'bdl-checkout-layout'}>
+        <section className={"bdl-checkout-layout"}>
             <LoadingLine />
             <Header />
-            <main className={'bdl-checkout-layout__main'}>
-				<Container className={'bdl-checkout-layout__container'}>
+            <main className={"bdl-checkout-layout__main"}>
+				<Container className={"bdl-checkout-layout__container"}>
 					<CheckoutProgress />
 					<Grid container spacing={2}>
 						<Grid
