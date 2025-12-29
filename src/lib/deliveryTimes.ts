@@ -58,7 +58,7 @@ export const getVancouverDateTime = () => {
 	};
 	const dayOfWeek = dayMap[weekdayName];
 
-	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
+	return {dayOfWeek, hourVancouver, minuteVancouver, year, month, day};
 };
 
 type TimeWindow = {

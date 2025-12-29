@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormikContext } from "formik";
+import {useFormikContext} from "formik";
 import {
 	FormControl,
 	FormControlLabel,
@@ -8,17 +8,17 @@ import {
 	RadioGroup,
 	Typography,
 } from "@mui/material";
-import { ICheckoutShippingPageData, IDelivery } from "boundless-api-client";
-import { IShippingFormValues } from "../../../types/shippingForm";
+import {ICheckoutShippingPageData, IDelivery} from "boundless-api-client";
+import {IShippingFormValues} from "../../../types/shippingForm";
 import StoreMallDirectoryIcon from "@mui/icons-material/StoreMallDirectory";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import { Box } from "@mui/system";
-import { useAppSelector } from "../../../hooks/redux";
-import { qualifiesForFreeShipping } from "../../../lib/shipping";
-import { SHIPPING_COST } from "../../../constants";
+import {Box} from "@mui/system";
+import {useAppSelector} from "../../../hooks/redux";
+import {qualifiesForFreeShipping} from "../../../lib/shipping";
+import {SHIPPING_COST} from "../../../constants";
 
-const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
+const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	const iconSx = {
 		height: "auto",
 		marginRight: "12px",
@@ -40,8 +40,8 @@ const DeliveryTitle = ({ delivery }: { delivery: IDelivery }) => {
 	);
 };
 
-const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
-	const { total } = useAppSelector((state) => state.app);
+const DeliveryDetails = ({delivery}: { delivery: IDelivery }) => {
+	const {total} = useAppSelector((state) => state.app);
 	const details = delivery.description;
 
 	const freeShippingApplies = qualifiesForFreeShipping(total);
@@ -60,10 +60,10 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 				{details}
 			</Typography>
 			{delivery.title === "Delivery" && (
-				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
 					{freeShippingApplies ? (
 						<>
-							<span style={{ textDecoration: "line-through", color: "#999" }}>
+							<span style={{textDecoration: "line-through", color: "#999"}}>
 								Delivery fee: $4.00
 							</span>
 							<span
@@ -82,10 +82,10 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 				</Typography>
 			)}
 			{delivery.title === "Shipping" && (
-				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
 					{freeShippingApplies ? (
 						<>
-							<span style={{ textDecoration: "line-through", color: "#999" }}>
+							<span style={{textDecoration: "line-through", color: "#999"}}>
 								{`Shipping fee: $${SHIPPING_COST}`}
 							</span>
 							<span
@@ -109,7 +109,7 @@ const DeliveryDetails = ({ delivery }: { delivery: IDelivery }) => {
 
 type IInPros = Pick<ICheckoutShippingPageData, "options">;
 
-export default function DeliverySelector({ options }: IInPros) {
+export default function DeliverySelector({options}: IInPros) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 
 	return (

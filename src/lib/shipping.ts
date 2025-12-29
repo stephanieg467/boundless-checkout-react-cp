@@ -4,14 +4,14 @@ import {
 	IOrder,
 	ITotal,
 } from "boundless-api-client";
-import { IOrderWithCustmAttr } from "../types/Order";
+import {IOrderWithCustmAttr} from "../types/Order";
 
 export const isPickUpDelivery = (
 	deliveryId: number,
 	deliveryOptions: IDelivery[]
 ): boolean => {
 	const selectedDelivery = deliveryOptions.find(
-		({ delivery_id }) => delivery_id == deliveryId
+		({delivery_id}) => delivery_id == deliveryId
 	);
 
 	if (selectedDelivery) {
@@ -26,7 +26,7 @@ export const isDeliveryMethod = (
 	deliveryOptions: IDelivery[]
 ): boolean => {
 	const selectedDelivery = deliveryOptions.find(
-		({ delivery_id }) => delivery_id == deliveryId
+		({delivery_id}) => delivery_id == deliveryId
 	);
 
 	if (selectedDelivery) {
