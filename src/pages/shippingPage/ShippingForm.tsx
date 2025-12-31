@@ -42,6 +42,7 @@ import {
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
 import { cartHasTickets } from "../../lib/products";
+import { getVancouverDateTime } from "../../lib/deliveryTimes";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -451,6 +452,9 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
+	const { month, day } =
+		getVancouverDateTime();
+	const isJanuaryFirst = month === 1 && day === 1;
 	const { total } = useAppSelector((state) => state.app);
 	const freeShippingApplies = qualifiesForFreeShipping(total);
 
@@ -487,7 +491,7 @@ export default function ShippingForm({
 								}
 							</Typography>
 						)}
-						<DeliverySelector options={shippingPage.options} />
+						{!isJanuaryFirst && <DeliverySelector options={shippingPage.options} />}
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
