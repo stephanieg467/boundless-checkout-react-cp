@@ -33,13 +33,12 @@ const useInitShippingPage = () => {
 		(!clonesInCart && !cartItemHasTickets) ||
 		(cartItems && cartItems.length > 1);
 
-	const { year, month, day } = getVancouverDateTime();
-	const isDec24OrIsDec25 =
-		year === 2025 && month === 12 && (day === 24 || day === 25);
+	const { month, day } = getVancouverDateTime();
+	const isJanuaryFirst = month === 1 && day === 1;
 
 	const deliveryOptions = [SELF_PICKUP_INFO];
 	if (showAllDeliveryOptions) {
-		if (!isDec24OrIsDec25) {
+		if (!isJanuaryFirst) {
 			deliveryOptions.push(DELIVERY_INFO);
 		}
 		deliveryOptions.push(SHIPPING_DELIVERY_INFO);
