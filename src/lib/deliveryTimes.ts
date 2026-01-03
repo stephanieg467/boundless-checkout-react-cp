@@ -61,99 +61,124 @@ export const getVancouverDateTime = () => {
 	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
 };
 
-export const shouldIncludeDeliveryTime = (
-	time: "ASAP" | "8pm - 8:30pm" | "9pm - 9:30pm"
-): string => {
-	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } =
-		getVancouverDateTime();
-	const currentTimeInMinutes = hourVancouver * 60 + minuteVancouver;
+type TimeWindow = {
+	start: number; // Hour in 24h format (e.g., 11 for 11am, 13 for 1pm)
+	end: number; // Hour in 24h format, can be fractional (e.g., 20.5 for 8:30pm)
+};
 
-	// Special Schedule for Dec 27, 2025 (Delivery only available from 5pm to 9:30pm)
-	if (year === 2025 && month === 12 && day === 27) {
-		const startTime = 17 * 60; // 5:00 PM
+const formatHour = (hour: number): string => {
+	const period = hour >= 12 ? "pm" : "am";
+	const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+	return `${displayHour}${period}`;
+};
 
-		let endTime;
-		if (time === "ASAP") {
-			endTime = 21 * 60 + 30; // 9:30 PM
-		} else {
-			endTime = 21 * 60; // 9:00 PM
-		}
-
-		if (time === "ASAP") {
-			if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
-				return time;
-			return "";
-		}
-
-		return time;
-	}
-
-	// Sunday (0) to Thursday (4): 9:00 AM (540 min) to 8:30 PM (1230 min)
-	if (dayOfWeek >= 0 && dayOfWeek <= 4) {
-		if (time === "9pm - 9:30pm") return "";
-
-		const startTime = 9 * 60; // 9:00 AM
-		const endTime = time === "ASAP" ? 20 * 60 + 30 : 20 * 60; // 8:30 PM or 8:00 PM
-		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
-			return time;
-
-		if (time === "ASAP") return "";
-		if (time === "8pm - 8:30pm" && currentTimeInMinutes > endTime + 30)
-			return time;
-	}
-	// Friday (5) to Saturday (6): 9:00 AM (540 min) to 9:30 PM (1290 min)
-	else if (dayOfWeek >= 5 && dayOfWeek <= 6) {
-		if (time === "8pm - 8:30pm") return time;
-
-		const startTime = 9 * 60; // 9:00 AM
-		let endTime;
-		if (time === "ASAP") {
-			endTime = 21 * 60 + 30; // 9:30 PM
-		} else {
-			// '9pm - 9:30pm'
-			endTime = 21 * 60; // 9:00 PM
-		}
-		if (currentTimeInMinutes >= startTime && currentTimeInMinutes <= endTime)
-			return time;
-
-		if (time === "ASAP") return "";
-		if (time === "9pm - 9:30pm" && currentTimeInMinutes > endTime + 30)
-			return time;
-	}
-	return "";
+// Returns date string "YYYY-MM-DD"
+const getDateString = (year: number, month: number, day: number) => {
+	return `${year}-${month}-${day}`;
 };
 
 export const getDynamicDeliveryTimes = () => {
-	const { year, month, day } = getVancouverDateTime();
-	const isDec27 = year === 2025 && month === 12 && day === 27;
+	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } =
+		getVancouverDateTime();
+	const currentTime = hourVancouver + minuteVancouver / 60;
+	const dateString = getDateString(year, month, day);
 
-	const baseDeliveryTimes = [shouldIncludeDeliveryTime("ASAP")];
+	// Define Schedules
+	const regularWeekSchedules: { [key: number]: TimeWindow[] } = {
+		// Sun (0) - Thurs (4)
+		0: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 19, end: 20.5 },
+		],
+		1: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 19, end: 20.5 },
+		],
+		2: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 19, end: 20.5 },
+		],
+		3: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 19, end: 20.5 },
+		],
+		4: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 19, end: 20.5 },
+		],
+		// Fri (5)
+		5: [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+			{ start: 20, end: 21.5 },
+		],
+		// Sat (6)
+		6: [
+			{ start: 11, end: 17 },
+			{ start: 20, end: 21.5 },
+		],
+	};
 
-	if (isDec27) {
-		baseDeliveryTimes.push(
-			"5pm - 6pm",
-			"6pm - 7pm",
-			"7pm - 8pm",
-			shouldIncludeDeliveryTime("8pm - 8:30pm"),
-			shouldIncludeDeliveryTime("9pm - 9:30pm")
-		);
-	} else {
-		baseDeliveryTimes.push(
-			"9am - 10am",
-			"10am - 11am",
-			"11am - 12pm",
-			"12pm - 1pm",
-			"1pm - 2pm",
-			"2pm - 3pm",
-			"3pm - 4pm",
-			"4pm - 5pm",
-			"5pm - 6pm",
-			"6pm - 7pm",
-			"7pm - 8pm",
-			shouldIncludeDeliveryTime("8pm - 8:30pm"),
-			shouldIncludeDeliveryTime("9pm - 9:30pm")
-		);
+	// Exception Dates for 2026
+	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
+		"2026-1-10": [
+			{ start: 13, end: 17 }, // 1PM-5PM
+			{ start: 20, end: 21.5 }, // 8PM-9:30PM
+		],
+		"2026-1-17": [
+			{ start: 13, end: 17 },
+			{ start: 20, end: 21.5 },
+		],
+		"2026-1-24": [
+			{ start: 13, end: 17 },
+			{ start: 20, end: 21.5 },
+		],
+	};
+
+	// Determine applicable schedule
+	let todaysSchedule = regularWeekSchedules[dayOfWeek] || [];
+	if (exceptionSchedules[dateString]) {
+		todaysSchedule = exceptionSchedules[dateString];
 	}
 
-	return baseDeliveryTimes.filter((item) => item !== "");
+	const deliveryTimes: string[] = [];
+
+	// 1. Determine "ASAP" availability
+	// Available if current time is within any of the windows
+	const isASAPAvailable = todaysSchedule.some(
+		(window) => currentTime >= window.start && currentTime < window.end
+	);
+
+	if (isASAPAvailable) {
+		deliveryTimes.push("ASAP");
+	}
+
+	// 2. Generate 1-hour windows
+	todaysSchedule.forEach((window) => {
+		// We iterate from the start hour up to the end hour
+		// We can fit a 1-hour slot if (start + 1) <= end
+		let slotStart = window.start;
+		while (slotStart + 1 <= window.end) {
+			// Logic: Show the slot if it's in the future.
+			// Specifically, if we are currently at 10:30, we can show 11am-12pm.
+			// If we are at 11:00, we typically don't show 11am-12pm for "delivery" as it's instant.
+			// However, keeping simple logic: show if the slot starts AFTER the current time (with small buffer? No, simple strict).
+			// If current time is 10:59, 11-12 is valid.
+			// If current time is 11:01, 11-12 is invalid.
+
+			if (slotStart > currentTime) {
+				const startStr = formatHour(slotStart);
+				const endStr = formatHour(slotStart + 1);
+				deliveryTimes.push(`${startStr} - ${endStr}`);
+			}
+			slotStart += 1;
+		}
+	});
+
+	return deliveryTimes;
 };
