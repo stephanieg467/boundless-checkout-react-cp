@@ -33,9 +33,7 @@ export const initCheckoutByCart =
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 			
-			// let totalOrderTaxes = checkoutDataOrder?.tax_amount ?? cartTaxAmount;
 			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
-			console.log("totalOrderTaxes =", totalOrderTaxes);
 			if (!totalOrderTaxes) {
 				totalOrderTaxes = await getOrderTaxes(items);
 			}

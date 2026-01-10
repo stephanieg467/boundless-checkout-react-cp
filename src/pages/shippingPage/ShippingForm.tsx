@@ -390,10 +390,6 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
-	console.log("Rendering ShippingForm1");
-	const {total} = useAppSelector((state) => state.app);
-	const freeShippingApplies = qualifiesForFreeShipping(total);
-
 	const {onSubmit} = useSaveShippingForm({shippingPage});
 	const {t} = useTranslation();
 
