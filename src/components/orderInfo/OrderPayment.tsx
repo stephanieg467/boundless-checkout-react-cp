@@ -2,8 +2,8 @@ import Grid from "@mui/material/Grid";
 import React from "react";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
-import { IOrderWithCustmAttr } from "../../types/Order";
+import {useTranslation} from "react-i18next";
+import {IOrderWithCustmAttr} from "../../types/Order";
 
 export default function OrderPayment({
 	order,
@@ -11,8 +11,8 @@ export default function OrderPayment({
 	order: IOrderWithCustmAttr;
 }) {
 	const paymentMethod = order.paymentMethod;
-	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
+	const {formatCurrency} = useFormatCurrency();
+	const {t} = useTranslation();
 
 	if (!paymentMethod) return null;
 

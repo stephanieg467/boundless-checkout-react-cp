@@ -1,22 +1,22 @@
 import React from "react";
-import { getProductImg } from "../../lib/images";
+import {getProductImg} from "../../lib/images";
 import currency from "currency.js";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
-import { covaProductPrice } from "../../lib/products";
-import { useAppSelector } from "../../hooks/redux";
-import { RootState } from "../../redux/store";
+import {useTranslation} from "react-i18next";
+import {covaProductPrice} from "../../lib/products";
+import {useAppSelector} from "../../hooks/redux";
+import {RootState} from "../../redux/store";
 
 export default function CartItems() {
 	const cartItems = useAppSelector(
 		(state: RootState) => state.app.items
 	);
-	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
+	const {formatCurrency} = useFormatCurrency();
+	const {t} = useTranslation();
 
 	if (!cartItems?.length) {
 		return (
-			<div style={{ padding: 15, textAlign: "center" }}>
+			<div style={{padding: 15, textAlign: "center"}}>
 				{t("cart.items.cartEmpty")}
 			</div>
 		);
@@ -34,7 +34,7 @@ export default function CartItems() {
 							<div className="bdl-cart-item__img">
 								<img
 									{...getProductImg(
-										{ path: product.HeroShotUri, width: 60, height: 60 },
+										{path: product.HeroShotUri, width: 60, height: 60},
 										200
 									)}
 								/>

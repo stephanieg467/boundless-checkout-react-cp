@@ -12,6 +12,7 @@ import {
 	TextField,
 	InputAdornment,
 	FormLabel,
+	Skeleton,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
@@ -30,7 +31,7 @@ import { setOrder, setTotal } from "../../redux/reducers/app";
 import { IOrderWithCustmAttr } from "../../types/Order";
 import { cartHasTickets } from "../../lib/products";
 import { hasShipping } from "../../lib/shipping";
-import { getDynamicDeliveryTimes } from "../../lib/deliveryTimes";
+import { useDeliveryTimes } from "../../hooks/useDeliveryTimes";
 
 // Custom validation function
 const validatePaymentForm = (
@@ -135,7 +136,13 @@ const PaymentMethods = ({
 	const isDelivery = order?.services?.some(
 		(service) => service.service_id === DELIVERY_ID
 	);
-	const deliveryTimes = getDynamicDeliveryTimes();
+
+	const {
+		isLoading: loadingDeliveryTimes,
+		isError: errorLoadingDeliveryTimes,
+		data: deliveryTimes,
+	} = useDeliveryTimes();
+	console.debug("useQuery deliveryTimes", deliveryTimes);
 
 	return (
 		<Box sx={{ mb: 2 }}>
@@ -222,11 +229,20 @@ const PaymentMethods = ({
 								{...fieldAttrs("delivery_time", formikProps)}
 							>
 								<option value=""></option>
-								{deliveryTimes.map((deliveryTime, idx) => (
-									<option key={idx} value={deliveryTime}>
-										{deliveryTime}
-									</option>
-								))}
+								{loadingDeliveryTimes ? (
+									<Skeleton variant="rectangular" width={"100%"} height={56} />
+								) : !errorLoadingDeliveryTimes && deliveryTimes ? (
+									deliveryTimes.map((deliveryTime, idx) => (
+										<option key={idx} value={deliveryTime}>
+											{deliveryTime}
+										</option>
+									))
+								) : (
+									<Typography color="error">
+										"There was an error loading delivery times. Please contant
+										info@cannabis-cottage.ca for assistance.
+									</Typography>
+								)}
 							</TextField>
 						</Box>
 					</>

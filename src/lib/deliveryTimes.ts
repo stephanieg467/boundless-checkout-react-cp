@@ -1,3 +1,5 @@
+import { DeliveryTimeSlot } from "../hooks/useDeliveryTimes";
+
 // Helper functions for dynamic delivery times
 export const getVancouverDateTime = () => {
 	const now = new Date();
@@ -58,7 +60,7 @@ export const getVancouverDateTime = () => {
 	};
 	const dayOfWeek = dayMap[weekdayName];
 
-	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day };
+	return { dayOfWeek, hourVancouver, minuteVancouver, year, month, day, weekdayName };
 };
 
 type TimeWindow = {
@@ -77,52 +79,29 @@ const getDateString = (year: number, month: number, day: number) => {
 	return `${year}-${month}-${day}`;
 };
 
-export const getDynamicDeliveryTimes = () => {
-	const { dayOfWeek, hourVancouver, minuteVancouver, year, month, day } =
+const parseTimeStringToNumber = (timeStr: string): number => {
+	const [hoursStr, minutesStr] = timeStr.split(":");
+	const hours = parseInt(hoursStr, 10);
+	const minutes = parseInt(minutesStr, 10);
+	return hours + minutes / 60;
+};
+
+export const getDynamicDeliveryTimes = (deliveryTimesData: DeliveryTimeSlot[]) => {
+	const { hourVancouver, minuteVancouver, year, month, day, weekdayName } =
 		getVancouverDateTime();
 	const currentTime = hourVancouver + minuteVancouver / 60;
 	const dateString = getDateString(year, month, day);
 
-	// Define Schedules
-	const regularWeekSchedules: { [key: number]: TimeWindow[] } = {
-		// Sun (0) - Thurs (4)
-		0: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 19, end: 20.5 },
-		],
-		1: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 19, end: 20.5 },
-		],
-		2: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 19, end: 20.5 },
-		],
-		3: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 19, end: 20.5 },
-		],
-		4: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 19, end: 20.5 },
-		],
-		// Fri (5)
-		5: [
-			{ start: 11, end: 13 },
-			{ start: 15, end: 17 },
-			{ start: 20, end: 21.5 },
-		],
-		// Sat (6)
-		6: [
-			{ start: 11, end: 17 },
-			{ start: 20, end: 21.5 },
-		],
-	};
+	// Transform deliveryTimesData to today's schedule
+	const todaysRegularSchedule: TimeWindow[] = deliveryTimesData
+		? deliveryTimesData
+				.filter((slot) => slot.days.includes(weekdayName))
+				.map((slot) => ({
+					start: parseTimeStringToNumber(slot.timeStart),
+					end: parseTimeStringToNumber(slot.timeEnd),
+				}))
+				.sort((a, b) => a.start - b.start)
+		: [];
 
 	// Exception Dates for 2026
 	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
@@ -141,7 +120,7 @@ export const getDynamicDeliveryTimes = () => {
 	};
 
 	// Determine applicable schedule
-	let todaysSchedule = regularWeekSchedules[dayOfWeek] || [];
+	let todaysSchedule = todaysRegularSchedule;
 	if (exceptionSchedules[dateString]) {
 		todaysSchedule = exceptionSchedules[dateString];
 	}

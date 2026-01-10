@@ -1,4 +1,4 @@
-import { Cart } from "../types/cart";
+import {Cart} from "../types/cart";
 
 export const getCartOrRetrieve = (): Cart | null => {
 	const cart = localStorage.getItem("cc_cart");

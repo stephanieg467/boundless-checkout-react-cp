@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { ICovaCustomer } from "../types/customer";
+import {useQuery} from "@tanstack/react-query";
+import {ICovaCustomer} from "../types/customer";
 import to from "await-to-js";
-import { IOrderWithCustmAttr } from "../types/Order";
+import {IOrderWithCustmAttr} from "../types/Order";
 
 export const useCustomer = (order?: IOrderWithCustmAttr) => {
 	const {
@@ -13,12 +13,12 @@ export const useCustomer = (order?: IOrderWithCustmAttr) => {
 		queryKey: ["customer"],
 		queryFn: async (): Promise<ICovaCustomer> => {
 			const [err, resp] = await to(
-				fetch(`/api/covaCustomer`, {
+				fetch("/api/covaCustomer", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ order: order ?? {} }),
+					body: JSON.stringify({order: order ?? {}}),
 				})
 			);
 
@@ -37,5 +37,5 @@ export const useCustomer = (order?: IOrderWithCustmAttr) => {
 		},
 	});
 
-	return { customer, isSuccess, isError, error };
+	return {customer, isSuccess, isError, error};
 };
