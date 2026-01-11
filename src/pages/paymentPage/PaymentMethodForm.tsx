@@ -225,14 +225,18 @@ const PaymentMethods = ({
 								slotProps={{
 									select: { native: true },
 								}}
-								helperText="Orders placed after hours of operation will be delivered the next day."
+								helperText={
+									deliveryTimes?.isNextDay
+										? "NOTE: Showing delivery times for tomorrow; your order will be delivered tomorrow."
+										: ""
+								}
 								{...fieldAttrs("delivery_time", formikProps)}
 							>
 								<option value=""></option>
 								{loadingDeliveryTimes ? (
 									<Skeleton variant="rectangular" width={"100%"} height={56} />
 								) : !errorLoadingDeliveryTimes && deliveryTimes ? (
-									deliveryTimes.map((deliveryTime, idx) => (
+									deliveryTimes.times.map((deliveryTime, idx) => (
 										<option key={idx} value={deliveryTime}>
 											{deliveryTime}
 										</option>

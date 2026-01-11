@@ -1,8 +1,7 @@
 import { DeliveryTimeSlot } from "../hooks/useDeliveryTimes";
 
 // Helper functions for dynamic delivery times
-export const getVancouverDateTime = () => {
-	const now = new Date();
+export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 	const options: Intl.DateTimeFormatOptions = {
 		timeZone: "America/Vancouver",
 		hour: "numeric", // Get hour in numeric format (e.g., "14")
@@ -14,7 +13,7 @@ export const getVancouverDateTime = () => {
 		hour12: false, // Use 24-hour format for the hour
 	};
 	const formatter = new Intl.DateTimeFormat("en-CA", options);
-	const parts = formatter.formatToParts(now);
+	const parts = formatter.formatToParts(baseDate);
 
 	let hourVancouver = 0;
 	let minuteVancouver = 0;
@@ -68,10 +67,13 @@ type TimeWindow = {
 	end: number; // Hour in 24h format, can be fractional (e.g., 20.5 for 8:30pm)
 };
 
-const formatHour = (hour: number): string => {
+const formatTime = (time: number): string => {
+	const hour = Math.floor(time);
+	const minutes = Math.round((time - hour) * 60);
 	const period = hour >= 12 ? "pm" : "am";
 	const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-	return `${displayHour}${period}`;
+	const minutesStr = minutes > 0 ? `:${minutes}` : "";
+	return `${displayHour}${minutesStr}${period}`;
 };
 
 // Returns date string "YYYY-MM-DD"
@@ -86,14 +88,42 @@ const parseTimeStringToNumber = (timeStr: string): number => {
 	return hours + minutes / 60;
 };
 
-export const getDynamicDeliveryTimes = (deliveryTimesData: DeliveryTimeSlot[]) => {
-	const { hourVancouver, minuteVancouver, year, month, day, weekdayName } =
-		getVancouverDateTime();
+export const getDynamicDeliveryTimes = (
+	deliveryTimesData: DeliveryTimeSlot[]
+): { times: string[]; isNextDay: boolean } => {
+	const now = new Date();
+	const {
+		hourVancouver,
+		minuteVancouver,
+	} = getVancouverDateTime(now);
 	const currentTime = hourVancouver + minuteVancouver / 60;
+
+	let deliveryTimes = calculateSlotsForDate(now, deliveryTimesData, currentTime);
+
+	if (deliveryTimes.length > 0) {
+		return { times: deliveryTimes, isNextDay: false };
+	}
+
+	// If no slots today, try tomorrow
+	const tomorrow = new Date(now);
+	tomorrow.setDate(tomorrow.getDate() + 1);
+
+	// For tomorrow, we don't care about currentTime (it's in the future)
+	deliveryTimes = calculateSlotsForDate(tomorrow, deliveryTimesData, -1);
+
+	return { times: deliveryTimes, isNextDay: true };
+};
+
+const calculateSlotsForDate = (
+	date: Date,
+	deliveryTimesData: DeliveryTimeSlot[],
+	currentTime: number
+): string[] => {
+	const { year, month, day, weekdayName } = getVancouverDateTime(date);
 	const dateString = getDateString(year, month, day);
 
 	// Transform deliveryTimesData to today's schedule
-	const todaysRegularSchedule: TimeWindow[] = deliveryTimesData
+	const regularSchedule: TimeWindow[] = deliveryTimesData
 		? deliveryTimesData
 				.filter((slot) => slot.days.includes(weekdayName))
 				.map((slot) => ({
@@ -120,16 +150,16 @@ export const getDynamicDeliveryTimes = (deliveryTimesData: DeliveryTimeSlot[]) =
 	};
 
 	// Determine applicable schedule
-	let todaysSchedule = todaysRegularSchedule;
+	let schedule = regularSchedule;
 	if (exceptionSchedules[dateString]) {
-		todaysSchedule = exceptionSchedules[dateString];
+		schedule = exceptionSchedules[dateString];
 	}
 
 	const deliveryTimes: string[] = [];
 
 	// 1. Determine "ASAP" availability
 	// Available if current time is within any of the windows
-	const isASAPAvailable = todaysSchedule.some(
+	const isASAPAvailable = schedule.some(
 		(window) => currentTime >= window.start && currentTime < window.end
 	);
 
@@ -138,21 +168,21 @@ export const getDynamicDeliveryTimes = (deliveryTimesData: DeliveryTimeSlot[]) =
 	}
 
 	// 2. Generate 1-hour windows
-	todaysSchedule.forEach((window) => {
+	schedule.forEach((window) => {
 		// We iterate from the start hour up to the end hour
 		// We can fit a 1-hour slot if (start + 1) <= end
 		let slotStart = window.start;
 		while (slotStart + 1 <= window.end) {
-			// Logic: Show the slot if it's in the future.
-			// Specifically, if we are currently at 10:30, we can show 11am-12pm.
-			// If we are at 11:00, we typically don't show 11am-12pm for "delivery" as it's instant.
-			// However, keeping simple logic: show if the slot starts AFTER the current time (with small buffer? No, simple strict).
-			// If current time is 10:59, 11-12 is valid.
-			// If current time is 11:01, 11-12 is invalid.
-
 			if (slotStart > currentTime) {
-				const startStr = formatHour(slotStart);
-				const endStr = formatHour(slotStart + 1);
+				let slotEnd = slotStart + 1;
+
+				// Lengthen the last delivery window by up to 30 min if it matches window.end
+				if (slotEnd < window.end && window.end - slotEnd <= 0.51) {
+					slotEnd = window.end;
+				}
+
+				const startStr = formatTime(slotStart);
+				const endStr = formatTime(slotEnd);
 				deliveryTimes.push(`${startStr} - ${endStr}`);
 			}
 			slotStart += 1;
