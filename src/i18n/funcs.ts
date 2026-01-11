@@ -1,6 +1,6 @@
-import i18n, {InitOptions} from 'i18next';
-import {initReactI18next} from 'react-i18next';
-import en from './en.json';
+import i18n, {InitOptions} from "i18next";
+import {initReactI18next} from "react-i18next";
+import en from "./en.json";
 
 export const initI18n = () => {
 	i18n
@@ -8,8 +8,8 @@ export const initI18n = () => {
 	;
 
 	const options: InitOptions = {
-		lng: 'en',
-		fallbackLng: 'en',
+		lng: "en",
+		fallbackLng: "en",
 		interpolation: {
 			escapeValue: false
 		},

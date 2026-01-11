@@ -1,11 +1,11 @@
-import {createSlice, PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
 const initialState: IXHRState = {
 	promises: []
 };
 
 const xhrSlice = createSlice({
-	name: 'xhr',
+	name: "xhr",
 	initialState,
 	reducers: {
 		pushPromise(state, action: PayloadAction<{promise: Promise<any>}>) {

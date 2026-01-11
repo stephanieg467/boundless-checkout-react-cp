@@ -1,11 +1,11 @@
-import {TCheckoutStep} from 'boundless-api-client';
+import {TCheckoutStep} from "boundless-api-client";
 
 const checkoutStepRoutes = {
-	[TCheckoutStep.contactInfo]: '/info',
-	[TCheckoutStep.shippingAddress]: '/shipping-address',
-	[TCheckoutStep.shippingMethod]: '/', //FIXME
-	[TCheckoutStep.paymentMethod]: '/payment',
-	[TCheckoutStep.thankYou]: '/', //FIXME
+	[TCheckoutStep.contactInfo]: "/info",
+	[TCheckoutStep.shippingAddress]: "/shipping-address",
+	[TCheckoutStep.shippingMethod]: "/", //FIXME
+	[TCheckoutStep.paymentMethod]: "/payment",
+	[TCheckoutStep.thankYou]: "/", //FIXME
 };
 
 

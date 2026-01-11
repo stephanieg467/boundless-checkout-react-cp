@@ -1,13 +1,13 @@
-import React, { MouseEvent } from "react";
+import React, {MouseEvent} from "react";
 import Container from "@mui/material/Container";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import { useAppSelector } from "../hooks/redux";
-import { TClickedElement } from "../lib/elementEvents";
-import { useTranslation } from "react-i18next";
+import {useAppSelector} from "../hooks/redux";
+import {TClickedElement} from "../lib/elementEvents";
+import {useTranslation} from "react-i18next";
 
 export default function Header() {
-	const { onHide } = useAppSelector((state) => state.app);
-	const { t } = useTranslation();
+	const {onHide} = useAppSelector((state) => state.app);
+	const {t} = useTranslation();
 
 	const onBackToCartClicked = (e: MouseEvent<HTMLAnchorElement>) => {
 		e.preventDefault();
@@ -46,7 +46,7 @@ export default function Header() {
 }
 
 export const Logo = () => {
-	const { logo } = useAppSelector((state) => state.app);
+	const {logo} = useAppSelector((state) => state.app);
 
 	const textLogoClass = "bdl-header__text-logo";
 	if (logo) {

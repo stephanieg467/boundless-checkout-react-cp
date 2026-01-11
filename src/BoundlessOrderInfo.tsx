@@ -1,18 +1,18 @@
-import React, { useEffect } from "react";
+import React, {useEffect} from "react";
 import Paper from "@mui/material/Paper";
 import OrderItems from "./components/orderInfo/OrderItems";
 import Typography from "@mui/material/Typography";
 import Loading from "./components/Loading";
-import { store } from "./redux/store";
-import { Provider } from "react-redux";
-import { useAppSelector } from "./hooks/redux";
+import {store} from "./redux/store";
+import {Provider} from "react-redux";
+import {useAppSelector} from "./hooks/redux";
 import {
 	setIsInited,
 } from "./redux/reducers/app";
-import { useTranslation } from "react-i18next";
-import { IOrderWithCustmAttr } from "./types/Order";
-import { getCheckoutData } from "./hooks/checkoutData";
-import { PAY_IN_STORE_PAYMENT_METHOD, SELF_PICKUP_ID } from "./constants";
+import {useTranslation} from "react-i18next";
+import {IOrderWithCustmAttr} from "./types/Order";
+import {getCheckoutData} from "./hooks/checkoutData";
+import {PAY_IN_STORE_PAYMENT_METHOD, SELF_PICKUP_ID} from "./constants";
 
 export default function BoundlessOrderInfo({
 	...restProps
@@ -42,7 +42,7 @@ const OrderInfo = ({
 	const isInited = useAppSelector((state) => state.app.isInited);
 	const checkoutData = getCheckoutData();
 	const {order, total, items} = checkoutData ?? {};
-	const { t } = useTranslation();
+	const {t} = useTranslation();
 	const isPayInStore = order?.services?.some(
 			(service) => service.service_id === SELF_PICKUP_ID
 		) && order.payment_method_id == PAY_IN_STORE_PAYMENT_METHOD;
@@ -54,10 +54,10 @@ const OrderInfo = ({
 			{showStatus && (
 				<div>
 					<Typography variant="subtitle1" gutterBottom>
-						{t("orderInfo.orderId", { id: order.id })}
+						{t("orderInfo.orderId", {id: order.id})}
 					</Typography>
 					<Typography variant="subtitle1" gutterBottom>
-						{t("orderInfo.orderStatus", { status: "Submitted" })}
+						{t("orderInfo.orderStatus", {status: "Submitted"})}
 					</Typography>
 					{isPayInStore && (
 						<Typography variant="subtitle1" gutterBottom>

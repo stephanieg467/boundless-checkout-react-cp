@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Form, Formik, FormikHelpers, FormikProps } from "formik";
-import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import React, {useEffect} from "react";
+import {Form, Formik, FormikHelpers, FormikProps} from "formik";
+import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import {
 	ICheckoutStepper,
 	TCheckoutStep,
@@ -10,26 +10,25 @@ import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import dayjs from "dayjs";
-import { fieldAttrs } from "../lib/formUtils";
+import {fieldAttrs} from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
-import { addFilledStep, setOrdersCustomer } from "../redux/reducers/app";
-import { useNavigate } from "react-router-dom";
+import {addFilledStep, setOrdersCustomer} from "../redux/reducers/app";
+import {useNavigate} from "react-router";
 import Typography from "@mui/material/Typography";
-import { LoginFormView } from "./LoginForm";
 import clsx from "clsx";
-import { useTranslation } from "react-i18next";
-import { v4 } from "uuid";
+import {useTranslation} from "react-i18next";
+import {v4} from "uuid";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../hooks/checkoutData";
-import { IOrderWithCustmAttr } from "../types/Order";
-import { PhoneInput } from "./PhoneInput";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import {IOrderWithCustmAttr} from "../types/Order";
+import {PhoneInput} from "./PhoneInput";
+import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
+import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
+import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -95,22 +94,18 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 	return errors;
 };
 
-export function ContactFormView({
-	setViewMode,
-}: {
-	setViewMode: (mode: TViewMode) => void;
-}) {
-	const { order, stepper } = useAppSelector((state) => state.app);
-	const { loggedInCustomer } = useAppSelector((state) => state.user);
-	const { t } = useTranslation();
+export function ContactFormView() {
+	const {order, stepper} = useAppSelector((state) => state.app);
+	const {loggedInCustomer} = useAppSelector((state) => state.user);
+	const {t} = useTranslation();
 
 	useEffect(() => {
 		document.title = t("contactForm.pageTitle");
 	}, []); //eslint-disable-line
 
 	const fieldsList = getFieldsList();
-	const { onSubmit } = useSaveContactInfo();
-	const excludedFields = fieldsList.map(({ type }) => type);
+	const {onSubmit} = useSaveContactInfo();
+	const excludedFields = fieldsList.map(({type}) => type);
 
 	return (
 		<Formik<IContactInformationFormValues>
@@ -132,7 +127,7 @@ export function ContactFormView({
 							errors={formikProps.errors}
 						/>
 					)}
-					<Typography variant="h5" sx={{ mb: 2 }}>
+					<Typography variant="h5" sx={{mb: 2}}>
 						{t("contactForm.pageHeader")}
 					</Typography>
 					{/* {!loggedInCustomer && (
@@ -154,9 +149,9 @@ export function ContactFormView({
 							</Button>
 						</Typography>
 					)} */}
-					<Grid container spacing={{ xs: 2, md: 3 }}>
-						{fieldsList.map(({ type, required }, i) => (
-							<Grid size={{ xs: 12, md: 6 }} key={i}>
+					<Grid container spacing={{xs: 2, md: 3}}>
+						{fieldsList.map(({type, required}, i) => (
+							<Grid size={{xs: 12, md: 6}} key={i}>
 								{type === "email" && (
 									<TextField
 										label={t("contactForm.email")}
@@ -256,7 +251,7 @@ export function ContactFormView({
 								/>
 							</Grid>
 						)} */}
-						<Grid size={{ xs: 12 }} sx={{ textAlign: "right" }}>
+						<Grid size={{xs: 12}} sx={{textAlign: "right"}}>
 							<NextStepBtn
 								stepper={stepper!}
 								isSubmitting={formikProps.isSubmitting}
@@ -276,7 +271,7 @@ const NextStepBtn = ({
 	stepper: ICheckoutStepper;
 	isSubmitting: boolean;
 }) => {
-	const { t } = useTranslation();
+	const {t} = useTranslation();
 
 	if (stepper.steps.includes(TCheckoutStep.shippingAddress)) {
 		return (
@@ -308,17 +303,17 @@ const NextStepBtn = ({
 };
 
 const useSaveContactInfo = () => {
-	const { stepper } = useAppSelector((state) => state.app);
-	const { order, total } = getCheckoutData() || {};
+	const {stepper} = useAppSelector((state) => state.app);
+	const {order, total} = getCheckoutData() || {};
 
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
 	const onSubmit = (
 		values: IContactInformationFormValues,
-		{ setSubmitting, setErrors }: FormikHelpers<IContactInformationFormValues>
+		{setSubmitting, setErrors}: FormikHelpers<IContactInformationFormValues>
 	) => {
-		const { email, first_name, last_name, phone, dob } = values;
+		const {email, first_name, last_name, phone, dob} = values;
 
 		// if (customer && authToken) {
 		// 	dispatch(setLoggedInCustomer(customer, authToken));
@@ -344,14 +339,14 @@ const useSaveContactInfo = () => {
 			total: total,
 		});
 		dispatch(setOrdersCustomer(customer));
-		dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
+		dispatch(addFilledStep({step: TCheckoutStep.contactInfo}));
 
 		setSubmitting(false);
 
 		const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
 			? "/shipping-address"
 			: "/payment";
-		navigate(nextUrl, { replace: true });
+		navigate(nextUrl, {replace: true});
 	};
 
 	return {
@@ -371,7 +366,7 @@ const getFieldsList = () => {
 			//@ts-ignore
 			show: true,
 		}))
-		.filter(({ show }) => show);
+		.filter(({show}) => show);
 
 	//required fields should be first:
 	fields.sort((a, b) => {
@@ -427,11 +422,5 @@ const getInitialValues = (
 };
 
 export default function ContactInformationForm() {
-	const [viewMode, setViewMode] = useState<TViewMode>(TViewMode.contact);
-
-	if (viewMode === TViewMode.login) {
-		return <LoginFormView setViewMode={setViewMode} />;
-	} else {
-		return <ContactFormView setViewMode={setViewMode} />;
-	}
+	return <ContactFormView />;
 }
