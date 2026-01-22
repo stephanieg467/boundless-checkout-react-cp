@@ -126,17 +126,22 @@ export const getDynamicDeliveryTimes = () => {
 
 	// Exception Dates for 2026
 	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
-		"2026-1-10": [
-			{ start: 13, end: 17 }, // 1PM-5PM
-			{ start: 20, end: 21.5 }, // 8PM-9:30PM
-		],
-		"2026-1-17": [
-			{ start: 13, end: 17 },
-			{ start: 20, end: 21.5 },
+		"2026-1-22": [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 16 },
 		],
 		"2026-1-24": [
 			{ start: 13, end: 17 },
-			{ start: 20, end: 21.5 },
+			{ start: 20, end: 21 },
+		],
+		"2026-1-26": [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 17 },
+		],
+		"2026-1-27": [
+			{ start: 11, end: 13 },
+			{ start: 15, end: 16 },
+			{ start: 19, end: 20.5 },
 		],
 	};
 
