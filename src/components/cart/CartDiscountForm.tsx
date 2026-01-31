@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Formik, FormikHelpers } from "formik";
+import {Form, Formik, FormikHelpers} from "formik";
 import {
 	Button,
 	FormControl,
@@ -9,36 +9,36 @@ import {
 	InputLabel,
 	Skeleton,
 } from "@mui/material";
-import { apiErrors2Formik, fieldAttrs } from "../../lib/formUtils";
-import { useAppDispatch } from "../../hooks/redux";
-import { addPromise } from "../../redux/actions/xhr";
-import { setOrder, setTotal } from "../../redux/reducers/app";
-import { useTranslation } from "react-i18next";
-import { CleanedCovaProduct, Coupon } from "../../types/cart";
+import {apiErrors2Formik, fieldAttrs} from "../../lib/formUtils";
+import {useAppDispatch} from "../../hooks/redux";
+import {addPromise} from "../../redux/actions/xhr";
+import {setOrder, setTotal} from "../../redux/reducers/app";
+import {useTranslation} from "react-i18next";
+import {CleanedCovaProduct, Coupon} from "../../types/cart";
 import to from "await-to-js";
-import { IOrderWithCustmAttr } from "../../types/Order";
+import {IOrderWithCustmAttr} from "../../types/Order";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import { getOrderTaxes } from "../../lib/taxes";
+import {getOrderTaxes} from "../../lib/taxes";
 import {
 	cartPromotionItems,
 	covaProductPrice,
 	isPromotionItem,
 } from "../../lib/products";
-import { getCartOrRetrieve, setCart } from "../../hooks/getCartOrRetrieve";
-import { ITotal } from "boundless-api-client";
-import { useQuery } from "@tanstack/react-query";
-import { useCustomer } from "../../hooks/useCustomer";
+import {getCartOrRetrieve, setCart} from "../../hooks/getCartOrRetrieve";
+import {ITotal} from "boundless-api-client";
+import {useQuery} from "@tanstack/react-query";
+import {useCustomer} from "../../hooks/useCustomer";
 
 export default function CartDiscountForm() {
 	const dispatch = useAppDispatch();
-	const { t } = useTranslation();
-	const { order, total } = getCheckoutData() || {};
+	const {t} = useTranslation();
+	const {order, total} = getCheckoutData() || {};
 	const cart = getCartOrRetrieve();
 
-	const { customer, isSuccess: isCustomerSuccess } = useCustomer(order);
+	const {customer, isSuccess: isCustomerSuccess} = useCustomer(order);
 
 	const {
 		isSuccess,
@@ -47,9 +47,11 @@ export default function CartDiscountForm() {
 		error,
 	} = useQuery({
 		queryKey: ["coupons"],
+		enabled: isCustomerSuccess && customer !== undefined,
+		staleTime: 900000, // 15 minutes
 		queryFn: async (): Promise<Coupon[]> => {
 			const [err, resp] = await to(
-				fetch(`/api/covaCpn`, {
+				fetch("/api/covaCpn", {
 					method: "GET",
 					headers: {
 						"Content-Type": "application/json",
@@ -91,7 +93,7 @@ export default function CartDiscountForm() {
 		},
 	});
 
-	if (cart?.items?.length === 1 && isPromotionItem(cart.items[0].product))
+	if (!cart || (cart.items?.length === 1 && isPromotionItem(cart.items[0].product)))
 		return null;
 
 	if (isError) {
@@ -135,7 +137,7 @@ export default function CartDiscountForm() {
 
 	const onSubmit = (
 		values: IDiscountFormValues,
-		{ setSubmitting, setErrors }: FormikHelpers<IDiscountFormValues>
+		{setSubmitting, setErrors}: FormikHelpers<IDiscountFormValues>
 	) => {
 		if (!order || !total || !cart || !cart.items) return;
 		const code = values.code.trim();
@@ -143,7 +145,7 @@ export default function CartDiscountForm() {
 			(cpn) => cpn.code.toLowerCase() === code.toLowerCase()
 		);
 		if (!coupon) {
-			setErrors({ code: "Invalid coupon code" });
+			setErrors({code: "Invalid coupon code"});
 			setSubmitting(false);
 			return;
 		}
@@ -278,7 +280,7 @@ export default function CartDiscountForm() {
 					dispatch(setTotal(updatedTotal));
 				}
 			})
-			.catch(({ response: { data } }) => {
+			.catch(({response: {data}}) => {
 				setErrors(apiErrors2Formik(data));
 			})
 			.finally(() => setSubmitting(false));
@@ -288,13 +290,13 @@ export default function CartDiscountForm() {
 
 	return (
 		<Formik
-			initialValues={{ code: "" }}
+			initialValues={{code: ""}}
 			onSubmit={onSubmit}
 			validate={validateCouponForm}
 			validateOnChange={false}
 		>
 			{(formikProps) => {
-				const { helperText, error, ...restProps } =
+				const {helperText, error, ...restProps} =
 					fieldAttrs<IDiscountFormValues>("code", formikProps);
 				return (
 					<Form className={"bdl-cart__discount-form"}>

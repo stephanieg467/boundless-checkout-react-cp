@@ -1,5 +1,5 @@
-import { ICustomer, IOrderDiscount, IOrderService, IOrderStatus, IPaymentMethod, ITotal, TPublishingStatus } from "boundless-api-client";
-import { CovaCartItem } from "./cart";
+import {ICustomer, IOrderDiscount, IOrderService, IOrderStatus, IPaymentMethod, ITotal, TPublishingStatus} from "boundless-api-client";
+import {CovaCartItem} from "./cart";
 
 
 export interface IOrderWithCustmAttr {
@@ -27,7 +27,7 @@ export interface IOrderWithCustmAttr {
 	delivery_time?: string;
 }
 
-export interface ICovaCustomer extends Omit<ICustomer, 'receive_marketing_info'> {
+export interface ICovaCustomer extends Omit<ICustomer, "receive_marketing_info"> {
 	dob?: string;
 }
 

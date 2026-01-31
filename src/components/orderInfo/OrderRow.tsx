@@ -1,32 +1,33 @@
 import React from "react";
 import currency from "currency.js";
 import Grid from "@mui/material/Grid";
-import { getProductImg } from "../../lib/images";
+import {getProductImg} from "../../lib/images";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
-import { CovaCartItem } from "../../types/cart";
-import { covaProductPrice } from "../../lib/products";
+import {useTranslation} from "react-i18next";
+import {CovaCartItem} from "../../types/cart";
+import {covaProductPrice} from "../../lib/products";
 
-export default function OrderRow({ item }: { item: CovaCartItem }) {
-	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
+export default function OrderRow({item}: { item: CovaCartItem }) {
+	const {formatCurrency} = useFormatCurrency();
+	const {t} = useTranslation();
 	const product = item.product;
 	const price = covaProductPrice(product);
 
 	return (
-        <>
-            <Grid className="bdl-order-item" container>
+		<>
+			<Grid className="bdl-order-item" container>
 				<Grid
-                    className="bdl-order-item__description-col"
-                    size={{
-                        sm: 6,
-                        xs: 12
-                    }}>
+					className="bdl-order-item__description-col"
+					size={{
+						sm: 6,
+						xs: 12,
+					}}
+				>
 					{product.HeroShotUri ? (
 						<div className="bdl-order-item__img">
 							<img
 								{...getProductImg(
-									{ path: product.HeroShotUri, width: 60, height: 60 },
+									{path: product.HeroShotUri, width: 60, height: 60},
 									200
 								)}
 							/>
@@ -48,49 +49,47 @@ export default function OrderRow({ item }: { item: CovaCartItem }) {
 					</div>
 				</Grid>
 				<Grid
-                    className="bdl-order-item__col"
-                    size={{
-                        sm: 2,
-                        xs: 12
-                    }}>
+					className="bdl-order-item__col"
+					size={{
+						sm: 2,
+						xs: 12,
+					}}
+				>
 					<span className="bdl-order-items__label">
 						<strong>Price: </strong>
 					</span>
 					<span className="bdl-order-items__value">
-						{price &&
-							formatCurrency(price)}
+						{price && formatCurrency(price)}
 					</span>
 				</Grid>
 				<Grid
-                    className="bdl-order-item__col"
-                    size={{
-                        sm: 2,
-                        xs: 12
-                    }}>
+					className="bdl-order-item__col"
+					size={{
+						sm: 2,
+						xs: 12,
+					}}
+				>
 					<span className="bdl-order-items__label">
 						<strong>{t("orderInfo.row.qty")} </strong>
 					</span>
 					<span className="bdl-order-items__value">{item.qty}</span>
 				</Grid>
 				<Grid
-                    className="bdl-order-item__col"
-                    size={{
-                        sm: 2,
-                        xs: 12
-                    }}>
+					className="bdl-order-item__col"
+					size={{
+						sm: 2,
+						xs: 12,
+					}}
+				>
 					<span className="bdl-order-items__label">
 						<strong>{t("orderInfo.row.total")} </strong>
 					</span>
 					<span className="bdl-order-items__value">
 						{price &&
-							formatCurrency(
-								currency(price)
-									.multiply(item.qty)
-									.toString()
-							)}
+							formatCurrency(currency(price).multiply(item.qty).toString())}
 					</span>
 				</Grid>
 			</Grid>
-        </>
-    );
+		</>
+	);
 }

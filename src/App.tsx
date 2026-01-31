@@ -1,11 +1,11 @@
-import React from 'react';
-import {Route, Routes} from 'react-router-dom';
-import ContactInfoPage from './pages/ContactInfoPage';
-import ShippingPage from './pages/ShippingPage';
-import {useAppSelector} from './hooks/redux';
-import PaymentPage from './pages/PaymentPage';
-import ErrorPage from './pages/ErrorPage';
-import IndexPage from './pages/IndexPage';
+import React from "react";
+import {Route, Routes} from "react-router";
+import ContactInfoPage from "./pages/ContactInfoPage";
+import ShippingPage from "./pages/ShippingPage";
+import {useAppSelector} from "./hooks/redux";
+import PaymentPage from "./pages/PaymentPage";
+import ErrorPage from "./pages/ErrorPage";
+import IndexPage from "./pages/IndexPage";
 
 export default function CheckoutApp() {
 	const {globalError} = useAppSelector((state) => state.app);
@@ -20,7 +20,7 @@ export default function CheckoutApp() {
 			<Route path="/shipping-address" element={<ShippingPage/>} />
 			<Route path="/payment" element={<PaymentPage />} />
 			<Route path="/" element={<IndexPage />} />
-			<Route path="*" element={<ErrorPage error={'Page not found'} />} />
+			<Route path="*" element={<ErrorPage error={"Page not found"} />} />
 		</Routes>
 	);
 }

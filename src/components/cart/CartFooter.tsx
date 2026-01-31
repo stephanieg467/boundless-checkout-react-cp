@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import clsx from "clsx";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
-import { hasShipping } from "../../lib/shipping";
-import { getCheckoutData } from "../../hooks/checkoutData";
-import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
+import {useTranslation} from "react-i18next";
+import {hasShipping} from "../../lib/shipping";
+import {getCheckoutData} from "../../hooks/checkoutData";
+import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
 
-export default function CartFooter({ open }: ICartFooterProps) {
-	let { order, total } = getCheckoutData() || {};
+export default function CartFooter({open}: ICartFooterProps) {
+	const {order, total} = getCheckoutData() || {};
 	const cart = getCartOrRetrieve();
 	
-	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
+	const {formatCurrency} = useFormatCurrency();
+	const {t} = useTranslation();
 	const [totalPrice, setTotalPrice] = useState(0);
 	const [totalTaxAmount, setTotalTaxAmount] = useState(0);
 
@@ -69,13 +69,13 @@ export default function CartFooter({ open }: ICartFooterProps) {
 	const isDelivery = order?.services?.[0]?.serviceDelivery?.delivery?.title === "Delivery";
 
 	return (
-		<div className={clsx("bdl-cart__footer", { open })}>
+		<div className={clsx("bdl-cart__footer", {open})}>
 			{hasDiscount && (
 				<div className="bdl-cart__footer-row">
 					<h5 className="bdl-cart__footer-title">
-						{t("cart.footer.couponTitle", { amount: getDiscountAmount() })}
+						{t("cart.footer.couponTitle", {amount: getDiscountAmount()})}
 						<span className="bdl-cart__footer-value">
-							{" "}-{formatCurrency(total.discount)}
+							{" "}-{formatCurrency(total?.discount)}
 						</span>
 					</h5>
 				</div>
@@ -98,10 +98,10 @@ export default function CartFooter({ open }: ICartFooterProps) {
 						<span className="bdl-cart__footer-value">
 							{Number(total.itemsSubTotal.price) >= 100 ? (
 								<>
-									<span style={{ textDecoration: 'line-through', color: '#999' }}>
+									<span style={{textDecoration: "line-through", color: "#999"}}>
 										{formatCurrency(isDelivery ? "4.00" : "0.00")}
 									</span>
-									<span style={{ color: '#4a7c4d', fontWeight: 'bold', marginLeft: '8px' }}>
+									<span style={{color: "#4a7c4d", fontWeight: "bold", marginLeft: "8px"}}>
 										FREE
 									</span>
 								</>

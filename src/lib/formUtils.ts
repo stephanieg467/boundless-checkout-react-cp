@@ -1,15 +1,15 @@
-import {FormikProps, FormikValues} from 'formik';
-import {FormikHandlers} from 'formik/dist/types';
+import {FormikProps, FormikValues} from "formik";
+import {FormikHandlers} from "formik/dist/types";
 
 export interface IFieldAttrs {
 	name: string;
 	error: boolean;
 	value: string;
-	onChange: FormikHandlers['handleChange'];
+	onChange: FormikHandlers["handleChange"];
 	helperText?: string;
 }
 
-export function fieldAttrs<V extends FormikValues>(field: string, formikProps: FormikProps<V>, helperText: string = ''): IFieldAttrs {
+export function fieldAttrs<V extends FormikValues>(field: string, formikProps: FormikProps<V>, helperText: string = ""): IFieldAttrs {
 	const {errors, values, handleChange} = formikProps;
 
 	let error = false;
@@ -21,7 +21,7 @@ export function fieldAttrs<V extends FormikValues>(field: string, formikProps: F
 	const out: IFieldAttrs = {
 		name: field,
 		error,
-		value: '',
+		value: "",
 		onChange: handleChange
 	};
 
@@ -37,7 +37,7 @@ export function fieldAttrs<V extends FormikValues>(field: string, formikProps: F
 
 interface ICheckAttrs {
 	name: string;
-	onChange: FormikHandlers['handleChange'];
+	onChange: FormikHandlers["handleChange"];
 	checked?: boolean;
 }
 

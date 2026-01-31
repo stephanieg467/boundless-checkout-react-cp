@@ -6,10 +6,10 @@ import OrderRow from "./OrderRow";
 import OrderShipping from "./OrderShipping";
 import OrderTotalRow from "./OrderTotalRow";
 import OrderInfo from "./OrderInfo";
-import { hasShipping } from "../../lib/shipping";
-import { IOrderWithCustmAttr } from "../../types/Order";
-import { CovaCartItem } from "../../types/cart";
-import { ITotal } from "boundless-api-client";
+import {hasShipping} from "../../lib/shipping";
+import {IOrderWithCustmAttr} from "../../types/Order";
+import {CovaCartItem} from "../../types/cart";
+import {ITotal} from "boundless-api-client";
 
 export default function OrderItems({
 	order,
@@ -20,7 +20,7 @@ export default function OrderItems({
 	order: IOrderWithCustmAttr;
 	items: CovaCartItem[];
 }) {
-	const { total_price } = order;
+	const {total_price} = order;
 	const hasTaxes = order.tax_amount !== null;
 	const showSubtotal =
 		order.services?.length ||

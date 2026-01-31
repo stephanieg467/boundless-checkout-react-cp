@@ -14,8 +14,8 @@ import {
 } from "body-scroll-lock";
 import "../styles/styles.scss";
 import CheckoutApp from "./App";
-import { Provider } from "react-redux";
-import { store } from "./redux/store";
+import {Provider} from "react-redux";
+import {store} from "./redux/store";
 import {
 	setBasicProps,
 	hideCheckout,
@@ -23,10 +23,10 @@ import {
 	TOnThankYouPage,
 	TOnCheckoutInited,
 } from "./redux/reducers/app";
-import { BrowserRouter } from "react-router-dom";
-import { useAppSelector } from "./hooks/redux";
-import { TClickedElement } from "./lib/elementEvents";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {BrowserRouter} from "react-router";
+import {useAppSelector} from "./hooks/redux";
+import {TClickedElement} from "./lib/elementEvents";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 export default class BoundlessCheckout extends Component<
 	IBoundlessCheckoutProps,
@@ -50,7 +50,7 @@ export default class BoundlessCheckout extends Component<
 			document.body.appendChild(this.el);
 		}
 
-		const { onHide, onThankYouPage, cartId, basename, logo, onCheckoutInited } =
+		const {onHide, onThankYouPage, cartId, basename, logo, onCheckoutInited} =
 			this.props;
 		store.dispatch(
 			setBasicProps({
@@ -95,7 +95,7 @@ export default class BoundlessCheckout extends Component<
 	}
 
 	render(): ReactPortal | null {
-		const { show, basename } = this.props;
+		const {show, basename} = this.props;
 
 		if (!this.el) {
 			return null;
@@ -104,7 +104,7 @@ export default class BoundlessCheckout extends Component<
 		const queryClient = new QueryClient();
 		return ReactDOM.createPortal(
 			<div
-				className={clsx("bdl-checkout", { "bdl-checkout_show": show })}
+				className={clsx("bdl-checkout", {"bdl-checkout_show": show})}
 				ref={this.rootElRef}
 			>
 				<React.StrictMode>
@@ -148,7 +148,7 @@ const WrappedApp = () => {
 				navigate('/', {replace: true});
 			}
 		}*/
-	}, [show]); //eslint-disable-line
+	}, [show]);  
 
 	return show ? <CheckoutApp /> : null;
 };

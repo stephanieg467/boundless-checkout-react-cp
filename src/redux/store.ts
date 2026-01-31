@@ -1,7 +1,7 @@
-import {configureStore, ThunkAction, Action} from '@reduxjs/toolkit';
-import appReducers from './reducers/app';
-import xhrReducers from './reducers/xhr';
-import userReducers from './reducers/user';
+import {configureStore, ThunkAction, Action} from "@reduxjs/toolkit";
+import appReducers from "./reducers/app";
+import xhrReducers from "./reducers/xhr";
+import userReducers from "./reducers/user";
 
 export const store = configureStore({
 	reducer: {
@@ -13,20 +13,20 @@ export const store = configureStore({
 		getDefaultMiddleware({
 			serializableCheck: {
 				ignoredActionPaths: [
-					'payload.onHide',
-					'payload.onThankYouPage',
-					'payload.api',
-					'payload.logo',
-					'payload.promise',
-					'payload.onCheckoutInited'
+					"payload.onHide",
+					"payload.onThankYouPage",
+					"payload.api",
+					"payload.logo",
+					"payload.promise",
+					"payload.onCheckoutInited"
 				],
 				ignoredPaths: [
-					'app.onHide',
-					'app.api',
-					'app.logo',
-					'app.onThankYouPage',
-					'xhr.promises',
-					'app.onCheckoutInited'
+					"app.onHide",
+					"app.api",
+					"app.logo",
+					"app.onThankYouPage",
+					"xhr.promises",
+					"app.onCheckoutInited"
 				],
 			},
 		})

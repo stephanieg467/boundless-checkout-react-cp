@@ -1,5 +1,5 @@
-import { ICheckoutData } from "../types/Order";
-import { getCartOrRetrieve } from "./getCartOrRetrieve";
+import {ICheckoutData} from "../types/Order";
+import {getCartOrRetrieve} from "./getCartOrRetrieve";
 
 export const getCheckoutData = (): ICheckoutData | null => {
 	const cc_checkout_data = localStorage.getItem("cc_checkout_data");
@@ -12,10 +12,10 @@ export const getCheckoutData = (): ICheckoutData | null => {
 
 export const setLocalStorageCheckoutData = (data: ICheckoutData): void => {
 	try {
-		const { items: currentCartItems, } = getCartOrRetrieve() || { items: [] };
+		const {items: currentCartItems,} = getCartOrRetrieve() || {items: []};
 
 		const itemsWithThc = currentCartItems ? currentCartItems.map((el) => {
-			const equivalentTo = el.product.ProductSpecifications.find((spec) => spec.DisplayName === 'Equivalent To');
+			const equivalentTo = el.product.ProductSpecifications.find((spec) => spec.DisplayName === "Equivalent To");
 			const thcGrams = equivalentTo ? parseFloat(equivalentTo.Value) : 0;
 			return {
 				...el,
@@ -23,7 +23,7 @@ export const setLocalStorageCheckoutData = (data: ICheckoutData): void => {
 			};
 		}) : [];
 
-		localStorage.setItem("cc_checkout_data", JSON.stringify({...data, items: itemsWithThc }));
+		localStorage.setItem("cc_checkout_data", JSON.stringify({...data, items: itemsWithThc}));
 	} catch (e) {
 		if (
 			(typeof e === "object" &&

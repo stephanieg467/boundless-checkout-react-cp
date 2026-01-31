@@ -1,5 +1,5 @@
-import {ICustomer} from 'boundless-api-client';
-import {createSlice, PayloadAction} from '@reduxjs/toolkit';
+import {ICustomer} from "boundless-api-client";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
 const initialState: IUserState = {
 	loggedInCustomer: null,
@@ -7,7 +7,7 @@ const initialState: IUserState = {
 };
 
 const userSlice = createSlice({
-	name: 'user',
+	name: "user",
 	initialState,
 	reducers: {
 		login(state, action: PayloadAction<{loggedInCustomer: ICustomer, authToken: string}>) {

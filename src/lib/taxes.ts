@@ -1,14 +1,14 @@
-import { CovaCartItem } from "../types/cart";
-import to from 'await-to-js';
+import {CovaCartItem} from "../types/cart";
+import to from "await-to-js";
 
 export async function getOrderTaxes(cartItems: CovaCartItem[]): Promise<string> {
 	const fetchTaxes = async () => {
-		const [err, resp] = await to(fetch(`/api/covaTaxes`, {
+		const [err, resp] = await to(fetch("/api/covaTaxes", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ cartItems: cartItems }),
+			body: JSON.stringify({cartItems: cartItems}),
 		}));
 
 		if (err || !resp) {
