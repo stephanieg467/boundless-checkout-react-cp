@@ -1,14 +1,14 @@
-import {AppThunk} from '../store';
-import {ICustomer} from 'boundless-api-client';
-import {login} from '../reducers/user';
-import Cookie from 'js-cookie';
+import {AppThunk} from "../store";
+import {ICustomer} from "boundless-api-client";
+import {login} from "../reducers/user";
+import Cookie from "js-cookie";
 
-export const userCookieName = 'c_customer_auth';
+export const userCookieName = "c_customer_auth";
 
-export const setLoggedInCustomer = (customer: ICustomer, authToken: string) : AppThunk => async (dispatch, getState) => {
+export const setLoggedInCustomer = (customer: ICustomer, authToken: string) : AppThunk => async (dispatch) => {
 	// const {api} = getState().app;
 	// api!.setCustomerAuthToken(authToken);
 
-	Cookie.set(userCookieName, authToken, {expires: 1, sameSite: 'None', secure: true});
+	Cookie.set(userCookieName, authToken, {expires: 1, sameSite: "None", secure: true});
 	dispatch(login({loggedInCustomer: customer, authToken}));
 };

@@ -1,15 +1,15 @@
 import React from "react";
-import { IVWCountry } from "boundless-api-client";
+import {IVWCountry} from "boundless-api-client";
 import Grid from "@mui/material/Grid";
-import { FormikProps, useFormikContext } from "formik";
+import {FormikProps, useFormikContext} from "formik";
 import TextField from "@mui/material/TextField";
-import { IFieldAttrs } from "../../../lib/formUtils";
+import {IFieldAttrs} from "../../../lib/formUtils";
 import {
 	IAddressSubForm,
 	IShippingFormValues,
 } from "../../../types/shippingForm";
-import { useTranslation } from "react-i18next";
-import { PhoneInput } from "../../../components/PhoneInput";
+import {useTranslation} from "react-i18next";
+import {PhoneInput} from "../../../components/PhoneInput";
 
 export default function AddressFieldset({
 	countries,
@@ -17,9 +17,9 @@ export default function AddressFieldset({
 	keyPrefix,
 }: IProps) {
 	const formikProps = useFormikContext<IShippingFormValues>();
-	const { values, handleChange } = formikProps;
+	const {values, handleChange} = formikProps;
 
-	const { t } = useTranslation();
+	const {t} = useTranslation();
 
 	return (
 		<Grid container spacing={2}>
@@ -164,7 +164,7 @@ export function addressFieldAttrs(
 	formikProps: FormikProps<IShippingFormValues>,
 	helperText: string = ""
 ): IFieldAttrs {
-	const { errors, values, handleChange } = formikProps;
+	const {errors, values, handleChange} = formikProps;
 	const addressValues = values[keyPrefix] as IAddressSubForm;
 
 	const fullName = `${keyPrefix}.${field}`;

@@ -1,7 +1,7 @@
-import React, {useState, SyntheticEvent, useEffect} from 'react';
-import {FormikErrors} from 'formik';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
+import React, {useState, SyntheticEvent, useEffect} from "react";
+import {FormikErrors} from "formik";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 /**
  * Some fields might not be represented in the form,
@@ -20,7 +20,7 @@ export default function ExtraErrors({excludedFields, errors}: {excludedFields: s
 		;
 
 		if (errorsList.length) {
-			setAlertText(errorsList.join(' '));
+			setAlertText(errorsList.join(" "));
 			setIsOpen(true);
 		} else {
 			setAlertText(null);
@@ -29,7 +29,7 @@ export default function ExtraErrors({excludedFields, errors}: {excludedFields: s
 	}, [excludedFields, errors]);
 
 	const handleClose = (event?: SyntheticEvent | Event, reason?: string) => {
-		if (reason === 'clickaway') {
+		if (reason === "clickaway") {
 			return;
 		}
 		setIsOpen(false);
@@ -40,9 +40,9 @@ export default function ExtraErrors({excludedFields, errors}: {excludedFields: s
 		<Snackbar open={open}
 							autoHideDuration={6000}
 							onClose={handleClose}
-							anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+							anchorOrigin={{vertical: "top", horizontal: "right"}}
 		>
-			<Alert severity="error">{alertText || ''}</Alert>
+			<Alert severity="error">{alertText || ""}</Alert>
 		</Snackbar>
 	);
 }

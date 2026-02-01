@@ -1,20 +1,25 @@
-import clsx from 'clsx';
-import React from 'react';
-import { IMenuItem } from '../../types/components';
+import clsx from "clsx";
+import React from "react";
+import {IMenuItem} from "../../types/components";
 
 export default function FooterMenu() {
-	const baseUrl = process.env.BASE_URL || '';
+	const baseUrl = process.env.BASE_URL || "";
 
 	const menuListmenuList: IMenuItem[] = [
 		{
-			title: 'Home',
+			title: "Home",
 			url: baseUrl,
 			isActive: false,
 		},
 		{
-			title: 'Menu',
-			url: baseUrl + 'menu',
-			isActive: true,
+			title: "Menu",
+			url: baseUrl + "menu",
+			isActive: false,
+		},
+		{
+			title: "BC Wide Cannabis Shipping",
+			url: "/cannabis-shipping-bc",
+			isActive: false,
 		},
 		// {
 		// 	title: 'News & Events',
@@ -22,26 +27,26 @@ export default function FooterMenu() {
 		// 	isActive: false,
 		// },
 		{
-			title: 'About',
-			url: baseUrl + 'about-us',
+			title: "About",
+			url: baseUrl + "about-us",
 			isActive: false,
 		},
 	];
 
 	const menuListSecondary: IMenuItem[] = [
 		{
-			title: 'Privacy',
-			url: '/privacy-policy',
+			title: "Privacy",
+			url: "/privacy-policy",
 			isActive: false,
 		},
 		{
-			title: 'Refund',
-			url: '/refund',
+			title: "Refund",
+			url: "/refund",
 			isActive: false,
 		},
 		{
-			title: 'Terms of Service',
-			url: '/terms-of-service',
+			title: "Terms of Service",
+			url: "/terms-of-service",
 			isActive: false,
 		},
 	];
@@ -55,7 +60,7 @@ export default function FooterMenu() {
 			>
 				{menuListmenuList.map((item, i) => (
 					<li
-						className={clsx('page-footer-menu__list-element', {
+						className={clsx("page-footer-menu__list-element", {
 							active: item.isActive,
 						})}
 						key={item.title + i}
@@ -77,7 +82,7 @@ export default function FooterMenu() {
 			>
 				{menuListSecondary.map((item, i) => (
 					<li
-						className={clsx('page-footer-menu__list-element', {
+						className={clsx("page-footer-menu__list-element", {
 							active: item.isActive,
 						})}
 						key={item.title + i}
@@ -108,7 +113,7 @@ function ListElement({
 			<>
 				<a
 					href={item.url}
-					className={clsx('page-footer-menu__element is-link', {
+					className={clsx("page-footer-menu__element is-link", {
 						active: item.isActive,
 					})}
 				>
@@ -122,7 +127,7 @@ function ListElement({
 
 	return (
 		<div
-			className={clsx('page-footer-menu__element', {active: item.isActive})}
+			className={clsx("page-footer-menu__element", {active: item.isActive})}
 		>
 			<span className='page-footer-menu__text-title'>{item.title}</span>
 		</div>

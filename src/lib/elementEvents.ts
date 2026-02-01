@@ -1,4 +1,4 @@
 export enum TClickedElement {
-	backToCart = 'backToCart',
-	logo = 'logo'
+	backToCart = "backToCart",
+	logo = "logo"
 }

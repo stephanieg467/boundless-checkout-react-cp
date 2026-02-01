@@ -1,10 +1,10 @@
-import {Step, StepButton, Stepper} from '@mui/material';
-import {TCheckoutStep} from 'boundless-api-client';
-import React, {useMemo} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
-import {getPathByStep, getStepByPath} from '../routes';
-import {useAppSelector} from '../hooks/redux';
-import {useTranslation} from 'react-i18next';
+import {Step, StepButton, Stepper} from "@mui/material";
+import {TCheckoutStep} from "boundless-api-client";
+import React, {useMemo} from "react";
+import {useLocation, useNavigate} from "react-router";
+import {getPathByStep, getStepByPath} from "../routes";
+import {useAppSelector} from "../hooks/redux";
+import {useTranslation} from "react-i18next";
 
 export default function CheckoutProgress() {
 	const stepper = useAppSelector(state => state.app.stepper);
@@ -21,11 +21,11 @@ export default function CheckoutProgress() {
 
 	const checkoutStepTitles = useMemo(() => {
 		return {
-			[TCheckoutStep.contactInfo]: t('checkoutProgress.contactInfo'),
-			[TCheckoutStep.shippingAddress]: t('checkoutProgress.shippingAddress'),
-			[TCheckoutStep.shippingMethod]: t('checkoutProgress.shippingMethod'),
-			[TCheckoutStep.paymentMethod]: t('checkoutProgress.paymentMethod'),
-			[TCheckoutStep.thankYou]: t('checkoutProgress.thankYou')
+			[TCheckoutStep.contactInfo]: t("checkoutProgress.contactInfo"),
+			[TCheckoutStep.shippingAddress]: t("checkoutProgress.shippingAddress"),
+			[TCheckoutStep.shippingMethod]: t("checkoutProgress.shippingMethod"),
+			[TCheckoutStep.paymentMethod]: t("checkoutProgress.paymentMethod"),
+			[TCheckoutStep.thankYou]: t("checkoutProgress.thankYou")
 		};
 	}, [t]);
 

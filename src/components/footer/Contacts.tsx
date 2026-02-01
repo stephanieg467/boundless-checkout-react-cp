@@ -1,9 +1,9 @@
-import {faWhatsapp} from '@fortawesome/free-brands-svg-icons/faWhatsapp';
-import {faEnvelope} from '@fortawesome/free-solid-svg-icons';
-import {faClock} from '@fortawesome/free-solid-svg-icons/faClock';
-import {faMapMarkerAlt} from '@fortawesome/free-solid-svg-icons/faMapMarkerAlt';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import React from 'react';
+import {faWhatsapp} from "@fortawesome/free-brands-svg-icons/faWhatsapp";
+import {faEnvelope} from "@fortawesome/free-solid-svg-icons";
+import {faClock} from "@fortawesome/free-solid-svg-icons/faClock";
+import {faMapMarkerAlt} from "@fortawesome/free-solid-svg-icons/faMapMarkerAlt";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import React from "react";
 
 export default function FooterContacts() {
 	return (

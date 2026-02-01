@@ -1,7 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
-import { useTranslation } from "react-i18next";
+import {useTranslation} from "react-i18next";
 
 export default function OrderTotalRow({
 	price,
@@ -12,8 +12,8 @@ export default function OrderTotalRow({
 	qty: string | number;
 	isSubTotal?: boolean;
 }) {
-	const { formatCurrency } = useFormatCurrency();
-	const { t } = useTranslation();
+	const {formatCurrency} = useFormatCurrency();
+	const {t} = useTranslation();
 
 	return (
 		<Grid container className="bdl-order-items__total-row">

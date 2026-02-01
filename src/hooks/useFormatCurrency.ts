@@ -1,6 +1,6 @@
-import {useAppSelector} from './redux';
-import {useCallback} from 'react';
-import currency, {Options} from 'currency.js';
+import {useAppSelector} from "./redux";
+import {useCallback} from "react";
+import currency, {Options} from "currency.js";
 
 export default function useFormatCurrency() {
 	const localeSettings = useAppSelector(state => state.app.localeSettings);
@@ -11,8 +11,8 @@ export default function useFormatCurrency() {
 		const currencyOptions: Options = {};
 		if (localeSettings) {
 			const {format, precision, symbol, decimal, thousand} = localeSettings.money;
-			let pattern = format.replace('%v', '#');
-			pattern = pattern.replace('%s', '!');
+			let pattern = format.replace("%v", "#");
+			pattern = pattern.replace("%s", "!");
 
 			Object.assign(currencyOptions, {
 				precision,

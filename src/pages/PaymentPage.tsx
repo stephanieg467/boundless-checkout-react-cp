@@ -1,21 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import CheckoutLayout from "../layout/CheckoutLayout";
-import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import PaymentMethodForm from "./paymentPage/PaymentMethodForm";
-import { useTranslation } from "react-i18next";
+import {useTranslation} from "react-i18next";
 import {
 	CREDIT_CARD_PAYMENT_METHOD,
 	PAY_IN_STORE_PAYMENT_METHOD,
 } from "../constants";
-import { cartHasTickets } from "../lib/products";
-import { getCheckoutData } from "../hooks/checkoutData";
-import { useNavigate } from "react-router-dom";
+import {cartHasTickets} from "../lib/products";
+import {getCheckoutData} from "../hooks/checkoutData";
+import {useNavigate} from "react-router";
 
 export default function PaymentPage() {
-	const { isInited, paymentPage } = useInitPaymentPage();
-	const { t } = useTranslation();
+	const {isInited, paymentPage} = useInitPaymentPage();
+	const {t} = useTranslation();
 
 	useEffect(() => {
 		document.title = t("paymentMethodForm.pageTitle");
@@ -46,8 +46,8 @@ export interface IPaymentPageData {
 }
 
 const useInitPaymentPage = () => {
-	const { isInited } = useInitCheckoutByCart();
-	const { order } = useAppSelector((state) => state.app);
+	const {isInited} = useInitCheckoutByCart();
+	const {order} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const checkoutData = getCheckoutData();

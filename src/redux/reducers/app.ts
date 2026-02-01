@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
 	ICheckoutStepper,
 	TCheckoutStep,
@@ -7,12 +7,12 @@ import {
 	ISystemTax,
 	ITotal,
 } from "boundless-api-client";
-import { ReactNode } from "react";
-import { TClickedElement } from "../../lib/elementEvents";
-import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
-import { ICovaCustomer, IOrderWithCustmAttr } from "../../types/Order";
-import { getCheckoutData, setLocalStorageCheckoutData } from "../../hooks/checkoutData";
-import { setCart } from "../../hooks/getCartOrRetrieve";
+import {ReactNode} from "react";
+import {TClickedElement} from "../../lib/elementEvents";
+import {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
+import {ICovaCustomer, IOrderWithCustmAttr} from "../../types/Order";
+import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkoutData";
+import {setCart} from "../../hooks/getCartOrRetrieve";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -106,7 +106,7 @@ const appSlice = createSlice({
 			state.isInited = action.payload.isInited;
 		},
 		addFilledStep(state, action: PayloadAction<{ step: TCheckoutStep }>) {
-			const { step } = action.payload;
+			const {step} = action.payload;
 			const stepper = state.stepper!;
 
 			if (!stepper.filledSteps.includes(step)) {
@@ -114,7 +114,7 @@ const appSlice = createSlice({
 			}
 		},
 		setOrder(state, action: PayloadAction<IOrderWithCustmAttr>) {
-			const order = { ...action.payload };
+			const order = {...action.payload};
 			if (order && order.customer === null) {
 				order.customer = undefined;
 			}
@@ -128,10 +128,10 @@ const appSlice = createSlice({
 			state.globalError = action.payload;
 		},
 		resetAppState() {
-			const { order } = getCheckoutData() || {};
+			const {order} = getCheckoutData() || {};
 			if (order && order.custom_attrs.originalCart) setCart(order.custom_attrs.originalCart);
-			localStorage.removeItem("cc_checkout_data")
-			return { ...initialState };
+			localStorage.removeItem("cc_checkout_data");
+			return {...initialState};
 		},
 		setTotal(state, action: PayloadAction<ITotal>) {
 			const total = action.payload;
