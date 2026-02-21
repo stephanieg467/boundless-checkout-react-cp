@@ -16,9 +16,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {Box} from "@mui/system";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
-import {DELIVERY_ID, SHIPPING_COST} from "../../../constants";
-import {useDeliveryTimes} from "../../../hooks/useDeliveryTimes";
-import {isDeliveryDisabled} from "../../../lib/deliveryTimes";
+import {SHIPPING_COST} from "../../../constants";
 
 const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -113,12 +111,6 @@ type IInPros = Pick<ICheckoutShippingPageData, "options">;
 
 export default function DeliverySelector({options}: IInPros) {
 	const formikProps = useFormikContext<IShippingFormValues>();
-	const {rawData: deliveryTimesData} = useDeliveryTimes();
-
-	// Check if delivery should be disabled based on time cutoff
-	const deliveryDisabled = deliveryTimesData
-		? isDeliveryDisabled(deliveryTimesData)
-		: false;
 
 	return (
 		<Box
@@ -138,18 +130,14 @@ export default function DeliverySelector({options}: IInPros) {
 					value={formikProps.values.delivery_id}
 				>
 					{options.delivery.map((delivery) => {
-						const isDeliveryOption = delivery.delivery_id === DELIVERY_ID;
-						const isDisabled = isDeliveryOption && deliveryDisabled;
-
 						return (
 							<React.Fragment key={delivery.delivery_id}>
 								<FormControlLabel
 									value={delivery.delivery_id}
-									disabled={isDisabled}
 									control={
 										<Radio
 											sx={{
-												color: isDisabled ? "#ccc" : "#133e20",
+												color: "#133e20",
 												"&.Mui-checked": {
 													color: "#4a7c4d",
 												},
@@ -162,7 +150,6 @@ export default function DeliverySelector({options}: IInPros) {
 									sx={{
 										mb: 1,
 										alignItems: "flex-start",
-										opacity: isDisabled ? 0.6 : 1,
 									}}
 									label={
 										<Box
@@ -182,18 +169,6 @@ export default function DeliverySelector({options}: IInPros) {
 												<DeliveryDetails delivery={delivery} />
 												<DeliveryTitle delivery={delivery} />
 											</Box>
-											{isDisabled && (
-												<Typography
-													variant="body2"
-													sx={{
-														color: "#d32f2f",
-														fontStyle: "italic",
-														mt: 0.5,
-													}}
-												>
-													Delivery is closed for today. Please check back after 12AM for tomorrows delivery hours.
-												</Typography>
-											)}
 										</Box>
 									}
 								/>

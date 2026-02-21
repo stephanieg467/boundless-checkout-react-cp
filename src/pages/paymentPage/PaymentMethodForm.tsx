@@ -201,6 +201,7 @@ const PaymentMethods = ({
 								type="number"
 								variant={"outlined"}
 								{...fieldAttrs("tip", formikProps)}
+								helperText={`100% of tip goes to your driver!`}
 								slotProps={{
 									input: {
 										startAdornment: (
@@ -226,7 +227,7 @@ const PaymentMethods = ({
 								}}
 								helperText={
 									deliveryTimes?.isNextDay
-										? "NOTE: Showing delivery times for tomorrow; your order will be delivered tomorrow."
+										? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
 										: ""
 								}
 								{...fieldAttrs("delivery_time", formikProps)}

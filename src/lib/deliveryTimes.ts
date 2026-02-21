@@ -29,46 +29,6 @@ const getSchedule = (
 		: [];
 };
 
-/**
- * Determines if delivery should be disabled based on the current time vs the last delivery window.
- * Delivery is disabled when currentTime > lastSlotEnd - 0.5 (30 minutes before last window ends).
- *
- * @param deliveryTimesData - Array of delivery time slots from the API
- * @returns true if delivery should be disabled, false otherwise
- */
-export const isDeliveryDisabled = (
-	deliveryTimesData: DeliveryTimeSlot[],
-): boolean => {
-	if (!deliveryTimesData || deliveryTimesData.length === 0) {
-		return true;
-	}
-
-	const {hourVancouver, minuteVancouver, weekdayName} =
-		getVancouverDateTime();
-	const currentTime = hourVancouver + minuteVancouver / 60;
-
-	// Get today's schedule
-	const todaySchedule = getSchedule(weekdayName, deliveryTimesData);
-
-	// If no schedule for today, delivery is disabled
-	if (todaySchedule.length === 0) {
-		return true;
-	}
-
-	// Find the last window
-	const lastWindow = todaySchedule[todaySchedule.length - 1];
-
-	// Calculate the last 1-hour slot end time
-	// We iterate from start hour up to find the last full hour slot that fits
-	let lastSlotEnd = lastWindow.start;
-	while (lastSlotEnd + 1 <= lastWindow.end) {
-		lastSlotEnd += 1;
-	}
-
-	// Disable if current time > lastSlotEnd - 0.5 (30 min buffer)
-	return currentTime > lastSlotEnd - 0.5;
-};
-
 export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 	const options: Intl.DateTimeFormatOptions = {
 		timeZone: "America/Vancouver",
