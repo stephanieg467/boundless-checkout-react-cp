@@ -34,11 +34,11 @@ const useInitShippingPage = () => {
 		(cartItems && cartItems.length > 1);
 
 	const {month, day} = getVancouverDateTime();
-	const isJanuaryFirst = month === 1 && day === 1;
+	const isMarchFourteenth = month === 3 && day === 14;
 
 	const deliveryOptions = [SELF_PICKUP_INFO];
 	if (showAllDeliveryOptions) {
-		if (!isJanuaryFirst) {
+		if (!isMarchFourteenth) {
 			deliveryOptions.push(DELIVERY_INFO);
 		}
 		deliveryOptions.push(SHIPPING_DELIVERY_INFO);

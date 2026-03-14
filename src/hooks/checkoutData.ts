@@ -40,9 +40,3 @@ export const setLocalStorageCheckoutData = (data: ICheckoutData): void => {
 		}
 	}
 };
-
-export const clearCheckoutData = (): void => {
-	if (typeof window !== "undefined" && window.localStorage) {
-		localStorage.removeItem("cc_checkout_data");
-	}
-};
