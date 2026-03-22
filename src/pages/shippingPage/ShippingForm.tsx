@@ -297,7 +297,7 @@ const useSaveShippingForm = ({
 
 				if (delivery_id === SHIPPING_DELIVERY_ID) {
 					shippingRate = SHIPPING_COST;
-					shippingTaxes = 0;
+					shippingTaxes = 0.3;
 				}
 
 				const freeShippingApplies = qualifiesForFreeShipping(total);
