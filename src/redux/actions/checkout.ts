@@ -15,8 +15,6 @@ export const initCheckoutByCart =
 	(): AppThunk => async (dispatch, getState) => {
 		const {cartId, onCheckoutInited, onHide, order, stepper} = getState().app;
 
-		// const customerAuthToken = Cookie.get(userCookieName);
-
 		const cart = getCartOrRetrieve();
 
 		try {
@@ -128,16 +126,6 @@ export const initCheckoutByCart =
 				} as unknown as ITotal,
 			};
 			dispatch(setCheckoutData(data));
-
-			// if (data.loggedInCustomer) {
-			// 	dispatch(
-			// 		setLoggedInCustomer(data.loggedInCustomer, customerAuthToken!)
-			// 	);
-			// } else {
-			// 	if (customerAuthToken) {
-			// 		Cookie.remove(userCookieName);
-			// 	}
-			// }
 
 			dispatch(setCheckoutInited({isInited: true}));
 
