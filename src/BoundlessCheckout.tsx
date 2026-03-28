@@ -1,24 +1,13 @@
-import React, {
-	Component,
-	createRef,
-	ReactNode,
-	ReactPortal,
-	useEffect,
-} from "react";
+import React, {ReactNode, useEffect, useMemo, useRef, useState} from "react";
 import ReactDOM from "react-dom";
 import clsx from "clsx";
-import {
-	disableBodyScroll,
-	enableBodyScroll,
-	clearAllBodyScrollLocks,
-} from "body-scroll-lock";
+import {disableBodyScroll, clearAllBodyScrollLocks} from "body-scroll-lock";
 import "../styles/styles.scss";
 import CheckoutApp from "./App";
 import {Provider} from "react-redux";
 import {store} from "./redux/store";
 import {
 	setBasicProps,
-	hideCheckout,
 	showCheckout,
 	TOnThankYouPage,
 	TOnCheckoutInited,
@@ -28,113 +17,93 @@ import {useAppSelector} from "./hooks/redux";
 import {TClickedElement} from "./lib/elementEvents";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
-export default class BoundlessCheckout extends Component<
-	IBoundlessCheckoutProps,
-	{}
-> {
-	private el: HTMLDivElement | null;
-	private rootElRef: React.RefObject<HTMLDivElement | null>;
+export interface IBoundlessCheckoutProps {
+	onHide: (element: TClickedElement) => void;
+	onThankYouPage: TOnThankYouPage;
+	cartId?: string;
+	basename?: string;
+	logo?: string | ReactNode;
+	logoSrc?: string;
+	logoText?: string;
+	onCheckoutInited?: TOnCheckoutInited;
+}
 
-	constructor(props: IBoundlessCheckoutProps) {
-		super(props);
+export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
+	const {onHide, onThankYouPage, cartId, basename, logoSrc, logoText, logo, onCheckoutInited} = props;
 
-		this.el =
-			typeof window !== undefined && window.document
-				? document.createElement("div")
-				: null;
-		this.rootElRef = createRef<HTMLDivElement>();
-	}
+	const resolvedLogo: string | ReactNode | undefined =
+		logoText !== undefined
+			? logoText
+			: logoSrc
+				? <img src={logoSrc} className={"bdl-header__img-logo"} />
+				: logo;
 
-	componentDidMount() {
-		if (this.el) {
-			document.body.appendChild(this.el);
+	const [el] = useState<HTMLDivElement | null>(() =>
+		typeof window !== "undefined" && window.document
+			? document.createElement("div")
+			: null
+	);
+
+	const rootElRef = useRef<HTMLDivElement | null>(null);
+
+	const queryClient = useMemo(() => new QueryClient(), []);
+
+	// Append portal div to body on mount, remove on unmount
+	useEffect(() => {
+		if (!el) return;
+		document.body.appendChild(el);
+		return () => {
+			clearAllBodyScrollLocks();
+			if (el.parentNode === document.body) {
+				document.body.removeChild(el);
+			}
+		};
+	}, [el]);
+
+	// Lock body scroll on mount, unlock handled by clearAllBodyScrollLocks in cleanup above
+	useEffect(() => {
+		if (rootElRef.current) {
+			disableBodyScroll(rootElRef.current);
 		}
+	}, []);
 
-		const {onHide, onThankYouPage, cartId, basename, logo, onCheckoutInited} =
-			this.props;
+	// Sync props into Redux store whenever they change
+	useEffect(() => {
 		store.dispatch(
 			setBasicProps({
 				onHide,
 				onThankYouPage,
 				cartId,
 				basename,
-				logo,
+				logo: resolvedLogo,
 				onCheckoutInited,
 			})
 		);
-		this.syncShowProp();
-	}
+		store.dispatch(showCheckout());
+	}, [onHide, onThankYouPage, cartId, basename, resolvedLogo, onCheckoutInited]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	syncShowProp() {
-		if (this.props.show) {
-			store.dispatch(showCheckout());
-		} else {
-			store.dispatch(hideCheckout());
-		}
-	}
+	if (!el) return null;
 
-	componentDidUpdate(prevProps: Readonly<IBoundlessCheckoutProps>) {
-		if (prevProps.show !== this.props.show) {
-			this.syncShowProp();
-
-			if (this.rootElRef.current) {
-				if (this.props.show) {
-					disableBodyScroll(this.rootElRef.current);
-				} else {
-					enableBodyScroll(this.rootElRef.current);
-				}
-			}
-		}
-	}
-
-	componentWillUnmount() {
-		clearAllBodyScrollLocks();
-		if (this.el && this.el.parentNode === document.body) {
-			document.body.removeChild(this.el);
-		}
-	}
-
-	render(): ReactPortal | null {
-		const {show, basename} = this.props;
-
-		if (!this.el) {
-			return null;
-		}
-
-		const queryClient = new QueryClient();
-		return ReactDOM.createPortal(
-			<div
-				className={clsx("bdl-checkout", {"bdl-checkout_show": show})}
-				ref={this.rootElRef}
-			>
-				<React.StrictMode>
-					<QueryClientProvider client={queryClient}>
-						<Provider store={store}>
-							<BrowserRouter basename={basename}>
-								<WrappedApp />
-							</BrowserRouter>
-						</Provider>
-					</QueryClientProvider>
-				</React.StrictMode>
-			</div>,
-			this.el
-		);
-	}
-}
-
-export interface IBoundlessCheckoutProps {
-	show: boolean;
-	onHide: (element: TClickedElement) => void;
-	onThankYouPage: TOnThankYouPage;
-	cartId?: string;
-	basename?: string;
-	logo?: string | ReactNode;
-	onCheckoutInited?: TOnCheckoutInited;
+	return ReactDOM.createPortal(
+		<div
+			className={clsx("bdl-checkout", "bdl-checkout_show")}
+			ref={rootElRef}
+		>
+			<React.StrictMode>
+				<QueryClientProvider client={queryClient}>
+					<Provider store={store}>
+						<BrowserRouter basename={basename}>
+							<WrappedApp />
+						</BrowserRouter>
+					</Provider>
+				</QueryClientProvider>
+			</React.StrictMode>
+		</div>,
+		el
+	);
 }
 
 const WrappedApp = () => {
-	// const location = useLocation();
-	// const navigate = useNavigate();
 	const show = useAppSelector((state) => state.app.show);
 
 	useEffect(() => {
@@ -148,7 +117,7 @@ const WrappedApp = () => {
 				navigate('/', {replace: true});
 			}
 		}*/
-	}, [show]);  
+	}, [show]);
 
 	return show ? <CheckoutApp /> : null;
 };
