@@ -1,4 +1,4 @@
-import React, {ReactNode, useEffect, useMemo, useRef, useState} from "react";
+import React, {ReactNode, useEffect, useMemo, useState} from "react";
 import ReactDOM from "react-dom";
 import clsx from "clsx";
 import {disableBodyScroll, clearAllBodyScrollLocks} from "body-scroll-lock";
@@ -44,14 +44,13 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 			: null
 	);
 
-	const rootElRef = useRef<HTMLDivElement | null>(null);
-
 	const queryClient = useMemo(() => new QueryClient(), []);
 
-	// Append portal div to body on mount, remove on unmount
+	// Append portal div to body on mount, lock scroll; remove and unlock on unmount
 	useEffect(() => {
 		if (!el) return;
 		document.body.appendChild(el);
+		disableBodyScroll(el);
 		return () => {
 			clearAllBodyScrollLocks();
 			if (el.parentNode === document.body) {
@@ -59,13 +58,6 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 			}
 		};
 	}, [el]);
-
-	// Lock body scroll on mount, unlock handled by clearAllBodyScrollLocks in cleanup above
-	useEffect(() => {
-		if (rootElRef.current) {
-			disableBodyScroll(rootElRef.current);
-		}
-	}, []);
 
 	// Sync props into Redux store whenever they change
 	useEffect(() => {
@@ -87,7 +79,6 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	return ReactDOM.createPortal(
 		<div
 			className={clsx("bdl-checkout", "bdl-checkout_show")}
-			ref={rootElRef}
 		>
 			<React.StrictMode>
 				<QueryClientProvider client={queryClient}>
