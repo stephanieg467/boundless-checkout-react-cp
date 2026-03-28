@@ -31,12 +31,11 @@ export interface IBoundlessCheckoutProps {
 export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	const {onHide, onThankYouPage, cartId, basename, logoSrc, logoText, logo, onCheckoutInited} = props;
 
-	const resolvedLogo: string | ReactNode | undefined =
-		logoText !== undefined
-			? logoText
-			: logoSrc
-				? <img src={logoSrc} className={"bdl-header__img-logo"} />
-				: logo;
+	const resolvedLogo = useMemo<string | ReactNode | undefined>(() => {
+		if (logoText !== undefined) return logoText;
+		if (logoSrc) return <img src={logoSrc} className={"bdl-header__img-logo"} />;
+		return logo;
+	}, [logoText, logoSrc, logo]);
 
 	const [el] = useState<HTMLDivElement | null>(() =>
 		typeof window !== "undefined" && window.document
@@ -97,18 +96,17 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 const WrappedApp = () => {
 	const show = useAppSelector((state) => state.app.show);
 
-	useEffect(() => {
-		/*
-		Это не работает - если я нахожусь на /payment и делаю refresh, то перекинет на info (или current step),
-		что неверно. Возможно, нужно на закрытии делать navigateTo(/checkout) (или этот кусок вынести в sample).
-		Те явно когда пользователь кликнул close - тогда меняем url.
+	/*
+	Это не работает - если я нахожусь на /payment и делаю refresh, то перекинет на info (или current step),
+	что неверно. Возможно, нужно на закрытии делать navigateTo(/checkout) (или этот кусок вынести в sample).
+	Те явно когда пользователь кликнул close - тогда меняем url.
 
-		if (!show) {
-			if (location.pathname !== '/') {
-				navigate('/', {replace: true});
-			}
-		}*/
-	}, [show]);
+	if (!show) {
+		if (location.pathname !== '/') {
+			navigate('/', {replace: true});
+		}
+	}
+	*/
 
 	return show ? <CheckoutApp /> : null;
 };
