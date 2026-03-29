@@ -12,7 +12,7 @@ export declare const setBasicProps: import("@reduxjs/toolkit").ActionCreatorWith
     step: TCheckoutStep;
 }, "app/addFilledStep">, setOrdersCustomer: import("@reduxjs/toolkit").ActionCreatorWithPayload<ICovaCustomer, "app/setOrdersCustomer">, setGlobalError: import("@reduxjs/toolkit").ActionCreatorWithPayload<string | null, "app/setGlobalError">, setOrder: import("@reduxjs/toolkit").ActionCreatorWithPayload<IOrderWithCustmAttr, "app/setOrder">, setCheckoutInited: import("@reduxjs/toolkit").ActionCreatorWithPayload<{
     isInited: boolean;
-}, "app/setCheckoutInited">, resetAppState: import("@reduxjs/toolkit").ActionCreatorWithoutPayload<"app/resetAppState">, setTotal: import("@reduxjs/toolkit").ActionCreatorWithPayload<ITotal, "app/setTotal">, setIsInited: import("@reduxjs/toolkit").ActionCreatorWithPayload<boolean, "app/setIsInited">, setLocaleSettings: import("@reduxjs/toolkit").ActionCreatorWithPayload<ILocaleSettings, "app/setLocaleSettings">;
+}, "app/setCheckoutInited">, resetAppState: import("@reduxjs/toolkit").ActionCreatorWithoutPayload<"app/resetAppState">, setTotal: import("@reduxjs/toolkit").ActionCreatorWithPayload<ITotal, "app/setTotal">, setIsInited: import("@reduxjs/toolkit").ActionCreatorWithPayload<boolean, "app/setIsInited">, setLocaleSettings: import("@reduxjs/toolkit").ActionCreatorWithPayload<ILocaleSettings, "app/setLocaleSettings">, setCurrentStep: import("@reduxjs/toolkit").ActionCreatorWithPayload<TCheckoutStep, "app/setCurrentStep">;
 declare const _default: import("redux").Reducer<IAppState>;
 export default _default;
 export type TOnThankYouPage = ({ orderId, error, }: {

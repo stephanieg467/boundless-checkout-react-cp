@@ -201,7 +201,7 @@ const PaymentMethods = ({
 								type="number"
 								variant={"outlined"}
 								{...fieldAttrs("tip", formikProps)}
-								helperText={`100% of tip goes to your driver!`}
+								helperText={"100% of tip goes to your driver!"}
 								slotProps={{
 									input: {
 										startAdornment: (
