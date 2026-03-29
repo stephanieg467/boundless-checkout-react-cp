@@ -13,10 +13,9 @@ import {Box} from "@mui/system";
 import {IShippingFormValues} from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
-import {useNavigate} from "react-router";
 import {addPromise} from "../../redux/actions/xhr";
 import {apiErrors2Formik} from "../../lib/formUtils";
-import {addFilledStep, setOrder, setTotal} from "../../redux/reducers/app";
+import {addFilledStep, setOrder, setTotal, setCurrentStep} from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
 import {isPickUpDelivery, qualifiesForFreeShipping} from "../../lib/shipping";
 import {useTranslation} from "react-i18next";
@@ -160,7 +159,6 @@ const useSaveShippingForm = ({
 	shippingPage: ICheckoutShippingPageData;
 }) => {
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 
 	const onSubmit = (
 		values: IShippingFormValues,
@@ -371,7 +369,7 @@ const useSaveShippingForm = ({
 					dispatch(addFilledStep({step: TCheckoutStep.shippingMethod}));
 				}
 
-				navigate("/payment");
+				dispatch(setCurrentStep(TCheckoutStep.paymentMethod));
 			})
 			.catch(({response: {data}}) => {
 				setErrors(apiErrors2Formik(data));

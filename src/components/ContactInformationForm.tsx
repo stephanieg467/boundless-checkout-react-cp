@@ -14,8 +14,7 @@ import {fieldAttrs} from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {addFilledStep, setOrdersCustomer} from "../redux/reducers/app";
-import {useNavigate} from "react-router";
+import {addFilledStep, setOrdersCustomer, setCurrentStep} from "../redux/reducers/app";
 import Typography from "@mui/material/Typography";
 import clsx from "clsx";
 import {useTranslation} from "react-i18next";
@@ -307,7 +306,6 @@ const useSaveContactInfo = () => {
 	const {order, total} = getCheckoutData() || {};
 
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 
 	const onSubmit = (
 		values: IContactInformationFormValues,
@@ -343,10 +341,10 @@ const useSaveContactInfo = () => {
 
 		setSubmitting(false);
 
-		const nextUrl = stepper!.steps.includes(TCheckoutStep.shippingAddress)
-			? "/shipping-address"
-			: "/payment";
-		navigate(nextUrl, {replace: true});
+		const nextStep = stepper!.steps.includes(TCheckoutStep.shippingAddress)
+			? TCheckoutStep.shippingAddress
+			: TCheckoutStep.paymentMethod;
+		dispatch(setCurrentStep(nextStep));
 	};
 
 	return {
