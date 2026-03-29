@@ -29,7 +29,6 @@ const appSlice = createSlice({
 			state,
 			action: PayloadAction<
 				Required<Pick<IAppState, "onHide" | "onThankYouPage">> & {
-					basename?: string;
 					logo?: string | ReactNode;
 					cartId?: string;
 					onCheckoutInited?: TOnCheckoutInited;
@@ -40,7 +39,6 @@ const appSlice = createSlice({
 				onHide,
 				onThankYouPage,
 				cartId,
-				basename,
 				logo,
 				onCheckoutInited,
 			} = action.payload;
@@ -50,7 +48,6 @@ const appSlice = createSlice({
 				onHide,
 				onThankYouPage,
 				cartId,
-				basename,
 				logo,
 				onCheckoutInited,
 			};
@@ -183,7 +180,6 @@ export interface IAppState {
 	show: boolean;
 	isInited: boolean;
 	globalError: string | null;
-	basename?: string;
 	onHide?: (element: TClickedElement, error?: string) => void;
 	onThankYouPage?: TOnThankYouPage;
 	cartId?: string;
