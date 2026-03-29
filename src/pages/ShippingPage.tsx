@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import CheckoutLayout from "../layout/CheckoutLayout";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
-import {useAppSelector} from "../hooks/redux";
+import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import {ICheckoutShippingPageData, TCheckoutStep} from "boundless-api-client";
 import ShippingForm from "./shippingPage/ShippingForm";
 import {useTranslation} from "react-i18next";
@@ -12,8 +12,8 @@ import {
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
 import {cartHasTickets} from "../lib/products";
-import {useNavigate} from "react-router";
 import {getVancouverDateTime} from "../lib/deliveryTimes";
+import {setCurrentStep} from "../redux/reducers/app";
 
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();
@@ -22,7 +22,7 @@ const useInitShippingPage = () => {
 	const {order} = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state) => state.app.items);
 	const {stepper} = useAppSelector((state) => state.app);
-	const navigate = useNavigate();
+	const dispatch = useAppDispatch();
 
 	const cartItemHasTickets = cartHasTickets();
 	const clonesInCart = cartItems?.some(
@@ -46,9 +46,9 @@ const useInitShippingPage = () => {
 
 	useEffect(() => {
 		if (stepper && !stepper.filledSteps.includes(TCheckoutStep.contactInfo)) {
-			navigate("/info");
+			dispatch(setCurrentStep(TCheckoutStep.contactInfo));
 		}
-	}, [stepper, navigate]);
+	}, [stepper, dispatch]);
 
 	useEffect(() => {
 		if (order && !shippingPage) {

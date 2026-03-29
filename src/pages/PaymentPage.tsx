@@ -11,7 +11,8 @@ import {
 } from "../constants";
 import {cartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
-import {useNavigate} from "react-router";
+import {TCheckoutStep} from "boundless-api-client";
+import {setCurrentStep} from "../redux/reducers/app";
 
 export default function PaymentPage() {
 	const {isInited, paymentPage} = useInitPaymentPage();
@@ -49,16 +50,15 @@ const useInitPaymentPage = () => {
 	const {isInited} = useInitCheckoutByCart();
 	const {order} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 	const checkoutData = getCheckoutData();
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
 	const cartItemHasTickets = cartHasTickets();
 
 	useEffect(() => {
 		if (!checkoutData) {
-			navigate("/info");
+			dispatch(setCurrentStep(TCheckoutStep.contactInfo));
 		}
-	}, [checkoutData, navigate]);
+	}, [checkoutData, dispatch]);
 
 	useEffect(() => {
 		if (isInited && order && !paymentPage) {
