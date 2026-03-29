@@ -2,13 +2,11 @@ import React from 'react';
 import {render} from '@testing-library/react';
 import {setBasicProps, showCheckout} from '../redux/reducers/app';
 
-// body-scroll-lock — factory uses jest.fn() directly; references retrieved after hoisting
 jest.mock('body-scroll-lock', () => ({
   disableBodyScroll: jest.fn(),
   clearAllBodyScrollLocks: jest.fn(),
 }));
 
-// Redux store — capture dispatches
 jest.mock('../redux/store', () => ({
   store: {
     dispatch: jest.fn(),
@@ -17,21 +15,13 @@ jest.mock('../redux/store', () => ({
   },
 }));
 
-// BrowserRouter — render children directly
-jest.mock('react-router', () => ({
-  BrowserRouter: ({children}: {children: React.ReactNode}) => <>{children}</>,
-}));
-
-// react-redux Provider — render children directly; useSelector returns show:true
 jest.mock('react-redux', () => ({
   Provider: ({children}: {children: React.ReactNode}) => <>{children}</>,
   useSelector: jest.fn((selector: any) => selector({app: {show: true}})),
 }));
 
-// CheckoutApp — avoid rendering full UI
-jest.mock('../App', () => () => <div data-testid="checkout-app" />);
+jest.mock('../StepRenderer', () => () => <div data-testid="step-renderer" />);
 
-// @tanstack/react-query — wrap QueryClient in a spy-friendly factory
 const mockQueryClientConstructor = jest.fn();
 jest.mock('@tanstack/react-query', () => {
   const actual = jest.requireActual('@tanstack/react-query');
@@ -47,7 +37,6 @@ jest.mock('@tanstack/react-query', () => {
 
 import BoundlessCheckout from '../BoundlessCheckout';
 
-// Retrieve mock references after hoisting
 const bodyScrollLock = jest.requireMock('body-scroll-lock') as {
   disableBodyScroll: jest.Mock;
   clearAllBodyScrollLocks: jest.Mock;
@@ -98,9 +87,7 @@ describe('BoundlessCheckout', () => {
   test('dispatches setBasicProps and showCheckout on mount', () => {
     const setBasicPropsType = setBasicProps({} as any).type;
     const showCheckoutType = showCheckout().type;
-
     render(<BoundlessCheckout {...defaultProps} />);
-
     const dispatchedTypes = mockStore.dispatch.mock.calls.map((call) => call[0].type);
     expect(dispatchedTypes).toContain(setBasicPropsType);
     expect(dispatchedTypes).toContain(showCheckoutType);
@@ -108,14 +95,10 @@ describe('BoundlessCheckout', () => {
 
   test('QueryClient is not recreated across re-renders', () => {
     mockQueryClientConstructor.mockClear();
-
     const {rerender, unmount} = render(<BoundlessCheckout {...defaultProps} />);
     rerender(<BoundlessCheckout {...defaultProps} cartId="cart-1" />);
     rerender(<BoundlessCheckout {...defaultProps} cartId="cart-2" />);
-
-    // QueryClient constructor should be called only once (on initial mount via useMemo)
     expect(mockQueryClientConstructor).toHaveBeenCalledTimes(1);
-
     unmount();
   });
 });
