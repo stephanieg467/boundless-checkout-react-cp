@@ -1,47 +1,47 @@
 import {Step, StepButton, Stepper} from "@mui/material";
 import {TCheckoutStep} from "boundless-api-client";
 import React, {useMemo} from "react";
-import {useLocation, useNavigate} from "react-router";
-import {getPathByStep, getStepByPath} from "../routes";
-import {useAppSelector} from "../hooks/redux";
+import {useAppDispatch, useAppSelector} from "../hooks/redux";
+import {setCurrentStep} from "../redux/reducers/app";
 import {useTranslation} from "react-i18next";
 
 export default function CheckoutProgress() {
-	const stepper = useAppSelector(state => state.app.stepper);
-	const {pathname} = useLocation();
-	const navigate = useNavigate();
-	const {t} = useTranslation();
+  const stepper = useAppSelector((state) => state.app.stepper);
+  const dispatch = useAppDispatch();
+  const {t} = useTranslation();
 
-	const currentStep = getStepByPath(pathname) ? stepper?.steps.indexOf(getStepByPath(pathname)!) : 0;
+  const currentStepIndex = stepper
+    ? stepper.steps.indexOf(stepper.currentStep)
+    : 0;
 
-	const handleStepChange = (step: TCheckoutStep) => {
-		const url = getPathByStep(step);
-		if (url) navigate(url);
-	};
+  const handleStepChange = (step: TCheckoutStep) => {
+    dispatch(setCurrentStep(step));
+  };
 
-	const checkoutStepTitles = useMemo(() => {
-		return {
-			[TCheckoutStep.contactInfo]: t("checkoutProgress.contactInfo"),
-			[TCheckoutStep.shippingAddress]: t("checkoutProgress.shippingAddress"),
-			[TCheckoutStep.shippingMethod]: t("checkoutProgress.shippingMethod"),
-			[TCheckoutStep.paymentMethod]: t("checkoutProgress.paymentMethod"),
-			[TCheckoutStep.thankYou]: t("checkoutProgress.thankYou")
-		};
-	}, [t]);
+  const checkoutStepTitles = useMemo(
+    () => ({
+      [TCheckoutStep.contactInfo]: t("checkoutProgress.contactInfo"),
+      [TCheckoutStep.shippingAddress]: t("checkoutProgress.shippingAddress"),
+      [TCheckoutStep.shippingMethod]: t("checkoutProgress.shippingMethod"),
+      [TCheckoutStep.paymentMethod]: t("checkoutProgress.paymentMethod"),
+      [TCheckoutStep.thankYou]: t("checkoutProgress.thankYou"),
+    }),
+    [t]
+  );
 
-	if (!stepper) return null;
+  if (!stepper) return null;
 
-	return (
-		<div className='bdl-checkout-progress'>
-			<Stepper activeStep={currentStep} alternativeLabel>
-				{stepper.steps.map((step) => (
-					<Step key={step}>
-						<StepButton color="inherit" onClick={handleStepChange.bind(null, step)}>
-							{checkoutStepTitles[step]}
-						</StepButton>
-					</Step>
-				))}
-			</Stepper>
-		</div>
-	);
+  return (
+    <div className="bdl-checkout-progress">
+      <Stepper activeStep={currentStepIndex} alternativeLabel nonLinear>
+        {stepper.steps.map((step) => (
+          <Step key={step}>
+            <StepButton color="inherit" onClick={() => handleStepChange(step)}>
+              {checkoutStepTitles[step]}
+            </StepButton>
+          </Step>
+        ))}
+      </Stepper>
+    </div>
+  );
 }
