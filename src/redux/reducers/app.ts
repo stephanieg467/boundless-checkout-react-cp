@@ -143,6 +143,11 @@ const appSlice = createSlice({
 		setLocaleSettings(state, action: PayloadAction<ILocaleSettings>) {
 			state.localeSettings = action.payload;
 		},
+		setCurrentStep(state, action: PayloadAction<TCheckoutStep>) {
+			if (state.stepper) {
+				state.stepper.currentStep = action.payload;
+			}
+		},
 	},
 });
 
@@ -160,6 +165,7 @@ export const {
 	setTotal,
 	setIsInited,
 	setLocaleSettings,
+	setCurrentStep,
 } = appSlice.actions;
 
 export default appSlice.reducer;
