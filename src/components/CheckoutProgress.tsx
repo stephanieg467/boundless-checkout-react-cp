@@ -33,7 +33,7 @@ export default function CheckoutProgress() {
 
   return (
     <div className="bdl-checkout-progress">
-      <Stepper activeStep={currentStepIndex} alternativeLabel nonLinear>
+      <Stepper activeStep={currentStepIndex} alternativeLabel>
         {stepper.steps.map((step) => (
           <Step key={step}>
             <StepButton color="inherit" onClick={() => handleStepChange(step)}>
