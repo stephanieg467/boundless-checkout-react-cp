@@ -58,23 +58,50 @@ const useSaveDeliveryDetails = () => {
 };
 
 export default function DeliveryDetailsForm() {
-  const {onSubmit} = useSaveDeliveryDetails();
-  const {order} = useAppSelector((state) => state.app);
+  const {onSubmit, hasDropShipItems} = useSaveDeliveryDetails();
+  const {order, items} = useAppSelector((state) => state.app);
   const {
     isLoading: loadingDeliveryTimes,
     isError: errorLoadingDeliveryTimes,
     data: deliveryTimes,
   } = useDeliveryTimes();
 
+  const dropShipItems = ordersDropShippingItems(items ?? []);
+  const regularItems = ordersRegularItems(items ?? []);
+
   const initialValues: IDeliveryDetailsFormValues = {
     delivery_time: order?.delivery_time ?? "",
+    drop_ship_delivery_time: order?.drop_ship_delivery_time ?? "",
   };
+
+  const deliveryTimeOptions = (
+    <>
+      <option value=""></option>
+      {loadingDeliveryTimes ? (
+        <option disabled value="">{"Loading delivery times..."}</option>
+      ) : !errorLoadingDeliveryTimes && deliveryTimes ? (
+        deliveryTimes.times.map((deliveryTime, idx) => (
+          <option key={idx} value={deliveryTime}>
+            {deliveryTime}
+          </option>
+        ))
+      ) : (
+        <option disabled>
+          {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
+        </option>
+      )}
+    </>
+  );
+
+  const nextDayHelperText = deliveryTimes?.isNextDay
+    ? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
+    : "";
 
   return (
     <Formik
       initialValues={initialValues}
       onSubmit={onSubmit}
-      validate={makeValidateDeliveryDetailsForm(false)}
+      validate={makeValidateDeliveryDetailsForm(hasDropShipItems)}
       validateOnChange={false}
     >
       {(formikProps) => (
@@ -82,39 +109,70 @@ export default function DeliveryDetailsForm() {
           <Typography variant="h5" sx={{mb: 2}}>
             {"Delivery details"}
           </Typography>
-          <Box sx={{mb: 2}}>
-            <TextField
-              required={true}
-              label="Delivery time"
-              variant={"outlined"}
-              fullWidth
-              select
-              slotProps={{
-                select: {native: true},
-              }}
-              helperText={
-                deliveryTimes?.isNextDay
-                  ? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
-                  : ""
-              }
-              {...fieldAttrs("delivery_time", formikProps)}
-            >
-              <option value=""></option>
-              {loadingDeliveryTimes ? (
-                <option disabled value="">{"Loading delivery times..."}</option>
-              ) : !errorLoadingDeliveryTimes && deliveryTimes ? (
-                deliveryTimes.times.map((deliveryTime, idx) => (
-                  <option key={idx} value={deliveryTime}>
-                    {deliveryTime}
-                  </option>
-                ))
-              ) : (
-                <option disabled>
-                  {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
-                </option>
-              )}
-            </TextField>
-          </Box>
+
+          {hasDropShipItems ? (
+            <>
+              <Box sx={{mb: 2}}>
+                <Typography variant="subtitle1" sx={{mb: 1}}>
+                  {"Standard delivery"}
+                </Typography>
+                <Typography variant="body2" sx={{mb: 1}}>
+                  {"Applies to: "}
+                  {regularItems.map((item) => item.product.Name).join(", ")}
+                </Typography>
+                <TextField
+                  required={true}
+                  label="Delivery time"
+                  variant={"outlined"}
+                  fullWidth
+                  select
+                  slotProps={{select: {native: true}}}
+                  helperText={nextDayHelperText}
+                  {...fieldAttrs("delivery_time", formikProps)}
+                >
+                  {deliveryTimeOptions}
+                </TextField>
+              </Box>
+
+              <Box sx={{mb: 2}}>
+                <Typography variant="subtitle1" sx={{mb: 1}}>
+                  {"Drop-ship delivery"}
+                </Typography>
+                <Typography variant="body2" sx={{mb: 1}}>
+                  {"Applies to: "}
+                  {dropShipItems.map((item) => item.product.Name).join(", ")}
+                </Typography>
+                <TextField
+                  required={true}
+                  label="Drop-ship delivery time"
+                  variant={"outlined"}
+                  fullWidth
+                  select
+                  slotProps={{select: {native: true}}}
+                  helperText={nextDayHelperText}
+                  {...fieldAttrs("drop_ship_delivery_time", formikProps)}
+                >
+                  {deliveryTimeOptions}
+                </TextField>
+              </Box>
+            </>
+          ) : (
+            <Box sx={{mb: 2}}>
+              <TextField
+                required={true}
+                label="Delivery time"
+                variant={"outlined"}
+                fullWidth
+                select
+                slotProps={{select: {native: true}}}
+                helperText={nextDayHelperText}
+                {...fieldAttrs("delivery_time", formikProps)}
+              >
+                {deliveryTimeOptions}
+              </TextField>
+            </Box>
+          )}
+
           <Box textAlign={"end"}>
             <Button
               variant="contained"
