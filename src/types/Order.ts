@@ -21,10 +21,10 @@ export interface IOrderWithCustmAttr {
 	custom_attrs: {
 		[key: string]: any;
 	};
-	items: CovaCartItem[];
 	status: IOrderStatus | null;
 	tip?: string;
 	delivery_time?: string;
+	drop_ship_delivery_time?: string;
 }
 
 export interface ICovaCustomer extends Omit<ICustomer, "receive_marketing_info"> {
