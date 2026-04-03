@@ -4,6 +4,7 @@ import {useAppSelector} from "./hooks/redux";
 import useInitCheckoutByCart from "./hooks/initCheckout";
 import ContactInfoPage from "./pages/ContactInfoPage";
 import ShippingPage from "./pages/ShippingPage";
+import DeliveryDetailsPage from "./pages/DeliveryDetailsPage";
 import PaymentPage from "./pages/PaymentPage";
 import Loading from "./components/Loading";
 import Container from "@mui/material/Container";
@@ -17,6 +18,7 @@ import {useTranslation} from "react-i18next";
 const stepComponents: Partial<Record<TCheckoutStep, React.ComponentType>> = {
   [TCheckoutStep.contactInfo]: ContactInfoPage,
   [TCheckoutStep.shippingAddress]: ShippingPage,
+  [TCheckoutStep.deliveryDetails]: DeliveryDetailsPage,
   [TCheckoutStep.paymentMethod]: PaymentPage,
 };
 
