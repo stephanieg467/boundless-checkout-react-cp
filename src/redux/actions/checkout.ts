@@ -6,7 +6,8 @@ import {
 } from "../reducers/app";
 import {TClickedElement} from "../../lib/elementEvents";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
-import {ITotal, TCheckoutStep, TPublishingStatus} from "boundless-api-client";
+import {ITotal, TPublishingStatus} from "boundless-api-client";
+import {TCheckoutStep} from "../../types/common";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {getOrderTaxes} from "../../lib/taxes";

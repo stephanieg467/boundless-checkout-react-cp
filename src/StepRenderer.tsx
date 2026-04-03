@@ -1,5 +1,5 @@
 import React from "react";
-import {TCheckoutStep} from "boundless-api-client";
+import {TCheckoutStep} from "./types/common";
 import {useAppSelector} from "./hooks/redux";
 import useInitCheckoutByCart from "./hooks/initCheckout";
 import ContactInfoPage from "./pages/ContactInfoPage";
