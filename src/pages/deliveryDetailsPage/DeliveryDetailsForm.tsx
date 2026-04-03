@@ -9,6 +9,7 @@ import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkout
 import {fieldAttrs} from "../../lib/formUtils";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
+import {ordersDropShippingItems, ordersRegularItems} from "../../lib/products";
 
 export interface IDeliveryDetailsFormValues {
   delivery_time: string;
@@ -30,7 +31,8 @@ export const makeValidateDeliveryDetailsForm =
 
 const useSaveDeliveryDetails = () => {
   const dispatch = useAppDispatch();
-  const {order} = useAppSelector((state) => state.app);
+  const {order, items} = useAppSelector((state) => state.app);
+  const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
 
   const onSubmit = (
     values: IDeliveryDetailsFormValues,
@@ -42,6 +44,7 @@ const useSaveDeliveryDetails = () => {
     const updatedOrder: IOrderWithCustmAttr = {
       ...checkoutDataOrder,
       delivery_time: values.delivery_time,
+      ...(hasDropShipItems && {drop_ship_delivery_time: values.drop_ship_delivery_time}),
     };
 
     setLocalStorageCheckoutData({order: updatedOrder, total});
@@ -51,7 +54,7 @@ const useSaveDeliveryDetails = () => {
     setSubmitting(false);
   };
 
-  return {onSubmit};
+  return {onSubmit, hasDropShipItems};
 };
 
 export default function DeliveryDetailsForm() {
