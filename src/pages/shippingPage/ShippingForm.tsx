@@ -3,23 +3,28 @@ import {
 	IAddress,
 	IAddressFields,
 	ICheckoutShippingPageData,
-	TCheckoutStep,
 } from "boundless-api-client";
-import {Form, Formik, FormikHelpers} from "formik";
+import { Form, Formik, FormikHelpers } from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
-import {Button, Typography} from "@mui/material";
+import { Alert, Button, Typography } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {Box} from "@mui/system";
-import {IShippingFormValues} from "../../types/shippingForm";
+import { Box } from "@mui/system";
+import { IShippingFormValues } from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
-import {useAppDispatch, useAppSelector} from "../../hooks/redux";
-import {addPromise} from "../../redux/actions/xhr";
-import {apiErrors2Formik} from "../../lib/formUtils";
-import {addFilledStep, setOrder, setTotal, setCurrentStep} from "../../redux/reducers/app";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { addPromise } from "../../redux/actions/xhr";
+import { apiErrors2Formik } from "../../lib/formUtils";
+import {
+	addFilledStep,
+	setOrder,
+	setTotal,
+	setCurrentStep,
+	setStepperSteps,
+} from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import {isPickUpDelivery, qualifiesForFreeShipping} from "../../lib/shipping";
-import {useTranslation} from "react-i18next";
-import {IOrderWithCustmAttr} from "../../types/Order";
+import { isPickUpDelivery, qualifiesForFreeShipping } from "../../lib/shipping";
+import { useTranslation } from "react-i18next";
+import { IOrderWithCustmAttr } from "../../types/Order";
 import {
 	DELIVERY_COST,
 	DELIVERY_ID,
@@ -30,12 +35,13 @@ import {
 	SHIPPING_DELIVERY_INFO,
 	SHIPPING_COST,
 } from "../../constants";
-import {v4} from "uuid";
+import { v4 } from "uuid";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import {cartHasTickets} from "../../lib/products";
+import { cartHasTickets, ordersDropShippingItems, ordersRegularItems } from "../../lib/products";
+import { TCheckoutStep } from "../../types/common";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -82,9 +88,9 @@ const validateShippingForm = (values: IShippingFormValues) => {
 };
 
 const getFormInitialValues = (
-	shippingPage: ICheckoutShippingPageData
+	shippingPage: ICheckoutShippingPageData,
 ): IShippingFormValues => {
-	const {order} = useAppSelector((state) => state.app);
+	const { order } = useAppSelector((state) => state.app);
 
 	const initialValues: IShippingFormValues = {
 		delivery_id:
@@ -96,7 +102,7 @@ const getFormInitialValues = (
 		deliveryInstructions: "",
 		shipping_address: getEmptyAddressFields(
 			shippingPage.shippingAddress,
-			order
+			order,
 		),
 		billing_address: getEmptyAddressFields(shippingPage.billingAddress, order),
 		billing_address_the_same: false,
@@ -111,7 +117,7 @@ const getFormInitialValues = (
 
 const getEmptyAddressFields = (
 	address: IAddress | null = null,
-	order: IOrderWithCustmAttr | null = null
+	order: IOrderWithCustmAttr | null = null,
 ): IAddressFields => {
 	let first_name = order ? order.customer?.first_name || null : null,
 		last_name = order ? order.customer?.last_name || null : null,
@@ -162,9 +168,9 @@ const useSaveShippingForm = ({
 
 	const onSubmit = (
 		values: IShippingFormValues,
-		{setSubmitting, setErrors}: FormikHelpers<IShippingFormValues>
+		{ setSubmitting, setErrors }: FormikHelpers<IShippingFormValues>,
 	) => {
-		const {order, total} = getCheckoutData() || {};
+		const { order, total } = getCheckoutData() || {};
 		if (!order) return;
 
 		const {
@@ -289,7 +295,7 @@ const useSaveShippingForm = ({
 			})
 			.then((result) => {
 				if (!result) throw new Error("Order data is missing");
-				const {order} = result;
+				const { order } = result;
 				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.2 : 0;
 				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
 
@@ -366,12 +372,20 @@ const useSaveShippingForm = ({
 
 					dispatch(setOrder(updatedOrder));
 					dispatch(setTotal(updatedTotal));
-					dispatch(addFilledStep({step: TCheckoutStep.shippingMethod}));
+					dispatch(addFilledStep({ step: TCheckoutStep.shippingAddress }));
 				}
 
-				dispatch(setCurrentStep(TCheckoutStep.paymentMethod));
+				const isDelivery = delivery_id === DELIVERY_ID;
+				const updatedSteps = [
+					TCheckoutStep.contactInfo,
+					TCheckoutStep.shippingAddress,
+					...(isDelivery ? [TCheckoutStep.deliveryDetails] : []),
+					TCheckoutStep.paymentMethod,
+				];
+				dispatch(setStepperSteps(updatedSteps));
+				dispatch(setCurrentStep(isDelivery ? TCheckoutStep.deliveryDetails : TCheckoutStep.paymentMethod));
 			})
-			.catch(({response: {data}}) => {
+			.catch(({ response: { data } }) => {
 				setErrors(apiErrors2Formik(data));
 			})
 			.finally(() => setSubmitting(false));
@@ -388,8 +402,15 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
-	const {onSubmit} = useSaveShippingForm({shippingPage});
-	const {t} = useTranslation();
+	const { onSubmit } = useSaveShippingForm({ shippingPage });
+	const { t } = useTranslation();
+		const checkoutData = getCheckoutData();
+		const { items } = checkoutData ?? {};
+	const orderItems = items || [];
+	const numRegularItems = ordersRegularItems(orderItems).length;
+	const numDropShipItems = ordersDropShippingItems(orderItems).length;
+	const hasDropShipItems = numDropShipItems > 0;
+	const hasRegulardAndDropShipItems = numRegularItems > 0 && hasDropShipItems;
 
 	return (
 		<Formik
@@ -398,10 +419,10 @@ export default function ShippingForm({
 			validate={validateShippingForm}
 		>
 			{(formikProps) => {
-				const {values} = formikProps;
+				const { values } = formikProps;
 				values.delivery_id = Number(values.delivery_id);
 
-				const {delivery_id} = values;
+				const { delivery_id } = values;
 
 				return (
 					<Form className={"bdl-shipping-form"}>
@@ -411,11 +432,18 @@ export default function ShippingForm({
 								errors={formikProps.errors}
 							/>
 						)}
-						<Typography variant="h5" sx={{m: 2}}>
+						<Typography variant="h5" sx={{ m: 2 }}>
 							{t("shippingForm.pageHeader")}
 						</Typography>
+						{hasDropShipItems && hasRegulardAndDropShipItems && (
+							<Alert severity="info">
+								{
+									"NOTE: Please select separate delivery options for drop-shipped items."
+								}
+							</Alert>
+						)}
 						{cartHasTickets() && (
-							<Typography variant="body1" sx={{m: 2}}>
+							<Typography variant="body1" sx={{ m: 2 }}>
 								{
 									"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."
 								}
@@ -429,10 +457,7 @@ export default function ShippingForm({
 							<Button
 								variant="contained"
 								type={"submit"}
-								disabled={
-									formikProps.isSubmitting ||
-									!delivery_id
-								}
+								disabled={formikProps.isSubmitting || !delivery_id}
 								color="success"
 								size="large"
 								startIcon={<PaymentIcon />}
