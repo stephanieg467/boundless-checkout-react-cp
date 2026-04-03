@@ -1,12 +1,13 @@
 import React from "react";
 import {render, screen} from "@testing-library/react";
-import {TCheckoutStep} from "boundless-api-client";
+import {TCheckoutStep} from "../types/common";
 
 // ── mocks ──────────────────────────────────────────────────────────────
 jest.mock("../hooks/initCheckout", () => () => ({isInited: true}));
 
 jest.mock("../pages/ContactInfoPage", () => () => <div data-testid="contact-info-page" />);
 jest.mock("../pages/ShippingPage", () => () => <div data-testid="shipping-page" />);
+jest.mock("../pages/DeliveryDetailsPage", () => () => <div data-testid="delivery-details-page" />);
 jest.mock("../pages/PaymentPage", () => () => <div data-testid="payment-page" />);
 jest.mock("../components/Loading", () => () => <div data-testid="loading" />);
 
@@ -43,6 +44,11 @@ describe("StepRenderer", () => {
   it("renders ShippingPage for shippingAddress step", () => {
     renderWithStep(TCheckoutStep.shippingAddress);
     expect(screen.getByTestId("shipping-page")).toBeInTheDocument();
+  });
+
+  it("renders DeliveryDetailsPage for deliveryDetails step", () => {
+    renderWithStep(TCheckoutStep.deliveryDetails);
+    expect(screen.getByTestId("delivery-details-page")).toBeInTheDocument();
   });
 
   it("renders PaymentPage for paymentMethod step", () => {
