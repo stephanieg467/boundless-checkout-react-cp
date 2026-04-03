@@ -1,7 +1,5 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
-	ICheckoutStepper,
-	TCheckoutStep,
 	ICurrency,
 	ILocaleSettings,
 	ISystemTax,
@@ -13,6 +11,7 @@ import {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
 import {ICovaCustomer, IOrderWithCustmAttr} from "../../types/Order";
 import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkoutData";
 import {setCart} from "../../hooks/getCartOrRetrieve";
+import { ICheckoutStepper, TCheckoutStep } from "../../types/common";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -145,6 +144,11 @@ const appSlice = createSlice({
 				state.stepper.currentStep = action.payload;
 			}
 		},
+		setStepperSteps(state, action: PayloadAction<TCheckoutStep[]>) {
+			if (state.stepper) {
+				state.stepper.steps = action.payload;
+			}
+		},
 	},
 });
 
@@ -163,6 +167,7 @@ export const {
 	setIsInited,
 	setLocaleSettings,
 	setCurrentStep,
+	setStepperSteps,
 } = appSlice.actions;
 
 export default appSlice.reducer;
