@@ -9,7 +9,6 @@ import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkout
 import {fieldAttrs} from "../../lib/formUtils";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
-import {RootState} from "../../redux/store";
 
 export interface IDeliveryDetailsFormValues {
   delivery_time: string;
@@ -21,13 +20,6 @@ const validateDeliveryDetailsForm = (values: IDeliveryDetailsFormValues) => {
     errors.delivery_time = "Delivery time is required";
   }
   return errors;
-};
-
-const getFormInitialValues = (): IDeliveryDetailsFormValues => {
-  const order = useAppSelector((state: RootState) => state.app.order);
-  return {
-    delivery_time: order?.delivery_time ?? "",
-  };
 };
 
 const useSaveDeliveryDetails = () => {
@@ -58,15 +50,20 @@ const useSaveDeliveryDetails = () => {
 
 export default function DeliveryDetailsForm() {
   const {onSubmit} = useSaveDeliveryDetails();
+  const {order} = useAppSelector((state) => state.app);
   const {
     isLoading: loadingDeliveryTimes,
     isError: errorLoadingDeliveryTimes,
     data: deliveryTimes,
   } = useDeliveryTimes();
 
+  const initialValues: IDeliveryDetailsFormValues = {
+    delivery_time: order?.delivery_time ?? "",
+  };
+
   return (
     <Formik
-      initialValues={getFormInitialValues()}
+      initialValues={initialValues}
       onSubmit={onSubmit}
       validate={validateDeliveryDetailsForm}
       validateOnChange={false}
