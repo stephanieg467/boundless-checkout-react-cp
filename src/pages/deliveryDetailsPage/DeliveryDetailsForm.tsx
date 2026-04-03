@@ -71,7 +71,7 @@ export default function DeliveryDetailsForm() {
     <Formik
       initialValues={initialValues}
       onSubmit={onSubmit}
-      validate={validateDeliveryDetailsForm}
+      validate={makeValidateDeliveryDetailsForm(false)}
       validateOnChange={false}
     >
       {(formikProps) => (
