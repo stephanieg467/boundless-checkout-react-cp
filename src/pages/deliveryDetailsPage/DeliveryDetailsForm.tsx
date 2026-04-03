@@ -17,10 +17,10 @@ export interface IDeliveryDetailsFormValues {
 }
 
 export const makeValidateDeliveryDetailsForm =
-  (hasDropShipItems: boolean) =>
+  (hasRegularItems: boolean, hasDropShipItems: boolean) =>
   (values: IDeliveryDetailsFormValues) => {
     const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> = {};
-    if (!values.delivery_time) {
+    if (hasRegularItems && !values.delivery_time) {
       errors.delivery_time = "Delivery time is required";
     }
     if (hasDropShipItems && !values.drop_ship_delivery_time) {
@@ -45,7 +45,7 @@ const useSaveDeliveryDetails = () => {
 
     const updatedOrder: IOrderWithCustmAttr = {
       ...checkoutDataOrder,
-      delivery_time: values.delivery_time,
+      ...(hasRegularItems && {delivery_time: values.delivery_time}),
       ...(hasDropShipItems && {drop_ship_delivery_time: values.drop_ship_delivery_time}),
     };
 
@@ -56,11 +56,13 @@ const useSaveDeliveryDetails = () => {
     setSubmitting(false);
   };
 
-  return {onSubmit, hasDropShipItems, dropShipItems, regularItems};
+  const hasRegularItems = regularItems.length > 0;
+
+  return {onSubmit, hasRegularItems, hasDropShipItems, dropShipItems, regularItems};
 };
 
 export default function DeliveryDetailsForm() {
-  const {onSubmit, hasDropShipItems, dropShipItems, regularItems} = useSaveDeliveryDetails();
+  const {onSubmit, hasRegularItems, hasDropShipItems, dropShipItems, regularItems} = useSaveDeliveryDetails();
   const {order} = useAppSelector((state) => state.app);
   const {
     isLoading: loadingDeliveryTimes,
@@ -69,10 +71,8 @@ export default function DeliveryDetailsForm() {
   } = useDeliveryTimes();
 
   const initialValues: IDeliveryDetailsFormValues = {
-    delivery_time: order?.delivery_time ?? "",
-    ...(hasDropShipItems && {
-      drop_ship_delivery_time: order?.drop_ship_delivery_time ?? "",
-    }),
+    delivery_time: hasRegularItems ? (order?.delivery_time ?? "") : "",
+    ...(hasDropShipItems && {drop_ship_delivery_time: order?.drop_ship_delivery_time ?? ""}),
   };
 
   const deliveryTimeOptions = (
@@ -102,7 +102,7 @@ export default function DeliveryDetailsForm() {
     <Formik
       initialValues={initialValues}
       onSubmit={onSubmit}
-      validate={makeValidateDeliveryDetailsForm(hasDropShipItems)}
+      validate={makeValidateDeliveryDetailsForm(hasRegularItems, hasDropShipItems)}
       validateOnChange={false}
     >
       {(formikProps) => (
@@ -113,27 +113,29 @@ export default function DeliveryDetailsForm() {
 
           {hasDropShipItems ? (
             <>
-              <Box sx={{mb: 2}}>
-                <Typography variant="subtitle1" sx={{mb: 1}}>
-                  {"Standard delivery"}
-                </Typography>
-                <Typography variant="body2" sx={{mb: 1}}>
-                  {"Applies to: "}
-                  {regularItems.map((item) => item.product.Name).join(", ")}
-                </Typography>
-                <TextField
-                  required={true}
-                  label="Delivery time"
-                  variant={"outlined"}
-                  fullWidth
-                  select
-                  slotProps={{select: {native: true}}}
-                  helperText={nextDayHelperText}
-                  {...fieldAttrs("delivery_time", formikProps)}
-                >
-                  {deliveryTimeOptions}
-                </TextField>
-              </Box>
+              {hasRegularItems && (
+                <Box sx={{mb: 2}}>
+                  <Typography variant="subtitle1" sx={{mb: 1}}>
+                    {"Standard delivery"}
+                  </Typography>
+                  <Typography variant="body2" sx={{mb: 1}}>
+                    {"Applies to: "}
+                    {regularItems.map((item) => item.product.Name).join(", ")}
+                  </Typography>
+                  <TextField
+                    required={true}
+                    label="Delivery time"
+                    variant={"outlined"}
+                    fullWidth
+                    select
+                    slotProps={{select: {native: true}}}
+                    helperText={nextDayHelperText}
+                    {...fieldAttrs("delivery_time", formikProps)}
+                  >
+                    {deliveryTimeOptions}
+                  </TextField>
+                </Box>
+              )}
 
               <Box sx={{mb: 2}}>
                 <Typography variant="subtitle1" sx={{mb: 1}}>
