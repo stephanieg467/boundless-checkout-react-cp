@@ -11,8 +11,8 @@ import {
 } from "../constants";
 import {cartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
-import {TCheckoutStep} from "boundless-api-client";
 import {setCurrentStep} from "../redux/reducers/app";
+import { TCheckoutStep } from "../types/common";
 
 export default function PaymentPage() {
 	const {isInited, paymentPage} = useInitPaymentPage();
@@ -48,7 +48,7 @@ export interface IPaymentPageData {
 
 const useInitPaymentPage = () => {
 	const {isInited} = useInitCheckoutByCart();
-	const {order} = useAppSelector((state) => state.app);
+	const {order, stepper} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const checkoutData = getCheckoutData();
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
@@ -85,6 +85,16 @@ const useInitPaymentPage = () => {
 			setPaymentPage(paymentPageData);
 		}
 	}, [isInited, order, dispatch]); //eslint-disable-line
+
+	useEffect(() => {
+		if (!stepper) return;
+		if (
+			stepper.steps.includes(TCheckoutStep.deliveryDetails) &&
+			!stepper.filledSteps.includes(TCheckoutStep.deliveryDetails)
+		) {
+			dispatch(setCurrentStep(TCheckoutStep.deliveryDetails));
+		}
+	}, [stepper, dispatch]);
 
 	return {
 		isInited,
