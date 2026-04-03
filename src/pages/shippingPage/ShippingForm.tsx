@@ -6,7 +6,7 @@ import {
 } from "boundless-api-client";
 import { Form, Formik, FormikHelpers } from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
-import { Alert, Button, Typography } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import { Box } from "@mui/system";
 import { IShippingFormValues } from "../../types/shippingForm";
@@ -40,7 +40,7 @@ import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import { cartHasTickets, ordersDropShippingItems, ordersRegularItems } from "../../lib/products";
+import { cartHasTickets } from "../../lib/products";
 import { TCheckoutStep } from "../../types/common";
 
 // Function to validate if postal code is a Penticton postal code
@@ -404,13 +404,6 @@ export default function ShippingForm({
 }) {
 	const { onSubmit } = useSaveShippingForm({ shippingPage });
 	const { t } = useTranslation();
-		const checkoutData = getCheckoutData();
-		const { items } = checkoutData ?? {};
-	const orderItems = items || [];
-	const numRegularItems = ordersRegularItems(orderItems).length;
-	const numDropShipItems = ordersDropShippingItems(orderItems).length;
-	const hasDropShipItems = numDropShipItems > 0;
-	const hasRegulardAndDropShipItems = numRegularItems > 0 && hasDropShipItems;
 
 	return (
 		<Formik
@@ -435,13 +428,6 @@ export default function ShippingForm({
 						<Typography variant="h5" sx={{ m: 2 }}>
 							{t("shippingForm.pageHeader")}
 						</Typography>
-						{hasDropShipItems && hasRegulardAndDropShipItems && (
-							<Alert severity="info">
-								{
-									"NOTE: Please select separate delivery options for drop-shipped items."
-								}
-							</Alert>
-						)}
 						{cartHasTickets() && (
 							<Typography variant="body1" sx={{ m: 2 }}>
 								{
