@@ -105,11 +105,13 @@ export const initCheckoutByCart =
 				stepper: {
 					filledSteps: stepper?.filledSteps ?? [],
 					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
-					steps: [
-						TCheckoutStep.contactInfo,
-						TCheckoutStep.shippingAddress,
-						TCheckoutStep.paymentMethod,
-					],
+					steps: stepper?.steps?.length
+						? stepper.steps
+						: [
+							TCheckoutStep.contactInfo,
+							TCheckoutStep.shippingAddress,
+							TCheckoutStep.paymentMethod,
+						],
 				},
 				total: {
 					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
