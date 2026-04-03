@@ -32,7 +32,9 @@ export const makeValidateDeliveryDetailsForm =
 const useSaveDeliveryDetails = () => {
   const dispatch = useAppDispatch();
   const {order, items} = useAppSelector((state) => state.app);
-  const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
+  const dropShipItems = ordersDropShippingItems(items ?? []);
+  const hasDropShipItems = dropShipItems.length > 0;
+  const regularItems = ordersRegularItems(items ?? []);
 
   const onSubmit = (
     values: IDeliveryDetailsFormValues,
@@ -54,20 +56,17 @@ const useSaveDeliveryDetails = () => {
     setSubmitting(false);
   };
 
-  return {onSubmit, hasDropShipItems};
+  return {onSubmit, hasDropShipItems, dropShipItems, regularItems};
 };
 
 export default function DeliveryDetailsForm() {
-  const {onSubmit, hasDropShipItems} = useSaveDeliveryDetails();
-  const {order, items} = useAppSelector((state) => state.app);
+  const {onSubmit, hasDropShipItems, dropShipItems, regularItems} = useSaveDeliveryDetails();
+  const {order} = useAppSelector((state) => state.app);
   const {
     isLoading: loadingDeliveryTimes,
     isError: errorLoadingDeliveryTimes,
     data: deliveryTimes,
   } = useDeliveryTimes();
-
-  const dropShipItems = ordersDropShippingItems(items ?? []);
-  const regularItems = ordersRegularItems(items ?? []);
 
   const initialValues: IDeliveryDetailsFormValues = {
     delivery_time: order?.delivery_time ?? "",
