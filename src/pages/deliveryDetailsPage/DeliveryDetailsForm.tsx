@@ -70,7 +70,9 @@ export default function DeliveryDetailsForm() {
 
   const initialValues: IDeliveryDetailsFormValues = {
     delivery_time: order?.delivery_time ?? "",
-    drop_ship_delivery_time: order?.drop_ship_delivery_time ?? "",
+    ...(hasDropShipItems && {
+      drop_ship_delivery_time: order?.drop_ship_delivery_time ?? "",
+    }),
   };
 
   const deliveryTimeOptions = (
