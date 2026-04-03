@@ -1,6 +1,6 @@
 import React from "react";
 import {Form, Formik, FormikHelpers} from "formik";
-import {Box, Button, Skeleton, TextField, Typography} from "@mui/material";
+import {Box, Button, TextField, Typography} from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
 import {addFilledStep, setCurrentStep, setOrder} from "../../redux/reducers/app";
@@ -12,15 +12,21 @@ import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 
 export interface IDeliveryDetailsFormValues {
   delivery_time: string;
+  drop_ship_delivery_time?: string;
 }
 
-const validateDeliveryDetailsForm = (values: IDeliveryDetailsFormValues) => {
-  const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> = {};
-  if (!values.delivery_time) {
-    errors.delivery_time = "Delivery time is required";
-  }
-  return errors;
-};
+export const makeValidateDeliveryDetailsForm =
+  (hasDropShipItems: boolean) =>
+  (values: IDeliveryDetailsFormValues) => {
+    const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> = {};
+    if (!values.delivery_time) {
+      errors.delivery_time = "Delivery time is required";
+    }
+    if (hasDropShipItems && !values.drop_ship_delivery_time) {
+      errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
+    }
+    return errors;
+  };
 
 const useSaveDeliveryDetails = () => {
   const dispatch = useAppDispatch();
@@ -71,7 +77,7 @@ export default function DeliveryDetailsForm() {
       {(formikProps) => (
         <Form className={"bdl-delivery-details-form"}>
           <Typography variant="h5" sx={{mb: 2}}>
-            Delivery details
+            {"Delivery details"}
           </Typography>
           <Box sx={{mb: 2}}>
             <TextField
@@ -92,7 +98,7 @@ export default function DeliveryDetailsForm() {
             >
               <option value=""></option>
               {loadingDeliveryTimes ? (
-                <Skeleton variant="rectangular" width={"100%"} height={56} />
+                <option disabled value="">{"Loading delivery times..."}</option>
               ) : !errorLoadingDeliveryTimes && deliveryTimes ? (
                 deliveryTimes.times.map((deliveryTime, idx) => (
                   <option key={idx} value={deliveryTime}>
@@ -101,7 +107,7 @@ export default function DeliveryDetailsForm() {
                 ))
               ) : (
                 <option disabled>
-                  Error loading delivery times. Please contact info@cannabis-cottage.ca
+                  {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
                 </option>
               )}
             </TextField>
@@ -115,7 +121,7 @@ export default function DeliveryDetailsForm() {
               color="success"
               size="large"
             >
-              Continue to payment
+              {"Continue to payment"}
             </Button>
           </Box>
         </Form>
