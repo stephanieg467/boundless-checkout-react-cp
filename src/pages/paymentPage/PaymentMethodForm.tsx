@@ -12,7 +12,6 @@ import {
 	TextField,
 	InputAdornment,
 	FormLabel,
-	Skeleton,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
@@ -31,13 +30,9 @@ import {setOrder, setTotal} from "../../redux/reducers/app";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {cartHasTickets} from "../../lib/products";
 import {hasShipping} from "../../lib/shipping";
-import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 
 // Custom validation function
-const validatePaymentForm = (
-	values: IPaymentMethodFormValues,
-	isDelivery: boolean
-) => {
+const validatePaymentForm = (values: IPaymentMethodFormValues) => {
 	const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
 
 	if (!values.payment_method_id || values.payment_method_id === "0") {
@@ -46,10 +41,6 @@ const validatePaymentForm = (
 
 	if (values.tip && parseFloat(values.tip) < 0) {
 		errors.tip = "Tip must be positive";
-	}
-
-	if (isDelivery && !values.delivery_time) {
-		errors.delivery_time = "Delivery time is required";
 	}
 
 	return errors;
@@ -62,17 +53,13 @@ export default function PaymentMethodForm({
 }) {
 	const {onSubmit} = useSavePaymentMethod(paymentPage);
 	const {t} = useTranslation();
-	const order = useAppSelector((state: RootState) => state.app.order);
-	const isDelivery =
-		order?.services?.some((service) => service.service_id === DELIVERY_ID) ||
-		false;
 
 	return (
 		<Formik
 			initialValues={getFormInitialValues()}
 			onSubmit={onSubmit}
 			validateOnChange={false}
-			validate={(values) => validatePaymentForm(values, isDelivery)}
+			validate={validatePaymentForm}
 		>
 			{(formikProps) => (
 				<Form className={"bdl-payment-form"}>
@@ -137,12 +124,6 @@ const PaymentMethods = ({
 		(service) => service.service_id === DELIVERY_ID
 	);
 
-	const {
-		isLoading: loadingDeliveryTimes,
-		isError: errorLoadingDeliveryTimes,
-		data: deliveryTimes,
-	} = useDeliveryTimes();
-
 	return (
 		<Box sx={{mb: 2}}>
 			<FormControl
@@ -194,62 +175,26 @@ const PaymentMethods = ({
 					</FormHelperText>
 				)}
 				{isDelivery && (
-					<>
-						<Box sx={{mb: 2, mt: 2}}>
-							<TextField
-								label="Tip"
-								type="number"
-								variant={"outlined"}
-								{...fieldAttrs("tip", formikProps)}
-								helperText={"100% of tip goes to your driver!"}
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position="start">$</InputAdornment>
-										),
-									},
-									htmlInput: {
-										min: "0",
-										step: "0.01",
-									},
-								}}
-							/>
-						</Box>
-						<Box sx={{mb: 2}}>
-							<TextField
-								required={true}
-								label="Delivery time"
-								variant={"outlined"}
-								fullWidth
-								select
-								slotProps={{
-									select: {native: true},
-								}}
-								helperText={
-									deliveryTimes?.isNextDay
-										? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
-										: ""
-								}
-								{...fieldAttrs("delivery_time", formikProps)}
-							>
-								<option value=""></option>
-								{loadingDeliveryTimes ? (
-									<Skeleton variant="rectangular" width={"100%"} height={56} />
-								) : !errorLoadingDeliveryTimes && deliveryTimes ? (
-									deliveryTimes.times.map((deliveryTime, idx) => (
-										<option key={idx} value={deliveryTime}>
-											{deliveryTime}
-										</option>
-									))
-								) : (
-									<Typography color="error">
-										"There was an error loading delivery times. Please contant
-										info@cannabis-cottage.ca for assistance.
-									</Typography>
-								)}
-							</TextField>
-						</Box>
-					</>
+					<Box sx={{mb: 2, mt: 2}}>
+						<TextField
+							label="Tip"
+							type="number"
+							variant={"outlined"}
+							{...fieldAttrs("tip", formikProps)}
+							helperText={"100% of tip goes to your driver!"}
+							slotProps={{
+								input: {
+									startAdornment: (
+										<InputAdornment position="start">$</InputAdornment>
+									),
+								},
+								htmlInput: {
+									min: "0",
+									step: "0.01",
+								},
+							}}
+						/>
+					</Box>
 				)}
 			</FormControl>
 		</Box>
@@ -268,14 +213,13 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 
 		if (!order || !checkoutDataOrder) return;
 
-		const {payment_method_id, tip, delivery_time} = values;
+		const {payment_method_id, tip} = values;
 
 		let updatedOrder = {
 			...checkoutDataOrder,
 			paymentMethod: paymentPage.paymentMethods.find(
 				(method) => method.payment_method_id === payment_method_id
 			),
-			delivery_time: delivery_time || "",
 			tip: tip ? parseFloat(tip).toString() : "0",
 			payment_method_id: payment_method_id,
 			custom_attrs: {
@@ -320,5 +264,4 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 export interface IPaymentMethodFormValues {
 	payment_method_id: number | string;
 	tip?: string;
-	delivery_time?: string;
 }
