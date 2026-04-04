@@ -1,4 +1,5 @@
-import {addBusinessDays} from "../lib/deliveryTimes";
+import {getDynamicDeliveryTimes, addBusinessDays} from "../lib/deliveryTimes";
+import {DeliveryTimeSlot} from "../hooks/useDeliveryTimes";
 
 describe("addBusinessDays", () => {
   it("adds 2 business days from a Monday (Monday + 2 = Wednesday)", () => {
@@ -31,6 +32,32 @@ describe("addBusinessDays", () => {
     const result = addBusinessDays(saturday, 2);
     const {year, month, day} = getVancouverDateTimeParts(result);
     expect(`${year}-${month}-${day}`).toBe("2026-4-8"); // Wednesday
+  });
+});
+
+describe("getDynamicDeliveryTimes with returnBothDays", () => {
+  const allDaysSlots: DeliveryTimeSlot[] = [
+    {days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], timeStart: "11:00", timeEnd: "17:00"},
+  ];
+
+  it("returns dropShipTimes when returnBothDays is true", () => {
+    const result = getDynamicDeliveryTimes(allDaysSlots, true);
+    expect(result).toHaveProperty("dropShipTimes");
+    expect(result.dropShipTimes).toHaveProperty("times");
+    expect(result.dropShipTimes).toHaveProperty("date");
+    expect(Array.isArray(result.dropShipTimes.times)).toBe(true);
+    expect(typeof result.dropShipTimes.date).toBe("string");
+    expect(result.dropShipTimes.date.length).toBeGreaterThan(0);
+  });
+
+  it("does not return dropShipTimes when returnBothDays is false", () => {
+    const result = getDynamicDeliveryTimes(allDaysSlots, false);
+    expect(result).not.toHaveProperty("dropShipTimes");
+  });
+
+  it("does not return dropShipTimes when returnBothDays is omitted", () => {
+    const result = getDynamicDeliveryTimes(allDaysSlots);
+    expect(result).not.toHaveProperty("dropShipTimes");
   });
 });
 

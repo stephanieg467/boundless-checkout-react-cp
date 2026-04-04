@@ -133,32 +133,56 @@ const getDateString = (year: number, month: number, day: number) => {
 	return `${year}-${month}-${day}`;
 };
 
-export const getDynamicDeliveryTimes = (
+type DeliveryTimesBase = {times: string[]; isNextDay: boolean};
+type DeliveryTimesWithDropShip = DeliveryTimesBase & {
+	dropShipTimes: {times: string[]; date: string};
+};
+
+export function getDynamicDeliveryTimes(
 	deliveryTimesData: DeliveryTimeSlot[],
-): { times: string[]; isNextDay: boolean } => {
+	returnBothDays: true,
+): DeliveryTimesWithDropShip;
+export function getDynamicDeliveryTimes(
+	deliveryTimesData: DeliveryTimeSlot[],
+	returnBothDays?: false,
+): DeliveryTimesBase;
+export function getDynamicDeliveryTimes(
+	deliveryTimesData: DeliveryTimeSlot[],
+	returnBothDays?: boolean,
+): DeliveryTimesBase | DeliveryTimesWithDropShip {
 	const now = new Date();
 	const {hourVancouver, minuteVancouver} = getVancouverDateTime(now);
 	const currentTime = hourVancouver + minuteVancouver / 60;
 
-	let deliveryTimes = calculateSlotsForDate(
-		now,
-		deliveryTimesData,
-		currentTime,
-	);
+	let deliveryTimes = calculateSlotsForDate(now, deliveryTimesData, currentTime);
+	const isNextDay = deliveryTimes.length === 0;
 
-	if (deliveryTimes.length > 0) {
-		return {times: deliveryTimes, isNextDay: false};
+	if (isNextDay) {
+		const tomorrow = new Date(now);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+		deliveryTimes = calculateSlotsForDate(tomorrow, deliveryTimesData, -1);
 	}
 
-	// If no slots today, try tomorrow
-	const tomorrow = new Date(now);
-	tomorrow.setDate(tomorrow.getDate() + 1);
+	const base: DeliveryTimesBase = {times: deliveryTimes, isNextDay};
 
-	// For tomorrow, we don't care about currentTime (it's in the future)
-	deliveryTimes = calculateSlotsForDate(tomorrow, deliveryTimesData, -1);
+	if (!returnBothDays) {
+		return base;
+	}
 
-	return {times: deliveryTimes, isNextDay: true};
-};
+	const dropShipDate = addBusinessDays(now, 2);
+	const dropShipSlots = calculateSlotsForDate(dropShipDate, deliveryTimesData, -1);
+	const dropShipDateLabel = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "America/Vancouver",
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	}).format(dropShipDate);
+
+	return {
+		...base,
+		dropShipTimes: {times: dropShipSlots, date: dropShipDateLabel},
+	};
+}
 
 const calculateSlotsForDate = (
 	date: Date,
