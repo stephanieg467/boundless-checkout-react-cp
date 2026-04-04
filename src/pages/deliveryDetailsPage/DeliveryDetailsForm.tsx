@@ -9,6 +9,7 @@ import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkout
 import {fieldAttrs} from "../../lib/formUtils";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
+import {DeliveryTimesWithDropShip} from "../../lib/deliveryTimes";
 import {ordersDropShippingItems, ordersRegularItems} from "../../lib/products";
 
 export interface IDeliveryDetailsFormValues {
@@ -68,7 +69,7 @@ export default function DeliveryDetailsForm() {
     isLoading: loadingDeliveryTimes,
     isError: errorLoadingDeliveryTimes,
     data: deliveryTimes,
-  } = useDeliveryTimes();
+  } = useDeliveryTimes({returnTimeForTodayAndTwoDaysFromNow: hasDropShipItems});
 
   const initialValues: IDeliveryDetailsFormValues = {
     delivery_time: hasRegularItems ? (order?.delivery_time ?? "") : "",
@@ -98,6 +99,29 @@ export default function DeliveryDetailsForm() {
     ? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
     : "";
 
+  const dropShipData = deliveryTimes as DeliveryTimesWithDropShip | undefined;
+
+  const dropShipTimeOptions = (
+    <>
+      <option value=""></option>
+      {loadingDeliveryTimes ? (
+        <option disabled value="">{"Loading delivery times..."}</option>
+      ) : !errorLoadingDeliveryTimes && dropShipData?.dropShipTimes ? (
+        dropShipData.dropShipTimes.times.map((deliveryTime, idx) => (
+          <option key={idx} value={deliveryTime}>
+            {deliveryTime}
+          </option>
+        ))
+      ) : (
+        <option disabled>
+          {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
+        </option>
+      )}
+    </>
+  );
+
+  const dropShipDateLabel = dropShipData?.dropShipTimes?.date ?? "";
+
   return (
     <Formik
       initialValues={initialValues}
@@ -115,10 +139,10 @@ export default function DeliveryDetailsForm() {
             <>
               {hasRegularItems && (
                 <Box sx={{mb: 2}}>
-                  <Typography variant="subtitle1" sx={{mb: 1}}>
+                  <Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
                     {"Standard delivery"}
                   </Typography>
-                  <Typography variant="body2" sx={{mb: 1}}>
+                  <Typography variant="body2" sx={{mb: 1, fontWeight: "bold"}}>
                     {"Applies to: "}
                     {regularItems.map((item) => item.product.Name).join(", ")}
                   </Typography>
@@ -138,10 +162,10 @@ export default function DeliveryDetailsForm() {
               )}
 
               <Box sx={{mb: 2}}>
-                <Typography variant="subtitle1" sx={{mb: 1}}>
+                <Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
                   {"Drop-ship delivery"}
                 </Typography>
-                <Typography variant="body2" sx={{mb: 1}}>
+                <Typography variant="body2" sx={{mb: 1, fontWeight: "bold"}}>
                   {"Applies to: "}
                   {dropShipItems.map((item) => item.product.Name).join(", ")}
                 </Typography>
@@ -152,10 +176,10 @@ export default function DeliveryDetailsForm() {
                   fullWidth
                   select
                   slotProps={{select: {native: true}}}
-                  helperText={nextDayHelperText}
+                  helperText={dropShipDateLabel ? `Available from ${dropShipDateLabel}` : ""}
                   {...fieldAttrs("drop_ship_delivery_time", formikProps)}
                 >
-                  {deliveryTimeOptions}
+                  {dropShipTimeOptions}
                 </TextField>
               </Box>
             </>

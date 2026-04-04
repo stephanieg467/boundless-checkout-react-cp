@@ -133,8 +133,8 @@ const getDateString = (year: number, month: number, day: number) => {
 	return `${year}-${month}-${day}`;
 };
 
-type DeliveryTimesBase = {times: string[]; isNextDay: boolean};
-type DeliveryTimesWithDropShip = DeliveryTimesBase & {
+export type DeliveryTimesBase = {times: string[]; isNextDay: boolean};
+export type DeliveryTimesWithDropShip = DeliveryTimesBase & {
 	dropShipTimes: {times: string[]; date: string};
 };
 
