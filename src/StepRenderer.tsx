@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {TCheckoutStep} from "./types/common";
 import {useAppSelector} from "./hooks/redux";
 import useInitCheckoutByCart from "./hooks/initCheckout";
@@ -26,6 +26,10 @@ export default function StepRenderer() {
   useInitCheckoutByCart();
   const {stepper, globalError, onHide} = useAppSelector((state) => state.app);
   const {t} = useTranslation();
+
+  useEffect(() => {
+    document.querySelector<HTMLElement>('.bdl-checkout')?.scrollTo({top: 0, behavior: 'smooth'});
+  }, [stepper?.currentStep]);
 
   if (globalError) {
     return (

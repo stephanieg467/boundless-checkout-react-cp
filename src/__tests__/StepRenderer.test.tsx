@@ -35,6 +35,34 @@ const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string |
 };
 
 // ── tests ────────────────────────────────────────────────────────────────
+describe("StepRenderer scroll-to-top", () => {
+  it("calls scrollTo on .bdl-checkout when currentStep changes", () => {
+    const scrollToMock = jest.fn();
+
+    const portalEl = document.createElement("div");
+    portalEl.className = "bdl-checkout";
+    portalEl.scrollTo = scrollToMock;
+    document.body.appendChild(portalEl);
+
+    const {rerender} = renderWithStep(TCheckoutStep.contactInfo);
+
+    // Navigate to next step
+    mockState = {
+      app: {
+        isInited: true,
+        globalError: null,
+        onHide: jest.fn(),
+        stepper: {currentStep: TCheckoutStep.shippingAddress, steps: [TCheckoutStep.shippingAddress], filledSteps: []},
+      },
+    };
+    rerender(<StepRenderer />);
+
+    expect(scrollToMock).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
+
+    document.body.removeChild(portalEl);
+  });
+});
+
 describe("StepRenderer", () => {
   it("renders ContactInfoPage for contactInfo step", () => {
     renderWithStep(TCheckoutStep.contactInfo);
