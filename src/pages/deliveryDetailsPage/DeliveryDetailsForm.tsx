@@ -10,6 +10,30 @@ import {fieldAttrs} from "../../lib/formUtils";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {DeliveryTimesWithDropShip} from "../../lib/deliveryTimes";
+
+const hasDropShipTimes = (data: unknown): data is DeliveryTimesWithDropShip =>
+  !!data && typeof data === "object" && "dropShipTimes" in data;
+
+const renderDeliveryTimeOptions = (
+  times: string[] | undefined,
+  isLoading: boolean,
+  hasError: boolean,
+) => (
+  <>
+    <option value=""></option>
+    {isLoading ? (
+      <option disabled value="">{"Loading delivery times..."}</option>
+    ) : !hasError && times ? (
+      times.map((t, idx) => (
+        <option key={idx} value={t}>{t}</option>
+      ))
+    ) : (
+      <option disabled>
+        {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
+      </option>
+    )}
+  </>
+);
 import {ordersDropShippingItems, ordersRegularItems} from "../../lib/products";
 
 export interface IDeliveryDetailsFormValues {
@@ -76,51 +100,13 @@ export default function DeliveryDetailsForm() {
     ...(hasDropShipItems && {drop_ship_delivery_time: order?.drop_ship_delivery_time ?? ""}),
   };
 
-  const deliveryTimeOptions = (
-    <>
-      <option value=""></option>
-      {loadingDeliveryTimes ? (
-        <option disabled value="">{"Loading delivery times..."}</option>
-      ) : !errorLoadingDeliveryTimes && deliveryTimes ? (
-        deliveryTimes.times.map((deliveryTime, idx) => (
-          <option key={idx} value={deliveryTime}>
-            {deliveryTime}
-          </option>
-        ))
-      ) : (
-        <option disabled>
-          {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
-        </option>
-      )}
-    </>
-  );
-
   const nextDayHelperText = deliveryTimes?.isNextDay
     ? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
     : "";
 
-  const dropShipData = deliveryTimes as DeliveryTimesWithDropShip | undefined;
-
-  const dropShipTimeOptions = (
-    <>
-      <option value=""></option>
-      {loadingDeliveryTimes ? (
-        <option disabled value="">{"Loading delivery times..."}</option>
-      ) : !errorLoadingDeliveryTimes && dropShipData?.dropShipTimes ? (
-        dropShipData.dropShipTimes.times.map((deliveryTime, idx) => (
-          <option key={idx} value={deliveryTime}>
-            {deliveryTime}
-          </option>
-        ))
-      ) : (
-        <option disabled>
-          {"Error loading delivery times. Please contact info@cannabis-cottage.ca."}
-        </option>
-      )}
-    </>
-  );
-
-  const dropShipDateLabel = dropShipData?.dropShipTimes?.date ?? "";
+  const dropShipDateLabel = hasDropShipTimes(deliveryTimes)
+    ? deliveryTimes.dropShipTimes.date
+    : "";
 
   return (
     <Formik
@@ -140,10 +126,9 @@ export default function DeliveryDetailsForm() {
               {hasRegularItems && (
                 <Box sx={{mb: 2}}>
                   <Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
-                    {"Standard delivery"}
+                    {"Delivery for:"}
                   </Typography>
                   <Typography variant="body2" sx={{mb: 1, fontWeight: "bold"}}>
-                    {"Applies to: "}
                     {regularItems.map((item) => item.product.Name).join(", ")}
                   </Typography>
                   <TextField
@@ -156,22 +141,21 @@ export default function DeliveryDetailsForm() {
                     helperText={nextDayHelperText}
                     {...fieldAttrs("delivery_time", formikProps)}
                   >
-                    {deliveryTimeOptions}
+                    {renderDeliveryTimeOptions(deliveryTimes?.times, loadingDeliveryTimes, errorLoadingDeliveryTimes)}
                   </TextField>
                 </Box>
               )}
 
               <Box sx={{mb: 2}}>
                 <Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
-                  {"Drop-ship delivery"}
+                  {"Delivery for:"}
                 </Typography>
                 <Typography variant="body2" sx={{mb: 1, fontWeight: "bold"}}>
-                  {"Applies to: "}
                   {dropShipItems.map((item) => item.product.Name).join(", ")}
                 </Typography>
                 <TextField
                   required={true}
-                  label="Drop-ship delivery time"
+                  label="Delivery time"
                   variant={"outlined"}
                   fullWidth
                   select
@@ -179,7 +163,11 @@ export default function DeliveryDetailsForm() {
                   helperText={dropShipDateLabel ? `Available from ${dropShipDateLabel}` : ""}
                   {...fieldAttrs("drop_ship_delivery_time", formikProps)}
                 >
-                  {dropShipTimeOptions}
+                  {renderDeliveryTimeOptions(
+                    hasDropShipTimes(deliveryTimes) ? deliveryTimes.dropShipTimes.times : undefined,
+                    loadingDeliveryTimes,
+                    errorLoadingDeliveryTimes,
+                  )}
                 </TextField>
               </Box>
             </>
@@ -195,7 +183,7 @@ export default function DeliveryDetailsForm() {
                 helperText={nextDayHelperText}
                 {...fieldAttrs("delivery_time", formikProps)}
               >
-                {deliveryTimeOptions}
+                {renderDeliveryTimeOptions(deliveryTimes?.times, loadingDeliveryTimes, errorLoadingDeliveryTimes)}
               </TextField>
             </Box>
           )}

@@ -1,4 +1,4 @@
-import {getDynamicDeliveryTimes, addBusinessDays} from "../lib/deliveryTimes";
+import {getDynamicDeliveryTimes, addBusinessDays, DeliveryTimesWithDropShip} from "../lib/deliveryTimes";
 import {DeliveryTimeSlot} from "../hooks/useDeliveryTimes";
 
 describe("addBusinessDays", () => {
@@ -41,7 +41,7 @@ describe("getDynamicDeliveryTimes with returnBothDays", () => {
   ];
 
   it("returns dropShipTimes when returnBothDays is true", () => {
-    const result = getDynamicDeliveryTimes(allDaysSlots, true);
+    const result = getDynamicDeliveryTimes(allDaysSlots, true) as DeliveryTimesWithDropShip;
     expect(result).toHaveProperty("dropShipTimes");
     expect(result.dropShipTimes).toHaveProperty("times");
     expect(result.dropShipTimes).toHaveProperty("date");

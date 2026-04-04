@@ -100,16 +100,14 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 
 export const addBusinessDays = (date: Date, n: number): Date => {
 	let count = 0;
-	let current = new Date(date);
+	const current = new Date(date);
 	// If starting on a weekend, advance to the next business day first
 	while (true) {
 		const {dayOfWeek} = getVancouverDateTime(current);
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) break;
-		current = new Date(current);
 		current.setDate(current.getDate() + 1);
 	}
 	while (count < n) {
-		current = new Date(current);
 		current.setDate(current.getDate() + 1);
 		const {dayOfWeek} = getVancouverDateTime(current);
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
@@ -138,14 +136,6 @@ export type DeliveryTimesWithDropShip = DeliveryTimesBase & {
 	dropShipTimes: {times: string[]; date: string};
 };
 
-export function getDynamicDeliveryTimes(
-	deliveryTimesData: DeliveryTimeSlot[],
-	returnBothDays: true,
-): DeliveryTimesWithDropShip;
-export function getDynamicDeliveryTimes(
-	deliveryTimesData: DeliveryTimeSlot[],
-	returnBothDays?: false,
-): DeliveryTimesBase;
 export function getDynamicDeliveryTimes(
 	deliveryTimesData: DeliveryTimeSlot[],
 	returnBothDays?: boolean,
