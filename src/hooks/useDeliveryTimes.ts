@@ -9,7 +9,13 @@ export interface DeliveryTimeSlot {
 	timeEnd: string;
 }
 
-export const useDeliveryTimes = () => {
+interface UseDeliveryTimesOptions {
+	returnTimeForTodayAndTwoDaysFromNow?: boolean;
+}
+
+export const useDeliveryTimes = (options?: UseDeliveryTimesOptions) => {
+	const returnBothDays = options?.returnTimeForTodayAndTwoDaysFromNow ?? false;
+
 	const {
 		isLoading: loadingDeliveryTimes,
 		isError: errorLoadingDeliveryTimes,
@@ -42,11 +48,14 @@ export const useDeliveryTimes = () => {
 			return data;
 		},
 	});
+
 	const deliveryTimes = useMemo(() => {
 		if (!loadingDeliveryTimes && !errorLoadingDeliveryTimes && data) {
-			return getDynamicDeliveryTimes(data);
+			return returnBothDays
+				? getDynamicDeliveryTimes(data, true)
+				: getDynamicDeliveryTimes(data);
 		}
-	}, [loadingDeliveryTimes, errorLoadingDeliveryTimes, data]);
+	}, [loadingDeliveryTimes, errorLoadingDeliveryTimes, data, returnBothDays]);
 
 	return {
 		isLoading: loadingDeliveryTimes,
