@@ -98,6 +98,27 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 	};
 };
 
+export const addBusinessDays = (date: Date, n: number): Date => {
+	let count = 0;
+	let current = new Date(date);
+	// If starting on a weekend, advance to the next business day first
+	while (true) {
+		const {dayOfWeek} = getVancouverDateTime(current);
+		if (dayOfWeek !== 0 && dayOfWeek !== 6) break;
+		current = new Date(current);
+		current.setDate(current.getDate() + 1);
+	}
+	while (count < n) {
+		current = new Date(current);
+		current.setDate(current.getDate() + 1);
+		const {dayOfWeek} = getVancouverDateTime(current);
+		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+			count++;
+		}
+	}
+	return current;
+};
+
 const formatTime = (time: number): string => {
 	const hour = Math.floor(time);
 	const minutes = Math.round((time - hour) * 60);
