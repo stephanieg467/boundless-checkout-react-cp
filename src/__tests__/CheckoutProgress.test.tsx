@@ -1,6 +1,5 @@
 import React from 'react';
 import {render, screen, fireEvent} from '@testing-library/react';
-import {TCheckoutStep} from 'boundless-api-client';
 
 // ── mocks ──────────────────────────────────────────────────────────────
 const mockDispatch = jest.fn();
@@ -17,6 +16,7 @@ jest.mock('react-i18next', () => ({
 
 import {setCurrentStep} from '../redux/reducers/app';
 import CheckoutProgress from '../components/CheckoutProgress';
+import { TCheckoutStep } from '../types/common';
 
 const renderWithStepper = (currentStep: TCheckoutStep, steps: TCheckoutStep[], filledSteps: TCheckoutStep[] = []) => {
   mockState = {

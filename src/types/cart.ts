@@ -1,7 +1,6 @@
 import {
 	ICurrency,
 	ILocaleSettings,
-	ICustomer,
 	ITotal,
 	ICartTotal,
 } from "boundless-api-client";
@@ -138,7 +137,6 @@ export interface CovaCheckoutInitData {
 	order: IOrderWithCustmAttr;
 	currency: ICurrency;
 	localeSettings: ILocaleSettings;
-	loggedInCustomer: ICustomer | null;
 	stepper: ICheckoutStepper;
 	total: ITotal;
 }

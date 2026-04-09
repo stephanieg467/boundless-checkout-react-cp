@@ -1,5 +1,5 @@
 import appReducer, {setCurrentStep} from "../redux/reducers/app";
-import {TCheckoutStep} from "boundless-api-client";
+import { TCheckoutStep } from "../types/common";
 
 describe("app slice – setCurrentStep", () => {
   it("updates stepper.currentStep", () => {

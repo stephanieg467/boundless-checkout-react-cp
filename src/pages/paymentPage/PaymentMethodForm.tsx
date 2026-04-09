@@ -12,6 +12,7 @@ import {
 	TextField,
 	InputAdornment,
 	FormLabel,
+	CircularProgress,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
@@ -28,22 +29,38 @@ import {DELIVERY_ID} from "../../constants";
 import {ITotal} from "boundless-api-client";
 import {setOrder, setTotal} from "../../redux/reducers/app";
 import {IOrderWithCustmAttr} from "../../types/Order";
-import {cartHasTickets} from "../../lib/products";
-import {hasShipping} from "../../lib/shipping";
+import {cartHasTickets, ordersDropShippingItems, ordersRegularItems} from "../../lib/products";
+import {hasDeliveryId, hasShipping} from "../../lib/shipping";
+import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
+import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
+import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 
-// Custom validation function
-const validatePaymentForm = (values: IPaymentMethodFormValues) => {
-	const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
+const makeValidatePaymentForm = (requireDeliveryTime: boolean) =>
+	(values: IPaymentMethodFormValues) => {
+		const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
 
-	if (!values.payment_method_id || values.payment_method_id === "0") {
-		errors.payment_method_id = "Payment method is required";
-	}
+		if (!values.payment_method_id || values.payment_method_id === "0") {
+			errors.payment_method_id = "Payment method is required";
+		}
 
-	if (values.tip && parseFloat(values.tip) < 0) {
-		errors.tip = "Tip must be positive";
-	}
+		if (values.tip && parseFloat(values.tip) < 0) {
+			errors.tip = "Tip must be positive";
+		}
 
-	return errors;
+		if (requireDeliveryTime && !values.delivery_time) {
+			errors.delivery_time = "Delivery time is required";
+		}
+
+		return errors;
+	};
+
+const usePaymentDeliveryContext = () => {
+	const {order, items} = useAppSelector((state) => state.app);
+	const isDelivery = order ? hasDeliveryId(order, DELIVERY_ID) : false;
+	const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
+	const regularItems = ordersRegularItems(items ?? []);
+	const requireDeliveryTime = isDelivery && !hasDropShipItems;
+	return {isDelivery, requireDeliveryTime, regularItems};
 };
 
 export default function PaymentMethodForm({
@@ -52,20 +69,30 @@ export default function PaymentMethodForm({
 	paymentPage: IPaymentPageData;
 }) {
 	const {onSubmit} = useSavePaymentMethod(paymentPage);
+	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
+	const {
+		isLoading: loadingDeliveryTimes,
+		isError: errorLoadingDeliveryTimes,
+		data: deliveryTimes,
+	} = useDeliveryTimes({returnTimeForTodayAndTwoDaysFromNow: false});
+
+	const nextDayHelperText = deliveryTimes?.isNextDay
+		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
+		: "Will be delivered today.";
 
 	return (
 		<Formik
 			initialValues={getFormInitialValues()}
 			onSubmit={onSubmit}
 			validateOnChange={false}
-			validate={validatePaymentForm}
+			validate={makeValidatePaymentForm(requireDeliveryTime)}
 		>
 			{(formikProps) => (
 				<Form className={"bdl-payment-form"}>
 					{Object.keys(formikProps.errors).length > 0 && (
 						<ExtraErrors
-							excludedFields={["payment_method_id"]}
+							excludedFields={["payment_method_id", "delivery_time"]}
 							errors={formikProps.errors}
 						/>
 					)}
@@ -82,11 +109,25 @@ export default function PaymentMethodForm({
 					<PaymentMethods
 						formikProps={formikProps}
 						paymentMethods={paymentPage.paymentMethods}
+						isDelivery={isDelivery}
 					/>
+					{requireDeliveryTime && (
+						<DeliveryTimeSelector
+							field="delivery_time"
+							helperText={nextDayHelperText}
+							formikProps={formikProps}
+						>
+							{renderDeliveryTimeOptions(
+								deliveryTimes?.times,
+								loadingDeliveryTimes,
+								errorLoadingDeliveryTimes,
+							)}
+						</DeliveryTimeSelector>
+					)}
 					<Box textAlign={"end"}>
 						<Button
 							variant="contained"
-							startIcon={<DoneIcon />}
+							startIcon={formikProps.isSubmitting ? <CircularProgress size="12px" aria-label="Loading…" /> : <DoneIcon />}
 							type={"submit"}
 							disabled={formikProps.isSubmitting}
 							color="success"
@@ -106,6 +147,7 @@ const getFormInitialValues = () => {
 
 	const initialValues: IPaymentMethodFormValues = {
 		payment_method_id: order?.payment_method_id || "0",
+		delivery_time: order?.delivery_time ?? "",
 	};
 
 	return initialValues;
@@ -114,15 +156,14 @@ const getFormInitialValues = () => {
 const PaymentMethods = ({
 	formikProps,
 	paymentMethods,
+	isDelivery
 }: {
 	formikProps: FormikProps<IPaymentMethodFormValues>;
 	paymentMethods: IPaymentMethod[];
+	isDelivery: boolean;
 }) => {
 	const order = useAppSelector((state: RootState) => state.app.order);
 	const orderHasShipping = hasShipping(order as IOrderWithCustmAttr);
-	const isDelivery = order?.services?.some(
-		(service) => service.service_id === DELIVERY_ID
-	);
 
 	return (
 		<Box sx={{mb: 2}}>
@@ -205,7 +246,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 	const {order, onThankYouPage, total} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 
-	const onSubmit = (
+	const onSubmit = async (
 		values: IPaymentMethodFormValues,
 		{setSubmitting}: FormikHelpers<IPaymentMethodFormValues>
 	) => {
@@ -213,7 +254,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 
 		if (!order || !checkoutDataOrder) return;
 
-		const {payment_method_id, tip} = values;
+		const {payment_method_id, tip, delivery_time} = values;
 
 		let updatedOrder = {
 			...checkoutDataOrder,
@@ -222,6 +263,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 			),
 			tip: tip ? parseFloat(tip).toString() : "0",
 			payment_method_id: payment_method_id,
+			...(delivery_time ? {delivery_time} : {}),
 			custom_attrs: {
 				...checkoutDataOrder.custom_attrs,
 				checkoutCompleted: true,
@@ -252,7 +294,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 		dispatch(setTotal(updatedTotal as unknown as ITotal));
 
-		onThankYouPage!({orderId: checkoutDataOrder.id});
+		await onThankYouPage!({orderId: checkoutDataOrder.id});
 		setSubmitting(false);
 	};
 
@@ -264,4 +306,5 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 export interface IPaymentMethodFormValues {
 	payment_method_id: number | string;
 	tip?: string;
+	delivery_time?: string;
 }

@@ -19,7 +19,6 @@ import {
 	setOrder,
 	setTotal,
 	setCurrentStep,
-	setStepperSteps,
 } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
 import { isPickUpDelivery, qualifiesForFreeShipping } from "../../lib/shipping";
@@ -165,6 +164,7 @@ const useSaveShippingForm = ({
 	shippingPage: ICheckoutShippingPageData;
 }) => {
 	const dispatch = useAppDispatch();
+	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
 
 	const onSubmit = (
 		values: IShippingFormValues,
@@ -375,15 +375,9 @@ const useSaveShippingForm = ({
 					dispatch(addFilledStep({ step: TCheckoutStep.shippingAddress }));
 				}
 
-				const isDelivery = delivery_id === DELIVERY_ID;
-				const updatedSteps = [
-					TCheckoutStep.contactInfo,
-					TCheckoutStep.shippingAddress,
-					...(isDelivery ? [TCheckoutStep.deliveryDetails] : []),
-					TCheckoutStep.paymentMethod,
-				];
-				dispatch(setStepperSteps(updatedSteps));
-				dispatch(setCurrentStep(isDelivery ? TCheckoutStep.deliveryDetails : TCheckoutStep.paymentMethod));
+				const shippingIdx = steps.indexOf(TCheckoutStep.shippingAddress);
+				const nextStep = steps[shippingIdx + 1] ?? TCheckoutStep.paymentMethod;
+				dispatch(setCurrentStep(nextStep));
 			})
 			.catch(({ response: { data } }) => {
 				setErrors(apiErrors2Formik(data));

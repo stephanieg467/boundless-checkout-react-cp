@@ -9,7 +9,7 @@ import terser from '@rollup/plugin-terser';
 import json from '@rollup/plugin-json';
 
 export default {
-	external: ['boundless-api-client', 'react', 'react-dom'],
+	external: ['boundless-api-client', 'react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
 	input: 'src/index.ts',
 	plugins: [
 		json(),

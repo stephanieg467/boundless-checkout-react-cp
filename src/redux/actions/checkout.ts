@@ -9,8 +9,8 @@ import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
 import {ITotal, TPublishingStatus} from "boundless-api-client";
 import {TCheckoutStep} from "../../types/common";
 import {getCheckoutData} from "../../hooks/checkoutData";
-import {IOrderWithCustmAttr} from "../../types/Order";
 import {getOrderTaxes} from "../../lib/taxes";
+import {ordersDropShippingItems} from "../../lib/products";
 
 export const initCheckoutByCart =
 	(): AppThunk => async (dispatch, getState) => {
@@ -29,6 +29,13 @@ export const initCheckoutByCart =
 			}
 
 			const {items, total: cartTotal} = cart;
+			const hasDropShipItems = ordersDropShippingItems(items).length > 0;
+			const steps: TCheckoutStep[] = [
+				TCheckoutStep.contactInfo,
+				TCheckoutStep.shippingAddress,
+				...(hasDropShipItems ? [TCheckoutStep.deliveryDetails] : []),
+				TCheckoutStep.paymentMethod,
+			];
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 			
@@ -55,6 +62,8 @@ export const initCheckoutByCart =
 				payment_mark_up: null,
 				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 				tip: checkoutDataOrder?.tip ?? "0.00",
+				...(checkoutDataOrder?.delivery_time && { delivery_time: checkoutDataOrder.delivery_time }),
+				...(checkoutDataOrder?.drop_ship_delivery_time && { drop_ship_delivery_time: checkoutDataOrder.drop_ship_delivery_time }),
 				discount_for_order: checkoutDataOrder?.discount_for_order ? checkoutDataOrder?.discount_for_order : null,
 				discounts: checkoutDataOrder?.discounts ? checkoutDataOrder?.discounts : [],
 				tax_amount: totalOrderTaxes,
@@ -86,13 +95,12 @@ export const initCheckoutByCart =
 
 			const data = {
 				items: items,
-				order: {...initialOrder} as unknown as IOrderWithCustmAttr,
+				order: {...initialOrder},
 				currency: {
 					currency_id: 0,
 					alias: "CAD",
 					code: 4217,
 				},
-				loggedInCustomer: null,
 				localeSettings: {
 					money: {
 						decimal: ".",
@@ -105,13 +113,7 @@ export const initCheckoutByCart =
 				stepper: {
 					filledSteps: stepper?.filledSteps ?? [],
 					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
-					steps: stepper?.steps?.length
-						? stepper.steps
-						: [
-							TCheckoutStep.contactInfo,
-							TCheckoutStep.shippingAddress,
-							TCheckoutStep.paymentMethod,
-						],
+					steps,
 				},
 				total: {
 					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),

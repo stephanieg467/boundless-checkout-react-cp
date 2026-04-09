@@ -3,7 +3,7 @@ import CheckoutLayout from "../layout/CheckoutLayout";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import {useAppDispatch, useAppSelector} from "../hooks/redux";
-import {ICheckoutShippingPageData, TCheckoutStep} from "boundless-api-client";
+import {ICheckoutShippingPageData} from "boundless-api-client";
 import ShippingForm from "./shippingPage/ShippingForm";
 import {useTranslation} from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
 import {cartHasTickets} from "../lib/products";
 import {getVancouverDateTime} from "../lib/deliveryTimes";
 import {setCurrentStep} from "../redux/reducers/app";
+import { TCheckoutStep } from "../types/common";
 
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();

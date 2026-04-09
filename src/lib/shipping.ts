@@ -4,14 +4,14 @@ import {
 	IOrder,
 	ITotal,
 } from "boundless-api-client";
-import {IOrderWithCustmAttr} from "../types/Order";
+import { IOrderWithCustmAttr } from "../types/Order";
 
 export const isPickUpDelivery = (
 	deliveryId: number,
-	deliveryOptions: IDelivery[]
+	deliveryOptions: IDelivery[],
 ): boolean => {
 	const selectedDelivery = deliveryOptions.find(
-		({delivery_id}) => delivery_id == deliveryId
+		({ delivery_id }) => delivery_id == deliveryId,
 	);
 
 	if (selectedDelivery) {
@@ -23,10 +23,10 @@ export const isPickUpDelivery = (
 
 export const isDeliveryMethod = (
 	deliveryId: number,
-	deliveryOptions: IDelivery[]
+	deliveryOptions: IDelivery[],
 ): boolean => {
 	const selectedDelivery = deliveryOptions.find(
-		({delivery_id}) => delivery_id == deliveryId
+		({ delivery_id }) => delivery_id == deliveryId,
 	);
 
 	if (selectedDelivery) {
@@ -34,6 +34,13 @@ export const isDeliveryMethod = (
 	}
 
 	return false;
+};
+
+export const hasDeliveryId = (
+	order: IOrderWithCustmAttr,
+	deliveryId: number,
+): boolean => {
+	return !!order?.services?.some((service) => service.service_id === deliveryId);
 };
 
 export const hasShipping = (order: IOrderWithCustmAttr | IOrder) => {
@@ -45,7 +52,9 @@ export const hasShipping = (order: IOrderWithCustmAttr | IOrder) => {
 };
 
 // Helper function to check if order qualifies for free shipping
-export const qualifiesForFreeShipping = (total: ITotal | undefined): boolean => {
+export const qualifiesForFreeShipping = (
+	total: ITotal | undefined,
+): boolean => {
 	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
 	const subtotal = Number(itemsSubTotal);
 	return subtotal >= 100;

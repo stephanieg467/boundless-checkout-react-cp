@@ -88,8 +88,9 @@ const useInitPaymentPage = () => {
 
 	useEffect(() => {
 		if (!stepper) return;
+		const deliveryDetailsIsInSteps = stepper.steps.includes(TCheckoutStep.deliveryDetails);
 		if (
-			stepper.steps.includes(TCheckoutStep.deliveryDetails) &&
+			deliveryDetailsIsInSteps &&
 			!stepper.filledSteps.includes(TCheckoutStep.deliveryDetails)
 		) {
 			dispatch(setCurrentStep(TCheckoutStep.deliveryDetails));

@@ -3,7 +3,7 @@ import {getProductImg} from "../../lib/images";
 import currency from "currency.js";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import {useTranslation} from "react-i18next";
-import {covaProductPrice} from "../../lib/products";
+import {covaProductPrice, productIsDropShip} from "../../lib/products";
 import {useAppSelector} from "../../hooks/redux";
 import {RootState} from "../../redux/store";
 
@@ -45,14 +45,13 @@ export default function CartItems() {
 						<div className="bdl-cart-item__desc">
 							<h5 className="bdl-cart-item__title">
 								{product.Name}
-								{/* {item.vwItem.variant?.title && (
+								{productIsDropShip(product) && (
 									<>
-										,{" "}
-										<span className="bdl-cart-item__variant">
-											{item.vwItem.variant.title}
-										</span>
+										<div className="bdl-cart-item__drop-ship-note" style={{marginTop: "8px"}}>
+											{"Note: This item is not available same day"}
+										</div>
 									</>
-								)} */}
+								)}
 							</h5>
 							<div className="bdl-cart-item__price">
 								{price && formatCurrency(price)} x {item.qty} pcs

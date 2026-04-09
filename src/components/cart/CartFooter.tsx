@@ -2,9 +2,10 @@ import React, {useEffect, useState} from "react";
 import clsx from "clsx";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import {useTranslation} from "react-i18next";
-import {hasShipping} from "../../lib/shipping";
+import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
+import { DELIVERY_ID } from "../../constants";
 
 export default function CartFooter({open}: ICartFooterProps) {
 	const {order, total} = getCheckoutData() || {};
@@ -66,7 +67,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 
 	const hasDiscount = total && total.discount != "0";
 	const orderHasShipping = order && hasShipping(order);
-	const isDelivery = order?.services?.[0]?.serviceDelivery?.delivery?.title === "Delivery";
+	const isDelivery = order && hasDeliveryId(order, DELIVERY_ID);
 
 	return (
 		<div className={clsx("bdl-cart__footer", {open})}>

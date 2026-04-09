@@ -1,14 +1,13 @@
 import React, {ReactNode} from "react";
 import ReactDOM, {Root} from "react-dom/client";
 import BoundlessCheckout, {IBoundlessCheckoutProps} from "./BoundlessCheckout";
-import BoundlessOrderInfo, {BoundlessOrderInfoProps} from "./BoundlessOrderInfo";
 import {store} from "./redux/store";
 import {resetState} from "./redux/actions/app";
 import {initI18n} from "./i18n/funcs";
 initI18n();
 
 /**
- * @deprecated Internal wrapper used by startCheckout/startOrderInfo.
+ * @deprecated Internal wrapper used by startCheckout.
  * Use the exported React components directly instead.
  */
 export class StarterWrapper {
@@ -60,16 +59,6 @@ export function startCheckout(el: HTMLElement, props: Omit<IBoundlessCheckoutPro
 		logo={logo}
 		{...props}
 	/>);
-	wrapper.start();
-
-	return wrapper;
-}
-
-/**
- * @deprecated Use the `<BoundlessOrderInfo>` component directly instead.
- */
-export function startOrderInfo(el: HTMLElement, props: BoundlessOrderInfoProps): StarterWrapper {
-	const wrapper = new StarterWrapper(el, <BoundlessOrderInfo {...props} />);
 	wrapper.start();
 
 	return wrapper;

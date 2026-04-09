@@ -21,7 +21,6 @@ export interface IOrderWithCustmAttr {
 	custom_attrs: {
 		[key: string]: any;
 	};
-	status: IOrderStatus | null;
 	tip?: string;
 	delivery_time?: string;
 	drop_ship_delivery_time?: string;

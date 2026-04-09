@@ -1,3 +1,4 @@
+import Holidays from 'date-holidays';
 import {DeliveryTimeSlot} from "../hooks/useDeliveryTimes";
 
 // Helper functions for dynamic delivery times
@@ -237,4 +238,38 @@ const calculateSlotsForDate = (
 	});
 
 	return deliveryTimes;
+};
+
+export const isBCStatHoliday = (date: Date): boolean => {
+  // Initialize the library for Canada (CA) and British Columbia (BC)
+  const hd = new Holidays('CA', 'BC');
+  
+  // hd.isHoliday returns an array of holiday objects if it is a holiday, or false
+  const holiday = hd.isHoliday(date);
+  
+  // The library includes some observances that aren't strict statutory holidays.
+  // Statutory holidays usually have a type of 'public'.
+  if (holiday && holiday.length > 0) {
+      return holiday.some(h => h.type === 'public');
+  }
+  
+  return false;
+}
+
+export const getNextTwoBusinessDaysFormatted = (): string => {
+	const date = addBusinessDays(new Date(), 2);
+	const month = date.toLocaleString("en-US", { month: "long", timeZone: "America/Vancouver" });
+	const day = parseInt(
+		date.toLocaleString("en-US", { day: "numeric", timeZone: "America/Vancouver" }),
+		10
+	);
+	const suffix =
+		day % 10 === 1 && day !== 11
+			? "st"
+			: day % 10 === 2 && day !== 12
+				? "nd"
+				: day % 10 === 3 && day !== 13
+					? "rd"
+					: "th";
+	return `${month} ${day}${suffix}`;
 };

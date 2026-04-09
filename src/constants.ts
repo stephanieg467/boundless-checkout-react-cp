@@ -22,7 +22,7 @@ export const DELIVERY_INFO = {
 export const SHIPPING_DELIVERY_INFO = {
 	delivery_id: SHIPPING_DELIVERY_ID,
 	title: "Shipping",
-	description: "Ship order to your address via UPS (available within BC, Canada). Expected delivery time 1-3 business days.",
+	description: "Ship order to your address via Canada Post (available within BC, Canada). Expected delivery time 1-3 business days.",
 	alias: "shipping",
 	shipping_id: SHIPPING_DELIVERY_ID,
 	shipping_config: null,

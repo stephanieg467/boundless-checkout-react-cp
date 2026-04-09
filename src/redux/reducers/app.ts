@@ -178,7 +178,7 @@ export type TOnThankYouPage = ({
 }: {
 	orderId: string;
 	error?: string;
-}) => void;
+}) => Promise<void>;
 export type TOnCheckoutInited = (data: CovaCheckoutInitData) => void;
 
 export interface IAppState {

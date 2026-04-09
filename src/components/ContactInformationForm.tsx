@@ -2,8 +2,6 @@ import React, {useEffect} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import {
-	ICheckoutStepper,
-	TCheckoutStep,
 	ICustomer,
 } from "boundless-api-client";
 import TextField from "@mui/material/TextField";
@@ -28,6 +26,7 @@ import {PhoneInput} from "./PhoneInput";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
+import { ICheckoutStepper, TCheckoutStep } from "../types/common";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -95,7 +94,6 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 
 export function ContactFormView() {
 	const {order, stepper} = useAppSelector((state) => state.app);
-	const {loggedInCustomer} = useAppSelector((state) => state.user);
 	const {t} = useTranslation();
 
 	useEffect(() => {
@@ -108,7 +106,7 @@ export function ContactFormView() {
 
 	return (
 		<Formik<IContactInformationFormValues>
-			initialValues={getInitialValues(order!, loggedInCustomer)}
+			initialValues={getInitialValues(order!)}
 			validate={validateContactForm}
 			onSubmit={onSubmit}
 			validateOnChange={false}
@@ -129,25 +127,6 @@ export function ContactFormView() {
 					<Typography variant="h5" sx={{mb: 2}}>
 						{t("contactForm.pageHeader")}
 					</Typography>
-					{/* {!loggedInCustomer && (
-						<Typography
-							align={"right"}
-							variant="body2"
-							className={"bdl-contact-form__has-account"}
-							gutterBottom
-						>
-							{t("contactForm.alreadyHaveAccount")}
-							<Button
-								startIcon={<LoginIcon />}
-								variant="text"
-								onClick={() => setViewMode(TViewMode.login)}
-								sx={{ mx: 1 }}
-								size={"small"}
-							>
-								{t("contactForm.login")}
-							</Button>
-						</Typography>
-					)} */}
 					<Grid container spacing={{xs: 2, md: 3}}>
 						{fieldsList.map(({type, required}, i) => (
 							<Grid size={{xs: 12, md: 6}} key={i}>
@@ -158,11 +137,9 @@ export function ContactFormView() {
 										type={"email"}
 										required={required}
 										fullWidth
-										disabled={Boolean(loggedInCustomer)}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"email",
-											formikProps,
-											loggedInCustomer ? t("contactForm.youAreLoggedIn") : ""
+											formikProps
 										)}
 									/>
 								)}
@@ -240,16 +217,6 @@ export function ContactFormView() {
 								)}
 							</Grid>
 						))}
-						{/* {!loggedInCustomer && (
-							<Grid size={{ xs: 12 }}>
-								<FormControlLabel
-									control={
-										<Checkbox {...checkAttrs("register_me", formikProps)} />
-									}
-									label={t("contactForm.registerMe")}
-								/>
-							</Grid>
-						)} */}
 						<Grid size={{xs: 12}} sx={{textAlign: "right"}}>
 							<NextStepBtn
 								stepper={stepper!}
@@ -302,7 +269,6 @@ const NextStepBtn = ({
 };
 
 const useSaveContactInfo = () => {
-	const {stepper} = useAppSelector((state) => state.app);
 	const {order, total} = getCheckoutData() || {};
 
 	const dispatch = useAppDispatch();
@@ -312,10 +278,6 @@ const useSaveContactInfo = () => {
 		{setSubmitting, setErrors}: FormikHelpers<IContactInformationFormValues>
 	) => {
 		const {email, first_name, last_name, phone, dob} = values;
-
-		// if (customer && authToken) {
-		// 	dispatch(setLoggedInCustomer(customer, authToken));
-		// }
 
 		const customer = {
 			id: v4(),
@@ -341,9 +303,7 @@ const useSaveContactInfo = () => {
 
 		setSubmitting(false);
 
-		const nextStep = stepper!.steps.includes(TCheckoutStep.shippingAddress)
-			? TCheckoutStep.shippingAddress
-			: TCheckoutStep.paymentMethod;
+		const nextStep = TCheckoutStep.shippingAddress;
 		dispatch(setCurrentStep(nextStep));
 	};
 
@@ -399,10 +359,9 @@ const getFieldsList = () => {
 };
 
 const getInitialValues = (
-	order: IOrderWithCustmAttr,
-	loggedInCustomer: ICustomer | null
+	order: IOrderWithCustmAttr
 ): IContactInformationFormValues => {
-	const customer = order.customer || loggedInCustomer;
+	const customer = order.customer;
 
 	// Ensure a default empty string for email and phone if customer or their properties are null/undefined
 	// Also, handle dob correctly if it might not exist on customer.

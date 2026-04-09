@@ -12,7 +12,6 @@
 		"continueToShipping": "Continue to shipping",
 		"continueToPayment": "Continue to payment",
 		"registerMe": "Register Me",
-		"youAreLoggedIn": "You are logged in"
 	},
 	"loginForm": {
 		"pageTitle": "Checkout: Login",
@@ -28,7 +27,7 @@
 	"checkoutProgress": {
 		"contactInfo": "Contact Info",
 		"shippingAddress": "Delivery method",
-		"shippingMethod": "Shipping method",
+		"deliveryDetails": "Delivery details",
 		"paymentMethod": "Payment method",
 		"thankYou": "Thank you!"
 	},

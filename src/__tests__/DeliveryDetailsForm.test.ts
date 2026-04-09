@@ -1,9 +1,9 @@
 import {makeValidateDeliveryDetailsForm} from "../pages/deliveryDetailsPage/DeliveryDetailsForm";
 
 describe("makeValidateDeliveryDetailsForm", () => {
-  const validate = makeValidateDeliveryDetailsForm(true, false);
-  const validateWithDropShip = makeValidateDeliveryDetailsForm(true, true);
-  const validateDropShipOnly = makeValidateDeliveryDetailsForm(false, true);
+  const validate = makeValidateDeliveryDetailsForm(true, false, true);
+  const validateWithDropShip = makeValidateDeliveryDetailsForm(true, true, true);
+  const validateDropShipOnly = makeValidateDeliveryDetailsForm(false, true, true);
 
   it("requires delivery_time when hasRegularItems is true", () => {
     expect(validate({delivery_time: ""})).toEqual({delivery_time: "Delivery time is required"});

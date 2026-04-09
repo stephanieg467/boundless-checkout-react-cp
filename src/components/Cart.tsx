@@ -15,7 +15,7 @@ import {getCheckoutData} from "../hooks/checkoutData";
 export default function Cart() {
 	const {order, total} = getCheckoutData() || {};
 	const orderHasShipping = order && hasShipping(order);
-	const [fullOpened, setFullOpened] = useState(false);
+	const [fullOpened, setFullOpened] = useState(true);
 	const {formatCurrency} = useFormatCurrency();
 	const {t} = useTranslation();
 
