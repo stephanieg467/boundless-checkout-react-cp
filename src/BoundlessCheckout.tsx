@@ -15,6 +15,7 @@ import {
 import { useAppSelector } from "./hooks/redux";
 import { TClickedElement } from "./lib/elementEvents";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Container, Typography } from "@mui/material";
 
 export interface IBoundlessCheckoutProps {
 	onHide: (element: TClickedElement) => void;
@@ -74,7 +75,18 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 		store.dispatch(showCheckout());
 	}, [onHide, onThankYouPage, cartId, resolvedLogo, onCheckoutInited]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	if (!el) return null;
+	if (!el)
+		return (
+			<Container>
+				<Typography variant="h4">
+					An error occurred while processing your order. <br />
+					Please contact{" "}
+					<a href={`mailto:${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`}>
+						{process.env.NEXT_PUBLIC_ADMIN_EMAIL}
+					</a>
+				</Typography>
+			</Container>
+		);
 
 	return ReactDOM.createPortal(
 		<div className={clsx("bdl-checkout", "bdl-checkout_show")}>

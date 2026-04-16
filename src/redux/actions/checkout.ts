@@ -1,20 +1,20 @@
-import {AppThunk} from "../store";
+import { AppThunk } from "../store";
 import {
 	setCheckoutData,
 	setCheckoutInited,
 	setGlobalError,
 } from "../reducers/app";
-import {TClickedElement} from "../../lib/elementEvents";
-import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
-import {ITotal, TPublishingStatus} from "boundless-api-client";
-import {TCheckoutStep} from "../../types/common";
-import {getCheckoutData} from "../../hooks/checkoutData";
-import {getOrderTaxes} from "../../lib/taxes";
-import {ordersDropShippingItems} from "../../lib/products";
+import { TClickedElement } from "../../lib/elementEvents";
+import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
+import { ITotal, TPublishingStatus } from "boundless-api-client";
+import { TCheckoutStep } from "../../types/common";
+import { getCheckoutData } from "../../hooks/checkoutData";
+import { getOrderTaxes } from "../../lib/taxes";
+import { ordersDropShippingItems } from "../../lib/products";
 
 export const initCheckoutByCart =
 	(): AppThunk => async (dispatch, getState) => {
-		const {cartId, onCheckoutInited, onHide, order, stepper} = getState().app;
+		const { cartId, onCheckoutInited, onHide, order, stepper } = getState().app;
 
 		const cart = getCartOrRetrieve();
 
@@ -22,13 +22,13 @@ export const initCheckoutByCart =
 			if (!cart || !cart.items?.length) {
 				dispatch(
 					setGlobalError(
-						"Your cart is empty. Please go back to the site and start shopping."
-					)
+						"Your cart is empty. Please go back to the site and start shopping.",
+					),
 				);
 				return;
 			}
 
-			const {items, total: cartTotal} = cart;
+			const { items, total: cartTotal } = cart;
 			const hasDropShipItems = ordersDropShippingItems(items).length > 0;
 			const steps: TCheckoutStep[] = [
 				TCheckoutStep.contactInfo,
@@ -38,7 +38,7 @@ export const initCheckoutByCart =
 			];
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
-			
+
 			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
 			if (!totalOrderTaxes) {
 				totalOrderTaxes = await getOrderTaxes(items);
@@ -48,7 +48,8 @@ export const initCheckoutByCart =
 				totalTaxAmount: totalOrderTaxes,
 				itemsWithTax: items,
 				shipping: {
-					shippingTaxes: checkoutDataOrder?.tax_calculations?.tax?.shipping?.shippingTaxes,
+					shippingTaxes:
+						checkoutDataOrder?.tax_calculations?.tax?.shipping?.shippingTaxes,
 				},
 			};
 
@@ -60,12 +61,22 @@ export const initCheckoutByCart =
 				payment_method_id: checkoutDataOrder?.payment_method_id ?? "0",
 				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
 				payment_mark_up: null,
-				total_price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
+				total_price: checkoutDataOrder?.total_price
+					? checkoutDataOrder?.total_price
+					: (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 				tip: checkoutDataOrder?.tip ?? "0.00",
-				...(checkoutDataOrder?.delivery_time && { delivery_time: checkoutDataOrder.delivery_time }),
-				...(checkoutDataOrder?.drop_ship_delivery_time && { drop_ship_delivery_time: checkoutDataOrder.drop_ship_delivery_time }),
-				discount_for_order: checkoutDataOrder?.discount_for_order ? checkoutDataOrder?.discount_for_order : null,
-				discounts: checkoutDataOrder?.discounts ? checkoutDataOrder?.discounts : [],
+				...(checkoutDataOrder?.delivery_time && {
+					delivery_time: checkoutDataOrder.delivery_time,
+				}),
+				...(checkoutDataOrder?.drop_ship_delivery_time && {
+					drop_ship_delivery_time: checkoutDataOrder.drop_ship_delivery_time,
+				}),
+				discount_for_order: checkoutDataOrder?.discount_for_order
+					? checkoutDataOrder?.discount_for_order
+					: null,
+				discounts: checkoutDataOrder?.discounts
+					? checkoutDataOrder?.discounts
+					: [],
 				tax_amount: totalOrderTaxes,
 				publishing_status: TPublishingStatus.published,
 				created_at: order?.created_at ?? new Date().toISOString(),
@@ -74,14 +85,18 @@ export const initCheckoutByCart =
 				tax_calculations: {
 					price: totalOrderTaxes,
 					itemsSubTotal: {
-						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
+						price:
+							checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
+							cartTotal.total,
 						qty: cartTotal.qty,
 					},
 					discount: checkoutDataOrder?.discount_for_order ?? "0",
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
-						price: checkoutDataOrderService ? checkoutDataOrderService.total_price : 0,
+						price: checkoutDataOrderService
+							? checkoutDataOrderService.total_price
+							: 0,
 						qty: checkoutDataOrderService ? checkoutDataOrderService.qty : 0,
 					},
 				} as unknown as ITotal,
@@ -90,12 +105,12 @@ export const initCheckoutByCart =
 					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
 					serviceRate: checkoutDataOrder?.custom_attrs?.serviceRate ?? "0.00",
 					checkoutInited: true,
-				}
+				},
 			};
 
 			const data = {
 				items: items,
-				order: {...initialOrder},
+				order: { ...initialOrder },
 				currency: {
 					currency_id: 0,
 					alias: "CAD",
@@ -116,42 +131,48 @@ export const initCheckoutByCart =
 					steps,
 				},
 				total: {
-					price: checkoutDataOrder?.total_price ? checkoutDataOrder?.total_price : (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
+					price: checkoutDataOrder?.total_price
+						? checkoutDataOrder?.total_price
+						: (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
 					itemsSubTotal: {
-						price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
+						price:
+							checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
+							cartTotal.total,
 						qty: cartTotal.qty,
 					},
 					discount: checkoutDataOrder?.discount_for_order ?? "0",
 					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
-						price: checkoutDataOrderService ? checkoutDataOrderService.total_price : 0,
+						price: checkoutDataOrderService
+							? checkoutDataOrderService.total_price
+							: 0,
 						qty: checkoutDataOrderService ? checkoutDataOrderService.qty : 0,
 					},
 				} as unknown as ITotal,
 			};
 			dispatch(setCheckoutData(data));
 
-			dispatch(setCheckoutInited({isInited: true}));
+			dispatch(setCheckoutInited({ isInited: true }));
 
 			if (onCheckoutInited) {
 				onCheckoutInited(data);
 			}
 		} catch (error) {
 			console.error(error);
+			const message =
+				typeof error === "object" && error !== null && "message" in error
+					? String((error as { message?: unknown }).message)
+					: "An unknown error occurred.";
+
+			dispatch(
+				setGlobalError(
+					"Cannot initialize checkout. Please go back to the cart and try again.",
+				),
+			);
+
 			if (onHide) {
-				onHide(
-					TClickedElement.backToCart,
-					typeof error === "object" && error !== null && "message" in error
-						? String((error as { message?: unknown }).message)
-						: "An unknown error occurred."
-				);
-			} else {
-				dispatch(
-					setGlobalError(
-						"Cannot initialize checkout. Please go back to the cart and try again."
-					)
-				);
+				onHide(TClickedElement.backToCart, message);
 			}
 		}
 	};
