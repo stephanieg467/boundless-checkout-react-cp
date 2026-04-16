@@ -44,25 +44,22 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 		return logo;
 	}, [logoText, logoSrc, logo]);
 
-	const [el] = useState<HTMLDivElement | null>(() =>
-		typeof window !== "undefined" && window.document
-			? document.createElement("div")
-			: null,
-	);
+	const [el, setEl] = useState<HTMLDivElement | null>(null);
 
 	const queryClient = useMemo(() => new QueryClient(), []);
 
 	useEffect(() => {
-		if (!el) return;
-		document.body.appendChild(el);
-		disableBodyScroll(el);
+		const div = document.createElement("div");
+		document.body.appendChild(div);
+		disableBodyScroll(div);
+		setEl(div);
 		return () => {
 			clearAllBodyScrollLocks();
-			if (el.parentNode === document.body) {
-				document.body.removeChild(el);
+			if (div.parentNode === document.body) {
+				document.body.removeChild(div);
 			}
 		};
-	}, [el]);
+	}, []);
 
 	useEffect(() => {
 		store.dispatch(
