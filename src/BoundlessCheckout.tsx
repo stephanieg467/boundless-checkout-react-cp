@@ -1,12 +1,8 @@
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
-import ReactDOM from "react-dom";
-import clsx from "clsx";
-import { disableBodyScroll, clearAllBodyScrollLocks } from "body-scroll-lock";
+import { createPortal } from "react-dom";
 import "../styles/styles.scss";
 import { initI18n } from "./i18n/funcs";
 import StepRenderer from "./StepRenderer";
-
-initI18n();
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
 import {
@@ -18,6 +14,8 @@ import {
 import { useAppSelector } from "./hooks/redux";
 import { TClickedElement } from "./lib/elementEvents";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+initI18n();
 
 export interface IBoundlessCheckoutProps {
 	onHide: (element: TClickedElement) => void;
@@ -54,16 +52,13 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	useEffect(() => {
 		const div = document.createElement("div");
 		document.body.appendChild(div);
-		disableBodyScroll(div);
 		setEl(div);
 		return () => {
-			clearAllBodyScrollLocks();
 			if (div.parentNode === document.body) {
 				document.body.removeChild(div);
 			}
 		};
-	}, []);
-	console.log("BoundlessCheckout rendered with props:", props);
+	}, []); 
 
 	useEffect(() => {
 		store.dispatch(
@@ -80,8 +75,8 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 
 	if (!el) return null;
 
-	return ReactDOM.createPortal(
-		<div className={clsx("bdl-checkout", "bdl-checkout_show")}>
+	return createPortal(
+		<div className={"bdl-checkout bdl-checkout_show"}>
 			<React.StrictMode>
 				<QueryClientProvider client={queryClient}>
 					<Provider store={store}>
