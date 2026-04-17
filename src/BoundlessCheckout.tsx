@@ -3,7 +3,10 @@ import ReactDOM from "react-dom";
 import clsx from "clsx";
 import { disableBodyScroll, clearAllBodyScrollLocks } from "body-scroll-lock";
 import "../styles/styles.scss";
+import { initI18n } from "./i18n/funcs";
 import StepRenderer from "./StepRenderer";
+
+initI18n();
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
 import {
@@ -15,7 +18,6 @@ import {
 import { useAppSelector } from "./hooks/redux";
 import { TClickedElement } from "./lib/elementEvents";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Container, Typography } from "@mui/material";
 
 export interface IBoundlessCheckoutProps {
 	onHide: (element: TClickedElement) => void;
@@ -61,6 +63,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 			}
 		};
 	}, []);
+	console.log("BoundlessCheckout rendered with props:", props);
 
 	useEffect(() => {
 		store.dispatch(
@@ -75,18 +78,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 		store.dispatch(showCheckout());
 	}, [onHide, onThankYouPage, cartId, resolvedLogo, onCheckoutInited]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	if (!el)
-		return (
-			<Container>
-				<Typography variant="h4">
-					An error occurred while processing your order. <br />
-					Please contact{" "}
-					<a href={`mailto:${process.env.NEXT_PUBLIC_ADMIN_EMAIL}`}>
-						{process.env.NEXT_PUBLIC_ADMIN_EMAIL}
-					</a>
-				</Typography>
-			</Container>
-		);
+	if (!el) return null;
 
 	return ReactDOM.createPortal(
 		<div className={clsx("bdl-checkout", "bdl-checkout_show")}>
