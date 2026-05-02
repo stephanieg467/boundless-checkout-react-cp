@@ -19,7 +19,6 @@ export default {
 		typescript({
 			tsconfig: './tsconfig.json',
 			include: ["src/**/*"],
-			exclude: ['./src/dev/**.*']
 		}),
 		commonjs(),
 		babel({
