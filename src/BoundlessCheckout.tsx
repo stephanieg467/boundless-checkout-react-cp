@@ -14,6 +14,7 @@ import {
 import { useAppSelector } from "./hooks/redux";
 import { TClickedElement } from "./lib/elementEvents";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CheckoutConfigProvider } from "./contexts/CheckoutConfigContext";
 
 initI18n();
 
@@ -63,26 +64,29 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	useEffect(() => {
 		store.dispatch(
 			setBasicProps({
-				onHide,
-				onThankYouPage,
 				cartId,
-				logo: resolvedLogo,
-				onCheckoutInited,
 			}),
 		);
 		store.dispatch(showCheckout());
-	}, [onHide, onThankYouPage, cartId, resolvedLogo, onCheckoutInited]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [cartId]);
+
+	const config = useMemo(
+		() => ({ onHide, onThankYouPage, onCheckoutInited, logo: resolvedLogo }),
+		[onHide, onThankYouPage, onCheckoutInited, resolvedLogo],
+	);
 
 	if (!el) return null;
 
 	return createPortal(
 		<div className={"bdl-checkout bdl-checkout_show"}>
 			<React.StrictMode>
-				<QueryClientProvider client={queryClient}>
-					<Provider store={store}>
-						<WrappedApp />
-					</Provider>
-				</QueryClientProvider>
+				<CheckoutConfigProvider config={config}>
+					<QueryClientProvider client={queryClient}>
+						<Provider store={store}>
+							<WrappedApp />
+						</Provider>
+					</QueryClientProvider>
+				</CheckoutConfigProvider>
 			</React.StrictMode>
 		</div>,
 		el,
