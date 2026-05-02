@@ -34,6 +34,7 @@ import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
 import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
+import { useCheckoutConfig } from "../../contexts/CheckoutConfigContext";
 
 const makeValidatePaymentForm = (requireDeliveryTime: boolean) =>
 	(values: IPaymentMethodFormValues) => {
@@ -243,12 +244,13 @@ const PaymentMethods = ({
 };
 
 const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
-	const {order, onThankYouPage, total} = useAppSelector((state) => state.app);
+	const {order, total} = useAppSelector((state) => state.app);
+	const {onThankYouPage} = useCheckoutConfig();
 	const dispatch = useAppDispatch();
 
 	const onSubmit = async (
 		values: IPaymentMethodFormValues,
-		{setSubmitting}: FormikHelpers<IPaymentMethodFormValues>
+		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>
 	) => {
 		const {order: checkoutDataOrder} = getCheckoutData() || {};
 
@@ -294,8 +296,14 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
 		dispatch(setTotal(updatedTotal as unknown as ITotal));
 
-		await onThankYouPage!({orderId: checkoutDataOrder.id});
-		setSubmitting(false);
+		try {
+			await onThankYouPage({orderId: checkoutDataOrder.id});
+		} catch (error) {
+			console.error("onThankYouPage failed:", error);
+			setStatus({serverError: "Unable to complete your order. Please try again."});
+		} finally {
+			setSubmitting(false);
+		}
 	};
 
 	return {
