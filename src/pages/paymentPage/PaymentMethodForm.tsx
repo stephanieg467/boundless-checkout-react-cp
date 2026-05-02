@@ -13,6 +13,7 @@ import {
 	InputAdornment,
 	FormLabel,
 	CircularProgress,
+	Alert,
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
@@ -124,6 +125,11 @@ export default function PaymentMethodForm({
 								errorLoadingDeliveryTimes,
 							)}
 						</DeliveryTimeSelector>
+					)}
+					{formikProps.status?.serverError && (
+						<Alert severity="error" sx={{mb: 2}}>
+							{formikProps.status.serverError}
+						</Alert>
 					)}
 					<Box textAlign={"end"}>
 						<Button
@@ -256,50 +262,50 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 
 		if (!order || !checkoutDataOrder) return;
 
-		const {payment_method_id, tip, delivery_time} = values;
-
-		let updatedOrder = {
-			...checkoutDataOrder,
-			paymentMethod: paymentPage.paymentMethods.find(
-				(method) => method.payment_method_id === payment_method_id
-			),
-			tip: tip ? parseFloat(tip).toString() : "0",
-			payment_method_id: payment_method_id,
-			...(delivery_time ? {delivery_time} : {}),
-			custom_attrs: {
-				...checkoutDataOrder.custom_attrs,
-				checkoutCompleted: true,
-			},
-		};
-		let updatedTotal = {...total};
-
-		if (tip) {
-			updatedOrder = {
-				...updatedOrder,
-				total_price: (
-					(Number(checkoutDataOrder.total_price) || 0) + parseFloat(tip)
-				).toString(),
-			};
-			updatedTotal = {
-				...total,
-				price: ((Number(total?.price) || 0) + parseFloat(tip)).toString(),
-			};
-		}
-
-		setLocalStorageCheckoutData({
-			order: {
-				...updatedOrder,
-			} as IOrderWithCustmAttr,
-			total: updatedTotal as unknown as ITotal,
-		});
-
-		dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
-		dispatch(setTotal(updatedTotal as unknown as ITotal));
-
 		try {
+			const {payment_method_id, tip, delivery_time} = values;
+
+			let updatedOrder = {
+				...checkoutDataOrder,
+				paymentMethod: paymentPage.paymentMethods.find(
+					(method) => method.payment_method_id === payment_method_id
+				),
+				tip: tip ? parseFloat(tip).toString() : "0",
+				payment_method_id: payment_method_id,
+				...(delivery_time ? {delivery_time} : {}),
+				custom_attrs: {
+					...checkoutDataOrder.custom_attrs,
+					checkoutCompleted: true,
+				},
+			};
+			let updatedTotal = {...total};
+
+			if (tip) {
+				updatedOrder = {
+					...updatedOrder,
+					total_price: (
+						(Number(checkoutDataOrder.total_price) || 0) + parseFloat(tip)
+					).toString(),
+				};
+				updatedTotal = {
+					...total,
+					price: ((Number(total?.price) || 0) + parseFloat(tip)).toString(),
+				};
+			}
+
+			setLocalStorageCheckoutData({
+				order: {
+					...updatedOrder,
+				} as IOrderWithCustmAttr,
+				total: updatedTotal as unknown as ITotal,
+			});
+
+			dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
+			dispatch(setTotal(updatedTotal as unknown as ITotal));
+
 			await onThankYouPage({orderId: checkoutDataOrder.id});
 		} catch (error) {
-			console.error("onThankYouPage failed:", error);
+			console.error("Checkout completion failed:", error);
 			setStatus({serverError: "Unable to complete your order. Please try again."});
 		} finally {
 			setSubmitting(false);
