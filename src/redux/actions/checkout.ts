@@ -3,6 +3,7 @@ import {
 	setCheckoutData,
 	setCheckoutInited,
 	setGlobalError,
+	TOnCheckoutInited,
 } from "../reducers/app";
 import { TClickedElement } from "../../lib/elementEvents";
 import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
@@ -13,8 +14,13 @@ import { getOrderTaxes } from "../../lib/taxes";
 import { ordersDropShippingItems } from "../../lib/products";
 
 export const initCheckoutByCart =
-	(): AppThunk => async (dispatch, getState) => {
-		const { cartId, onCheckoutInited, onHide, order, stepper } = getState().app;
+	(config: {
+		onCheckoutInited?: TOnCheckoutInited;
+		onHide?: (element: TClickedElement, error?: string) => void;
+	}): AppThunk =>
+	async (dispatch, getState) => {
+		const { cartId, order, stepper } = getState().app;
+		const { onCheckoutInited, onHide } = config;
 
 		const cart = getCartOrRetrieve();
 
