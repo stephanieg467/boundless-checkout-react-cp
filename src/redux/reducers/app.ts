@@ -5,12 +5,13 @@ import {
 	ISystemTax,
 	ITotal,
 } from "boundless-api-client";
-import {ReactNode} from "react";
-import {TClickedElement} from "../../lib/elementEvents";
-import {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
-import {ICovaCustomer, IOrderWithCustmAttr} from "../../types/Order";
-import {getCheckoutData, setLocalStorageCheckoutData} from "../../hooks/checkoutData";
-import {setCart} from "../../hooks/getCartOrRetrieve";
+import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
+import { ICovaCustomer, IOrderWithCustmAttr } from "../../types/Order";
+import {
+	getCheckoutData,
+	setLocalStorageCheckoutData,
+} from "../../hooks/checkoutData";
+import { setCart } from "../../hooks/getCartOrRetrieve";
 import { ICheckoutStepper, TCheckoutStep } from "../../types/common";
 
 const initialState: IAppState = {
@@ -26,29 +27,15 @@ const appSlice = createSlice({
 	reducers: {
 		setBasicProps(
 			state,
-			action: PayloadAction<
-				Required<Pick<IAppState, "onHide" | "onThankYouPage">> & {
-					logo?: string | ReactNode;
-					cartId?: string;
-					onCheckoutInited?: TOnCheckoutInited;
-				}
-			>
+			action: PayloadAction<{
+				cartId?: string;
+			}>,
 		) {
-			const {
-				onHide,
-				onThankYouPage,
-				cartId,
-				logo,
-				onCheckoutInited,
-			} = action.payload;
+			const { cartId } = action.payload;
 
 			return {
 				...state,
-				onHide,
-				onThankYouPage,
 				cartId,
-				logo,
-				onCheckoutInited,
 			};
 		},
 		showCheckout(state) {
@@ -185,16 +172,12 @@ export interface IAppState {
 	show: boolean;
 	isInited: boolean;
 	globalError: string | null;
-	onHide?: (element: TClickedElement, error?: string) => void;
-	onThankYouPage?: TOnThankYouPage;
 	cartId?: string;
 	items?: CovaCartItem[];
 	order?: IOrderWithCustmAttr;
 	currency?: ICurrency;
 	localeSettings?: ILocaleSettings;
 	taxSettings?: ISystemTax;
-	logo?: string | ReactNode;
 	stepper?: ICheckoutStepper | null;
-	onCheckoutInited?: TOnCheckoutInited;
 	total?: ITotal;
 }

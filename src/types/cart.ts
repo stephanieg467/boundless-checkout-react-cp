@@ -85,6 +85,7 @@ export interface CovaProduct {
 	CreatedDateUtc: string;
 	UpdatedDateUtc: string;
 	ApplicableTaxRates: Array<string>;
+	taxTotal?: string;
 	ClassificationTreeId: number;
 	ManufacturerId: null | number;
 	Manufacturer: null | string;
@@ -112,6 +113,7 @@ export interface CleanedCovaProduct
 		| "Availability"
 		| "Prices"
 		| "discountedPrice"
+		| "taxTotal"
 		| "couponPrice"
 		| "discount"
 		| "UpdatedDateUtc"

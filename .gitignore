@@ -15,5 +15,6 @@ yarn-error.log*
 ## AI Agents
 CLAUDE.md
 GEMINI.md
+AGENTS.md
 .claude
 prompt.md

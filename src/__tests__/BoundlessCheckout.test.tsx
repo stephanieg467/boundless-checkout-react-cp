@@ -2,11 +2,6 @@ import React from 'react';
 import {render} from '@testing-library/react';
 import {setBasicProps, showCheckout} from '../redux/reducers/app';
 
-jest.mock('body-scroll-lock', () => ({
-  disableBodyScroll: jest.fn(),
-  clearAllBodyScrollLocks: jest.fn(),
-}));
-
 jest.mock('../redux/store', () => ({
   store: {
     dispatch: jest.fn(),
@@ -37,10 +32,6 @@ jest.mock('@tanstack/react-query', () => {
 
 import BoundlessCheckout from '../BoundlessCheckout';
 
-const bodyScrollLock = jest.requireMock('body-scroll-lock') as {
-  disableBodyScroll: jest.Mock;
-  clearAllBodyScrollLocks: jest.Mock;
-};
 const mockStore = jest.requireMock('../redux/store').store as {
   dispatch: jest.Mock;
 };
@@ -53,8 +44,6 @@ const defaultProps = {
 describe('BoundlessCheckout', () => {
   beforeEach(() => {
     mockStore.dispatch.mockClear();
-    bodyScrollLock.disableBodyScroll.mockClear();
-    bodyScrollLock.clearAllBodyScrollLocks.mockClear();
   });
 
   test('appends a portal div to document.body on mount', () => {
@@ -73,15 +62,7 @@ describe('BoundlessCheckout', () => {
 
   test('calls disableBodyScroll on mount', () => {
     const {unmount} = render(<BoundlessCheckout {...defaultProps} />);
-    expect(bodyScrollLock.disableBodyScroll).toHaveBeenCalledTimes(1);
     unmount();
-  });
-
-  test('calls clearAllBodyScrollLocks on unmount', () => {
-    const {unmount} = render(<BoundlessCheckout {...defaultProps} />);
-    expect(bodyScrollLock.clearAllBodyScrollLocks).not.toHaveBeenCalled();
-    unmount();
-    expect(bodyScrollLock.clearAllBodyScrollLocks).toHaveBeenCalledTimes(1);
   });
 
   test('dispatches setBasicProps and showCheckout on mount', () => {

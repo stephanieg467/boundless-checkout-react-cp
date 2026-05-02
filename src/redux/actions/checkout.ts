@@ -5,7 +5,6 @@ import {
 	setGlobalError,
 	TOnCheckoutInited,
 } from "../reducers/app";
-import { TClickedElement } from "../../lib/elementEvents";
 import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
 import { ITotal, TPublishingStatus } from "boundless-api-client";
 import { TCheckoutStep } from "../../types/common";
@@ -16,11 +15,10 @@ import { ordersDropShippingItems } from "../../lib/products";
 export const initCheckoutByCart =
 	(config: {
 		onCheckoutInited?: TOnCheckoutInited;
-		onHide?: (element: TClickedElement, error?: string) => void;
 	}): AppThunk =>
 	async (dispatch, getState) => {
 		const { cartId, order, stepper } = getState().app;
-		const { onCheckoutInited, onHide } = config;
+		const { onCheckoutInited } = config;
 
 		const cart = getCartOrRetrieve();
 
@@ -166,19 +164,10 @@ export const initCheckoutByCart =
 			}
 		} catch (error) {
 			console.error(error);
-			const message =
-				typeof error === "object" && error !== null && "message" in error
-					? String((error as { message?: unknown }).message)
-					: "An unknown error occurred.";
-
 			dispatch(
 				setGlobalError(
 					"Cannot initialize checkout. Please go back to the cart and try again.",
 				),
 			);
-
-			if (onHide) {
-				onHide(TClickedElement.backToCart, message);
-			}
 		}
 	};

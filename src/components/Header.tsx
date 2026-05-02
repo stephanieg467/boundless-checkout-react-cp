@@ -4,9 +4,10 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import {useAppSelector} from "../hooks/redux";
 import {TClickedElement} from "../lib/elementEvents";
 import {useTranslation} from "react-i18next";
+import { useCheckoutConfig } from "../contexts/CheckoutConfigContext";
 
 export default function Header() {
-	const {onHide} = useAppSelector((state) => state.app);
+	const {onHide} = useCheckoutConfig();
 	const {t} = useTranslation();
 
 	const onBackToCartClicked = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -46,7 +47,7 @@ export default function Header() {
 }
 
 export const Logo = () => {
-	const {logo} = useAppSelector((state) => state.app);
+	const {logo} = useCheckoutConfig();
 
 	const textLogoClass = "bdl-header__text-logo";
 	if (logo) {

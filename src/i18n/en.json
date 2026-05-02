@@ -11,7 +11,7 @@
 		"dob": "Date of birth",
 		"continueToShipping": "Continue to shipping",
 		"continueToPayment": "Continue to payment",
-		"registerMe": "Register Me",
+		"registerMe": "Register Me"
 	},
 	"loginForm": {
 		"pageTitle": "Checkout: Login",

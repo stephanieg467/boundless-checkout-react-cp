@@ -20,18 +20,26 @@ jest.mock("../hooks/redux", () => ({
 import StepRenderer from "../StepRenderer";
 
 // ── helpers ─────────────────────────────────────────────────────────────
+import { CheckoutConfigProvider } from "../contexts/CheckoutConfigContext";
+
+const mockOnHide = jest.fn();
+const mockOnThankYouPage = jest.fn();
+
 const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string | null = null) => {
   mockState = {
     app: {
       isInited: true,
       globalError,
-      onHide: jest.fn(),
       stepper: currentStep
         ? {currentStep, steps: [currentStep], filledSteps: []}
         : null,
     },
   };
-  return render(<StepRenderer />);
+  return render(
+    <CheckoutConfigProvider config={{ onHide: mockOnHide, onThankYouPage: mockOnThankYouPage }}>
+      <StepRenderer />
+    </CheckoutConfigProvider>
+  );
 };
 
 // ── tests ────────────────────────────────────────────────────────────────
@@ -51,11 +59,14 @@ describe("StepRenderer scroll-to-top", () => {
       app: {
         isInited: true,
         globalError: null,
-        onHide: jest.fn(),
         stepper: {currentStep: TCheckoutStep.shippingAddress, steps: [TCheckoutStep.shippingAddress], filledSteps: []},
       },
     };
-    rerender(<StepRenderer />);
+    rerender(
+      <CheckoutConfigProvider config={{ onHide: mockOnHide, onThankYouPage: mockOnThankYouPage }}>
+        <StepRenderer />
+      </CheckoutConfigProvider>
+    );
 
     expect(scrollToMock).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
 

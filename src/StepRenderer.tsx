@@ -14,6 +14,7 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
 import {TClickedElement} from "./lib/elementEvents";
 import {useTranslation} from "react-i18next";
+import { useCheckoutConfig } from "./contexts/CheckoutConfigContext";
 
 const stepComponents: Partial<Record<TCheckoutStep, React.ComponentType>> = {
   [TCheckoutStep.contactInfo]: ContactInfoPage,
@@ -24,7 +25,8 @@ const stepComponents: Partial<Record<TCheckoutStep, React.ComponentType>> = {
 
 export default function StepRenderer() {
   useInitCheckoutByCart();
-  const {stepper, globalError, onHide} = useAppSelector((state) => state.app);
+  const {stepper, globalError} = useAppSelector((state) => state.app);
+  const { onHide } = useCheckoutConfig();
   const {t} = useTranslation();
 
   useEffect(() => {
