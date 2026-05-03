@@ -12,7 +12,7 @@ import {
 import {cartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
 import {setCurrentStep} from "../redux/reducers/app";
-import { TCheckoutStep } from "../types/common";
+import {TCheckoutStep} from "../types/common";
 
 export default function PaymentPage() {
 	const {isInited, paymentPage} = useInitPaymentPage();

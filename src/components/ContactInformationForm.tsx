@@ -26,7 +26,7 @@ import {PhoneInput} from "./PhoneInput";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
-import { ICheckoutStepper, TCheckoutStep } from "../types/common";
+import {ICheckoutStepper, TCheckoutStep} from "../types/common";
 
 export interface IContactInformationFormValues {
 	email: string;

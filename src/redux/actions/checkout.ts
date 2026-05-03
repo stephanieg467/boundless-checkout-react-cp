@@ -1,24 +1,24 @@
-import { AppThunk } from "../store";
+import {AppThunk} from "../store";
 import {
 	setCheckoutData,
 	setCheckoutInited,
 	setGlobalError,
 	TOnCheckoutInited,
 } from "../reducers/app";
-import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
-import { ITotal, TPublishingStatus } from "boundless-api-client";
-import { TCheckoutStep } from "../../types/common";
-import { getCheckoutData } from "../../hooks/checkoutData";
-import { getOrderTaxes } from "../../lib/taxes";
-import { ordersDropShippingItems } from "../../lib/products";
+import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
+import {ITotal, TPublishingStatus} from "boundless-api-client";
+import {TCheckoutStep} from "../../types/common";
+import {getCheckoutData} from "../../hooks/checkoutData";
+import {getOrderTaxes} from "../../lib/taxes";
+import {ordersDropShippingItems} from "../../lib/products";
 
 export const initCheckoutByCart =
 	(config: {
 		onCheckoutInited?: TOnCheckoutInited;
 	}): AppThunk =>
 	async (dispatch, getState) => {
-		const { cartId, order, stepper } = getState().app;
-		const { onCheckoutInited } = config;
+		const {cartId, order, stepper} = getState().app;
+		const {onCheckoutInited} = config;
 
 		const cart = getCartOrRetrieve();
 
@@ -32,7 +32,7 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const { items, total: cartTotal } = cart;
+			const {items, total: cartTotal} = cart;
 			const hasDropShipItems = ordersDropShippingItems(items).length > 0;
 			const steps: TCheckoutStep[] = [
 				TCheckoutStep.contactInfo,
@@ -114,7 +114,7 @@ export const initCheckoutByCart =
 
 			const data = {
 				items: items,
-				order: { ...initialOrder },
+				order: {...initialOrder},
 				currency: {
 					currency_id: 0,
 					alias: "CAD",
@@ -157,7 +157,7 @@ export const initCheckoutByCart =
 			};
 			dispatch(setCheckoutData(data));
 
-			dispatch(setCheckoutInited({ isInited: true }));
+			dispatch(setCheckoutInited({isInited: true}));
 
 			if (onCheckoutInited) {
 				onCheckoutInited(data);

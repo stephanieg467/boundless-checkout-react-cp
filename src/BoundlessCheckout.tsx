@@ -1,20 +1,20 @@
-import React, { ReactNode, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import React, {ReactNode, useEffect, useMemo, useState} from "react";
+import {createPortal} from "react-dom";
 import "../styles/styles.scss";
-import { initI18n } from "./i18n/funcs";
+import {initI18n} from "./i18n/funcs";
 import StepRenderer from "./StepRenderer";
-import { Provider } from "react-redux";
-import { store } from "./redux/store";
+import {Provider} from "react-redux";
+import {store} from "./redux/store";
 import {
 	setBasicProps,
 	showCheckout,
 	TOnThankYouPage,
 	TOnCheckoutInited,
 } from "./redux/reducers/app";
-import { useAppSelector } from "./hooks/redux";
-import { TClickedElement } from "./lib/elementEvents";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CheckoutConfigProvider } from "./contexts/CheckoutConfigContext";
+import {useAppSelector} from "./hooks/redux";
+import {TClickedElement} from "./lib/elementEvents";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {CheckoutConfigProvider} from "./contexts/CheckoutConfigContext";
 
 initI18n();
 
@@ -71,7 +71,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	}, [cartId]);
 
 	const config = useMemo(
-		() => ({ onHide, onThankYouPage, onCheckoutInited, logo: resolvedLogo }),
+		() => ({onHide, onThankYouPage, onCheckoutInited, logo: resolvedLogo}),
 		[onHide, onThankYouPage, onCheckoutInited, resolvedLogo],
 	);
 

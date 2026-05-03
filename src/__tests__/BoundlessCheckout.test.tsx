@@ -1,8 +1,8 @@
-import React from 'react';
-import {render} from '@testing-library/react';
-import {setBasicProps, showCheckout} from '../redux/reducers/app';
+import React from "react";
+import {render} from "@testing-library/react";
+import {setBasicProps, showCheckout} from "../redux/reducers/app";
 
-jest.mock('../redux/store', () => ({
+jest.mock("../redux/store", () => ({
   store: {
     dispatch: jest.fn(),
     getState: () => ({app: {show: true}}),
@@ -10,16 +10,16 @@ jest.mock('../redux/store', () => ({
   },
 }));
 
-jest.mock('react-redux', () => ({
+jest.mock("react-redux", () => ({
   Provider: ({children}: {children: React.ReactNode}) => <>{children}</>,
   useSelector: jest.fn((selector: any) => selector({app: {show: true}})),
 }));
 
-jest.mock('../StepRenderer', () => () => <div data-testid="step-renderer" />);
+jest.mock("../StepRenderer", () => () => <div data-testid="step-renderer" />);
 
 const mockQueryClientConstructor = jest.fn();
-jest.mock('@tanstack/react-query', () => {
-  const actual = jest.requireActual('@tanstack/react-query');
+jest.mock("@tanstack/react-query", () => {
+  const actual = jest.requireActual("@tanstack/react-query");
   return {
     ...actual,
     QueryClient: jest.fn().mockImplementation((...args: any[]) => {
@@ -30,9 +30,9 @@ jest.mock('@tanstack/react-query', () => {
   };
 });
 
-import BoundlessCheckout from '../BoundlessCheckout';
+import BoundlessCheckout from "../BoundlessCheckout";
 
-const mockStore = jest.requireMock('../redux/store').store as {
+const mockStore = jest.requireMock("../redux/store").store as {
   dispatch: jest.Mock;
 };
 
@@ -41,31 +41,31 @@ const defaultProps = {
   onThankYouPage: jest.fn(),
 };
 
-describe('BoundlessCheckout', () => {
+describe("BoundlessCheckout", () => {
   beforeEach(() => {
     mockStore.dispatch.mockClear();
   });
 
-  test('appends a portal div to document.body on mount', () => {
+  test("appends a portal div to document.body on mount", () => {
     const childrenBefore = document.body.children.length;
     const {unmount} = render(<BoundlessCheckout {...defaultProps} />);
     expect(document.body.children.length).toBeGreaterThan(childrenBefore);
     unmount();
   });
 
-  test('removes the portal div from document.body on unmount', () => {
+  test("removes the portal div from document.body on unmount", () => {
     const {unmount} = render(<BoundlessCheckout {...defaultProps} />);
     const childrenAfterMount = document.body.children.length;
     unmount();
     expect(document.body.children.length).toBeLessThan(childrenAfterMount);
   });
 
-  test('calls disableBodyScroll on mount', () => {
+  test("calls disableBodyScroll on mount", () => {
     const {unmount} = render(<BoundlessCheckout {...defaultProps} />);
     unmount();
   });
 
-  test('dispatches setBasicProps and showCheckout on mount', () => {
+  test("dispatches setBasicProps and showCheckout on mount", () => {
     const setBasicPropsType = setBasicProps({} as any).type;
     const showCheckoutType = showCheckout().type;
     render(<BoundlessCheckout {...defaultProps} />);
@@ -74,7 +74,7 @@ describe('BoundlessCheckout', () => {
     expect(dispatchedTypes).toContain(showCheckoutType);
   });
 
-  test('QueryClient is not recreated across re-renders', () => {
+  test("QueryClient is not recreated across re-renders", () => {
     mockQueryClientConstructor.mockClear();
     const {rerender, unmount} = render(<BoundlessCheckout {...defaultProps} />);
     rerender(<BoundlessCheckout {...defaultProps} cartId="cart-1" />);

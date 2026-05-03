@@ -1,6 +1,6 @@
-import React, { createContext, useContext, ReactNode } from "react";
-import { TClickedElement } from "../lib/elementEvents";
-import { TOnThankYouPage, TOnCheckoutInited } from "../redux/reducers/app";
+import React, {createContext, useContext, ReactNode} from "react";
+import {TClickedElement} from "../lib/elementEvents";
+import {TOnThankYouPage, TOnCheckoutInited} from "../redux/reducers/app";
 
 export interface ICheckoutConfig {
 	onHide: (element: TClickedElement, error?: string) => void;

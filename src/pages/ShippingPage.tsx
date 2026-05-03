@@ -14,7 +14,7 @@ import {
 import {cartHasTickets} from "../lib/products";
 import {getVancouverDateTime} from "../lib/deliveryTimes";
 import {setCurrentStep} from "../redux/reducers/app";
-import { TCheckoutStep } from "../types/common";
+import {TCheckoutStep} from "../types/common";
 
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();

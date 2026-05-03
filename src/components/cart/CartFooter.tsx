@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
-import { DELIVERY_ID } from "../../constants";
+import {DELIVERY_ID} from "../../constants";
 
 export default function CartFooter({open}: ICartFooterProps) {
 	const {order, total} = getCheckoutData() || {};

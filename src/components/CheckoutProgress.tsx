@@ -1,15 +1,15 @@
-import { Step, StepButton, Stepper } from "@mui/material";
-import React, { useMemo } from "react";
-import { useAppDispatch, useAppSelector } from "../hooks/redux";
-import { setCurrentStep } from "../redux/reducers/app";
-import { useTranslation } from "react-i18next";
-import { TCheckoutStep } from "../types/common";
-import { ordersDropShippingItems } from "../lib/products";
+import {Step, StepButton, Stepper} from "@mui/material";
+import React, {useMemo} from "react";
+import {useAppDispatch, useAppSelector} from "../hooks/redux";
+import {setCurrentStep} from "../redux/reducers/app";
+import {useTranslation} from "react-i18next";
+import {TCheckoutStep} from "../types/common";
+import {ordersDropShippingItems} from "../lib/products";
 
 export default function CheckoutProgress() {
-	const { stepper, items } = useAppSelector((state) => state.app);
+	const {stepper, items} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
-	const { t } = useTranslation();
+	const {t} = useTranslation();
 	const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
 
 	const currentStepIndex = stepper

@@ -1,10 +1,9 @@
 import React, {MouseEvent} from "react";
 import Container from "@mui/material/Container";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import {useAppSelector} from "../hooks/redux";
 import {TClickedElement} from "../lib/elementEvents";
 import {useTranslation} from "react-i18next";
-import { useCheckoutConfig } from "../contexts/CheckoutConfigContext";
+import {useCheckoutConfig} from "../contexts/CheckoutConfigContext";
 
 export default function Header() {
 	const {onHide} = useCheckoutConfig();

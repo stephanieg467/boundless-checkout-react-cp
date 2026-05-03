@@ -1,19 +1,19 @@
-import { Form, Formik, FormikHelpers } from "formik";
-import { Box, Button, Typography } from "@mui/material";
+import {Form, Formik, FormikHelpers} from "formik";
+import {Box, Button, Typography} from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
-import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import {useAppDispatch, useAppSelector} from "../../hooks/redux";
 import {
 	addFilledStep,
 	setCurrentStep,
 	setOrder,
 } from "../../redux/reducers/app";
-import { TCheckoutStep } from "../../types/common";
+import {TCheckoutStep} from "../../types/common";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import { IOrderWithCustmAttr } from "../../types/Order";
-import { useDeliveryTimes } from "../../hooks/useDeliveryTimes";
+import {IOrderWithCustmAttr} from "../../types/Order";
+import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {
 	DeliveryTimesWithDropShip,
 	getNextTwoBusinessDaysFormatted,
@@ -22,9 +22,9 @@ import {
 	ordersDropShippingItems,
 	ordersRegularItems,
 } from "../../lib/products";
-import { hasDeliveryId } from "../../lib/shipping";
-import { DELIVERY_ID, SELF_PICKUP_ID } from "../../constants";
-import { DeliveryTimeSelector } from "./helpers";
+import {hasDeliveryId} from "../../lib/shipping";
+import {DELIVERY_ID, SELF_PICKUP_ID} from "../../constants";
+import {DeliveryTimeSelector} from "./helpers";
 import ExtraErrors from "../../components/ExtraErrors";
 
 const hasDropShipTimes = (data: unknown): data is DeliveryTimesWithDropShip =>
@@ -80,7 +80,7 @@ export const makeValidateDeliveryDetailsForm =
 
 const useSaveDeliveryDetails = () => {
 	const dispatch = useAppDispatch();
-	const { order, items } = useAppSelector((state) => state.app);
+	const {order, items} = useAppSelector((state) => state.app);
 
 	const regularItems = ordersRegularItems(items ?? []);
 	const hasRegularItems = regularItems.length > 0;
@@ -89,9 +89,9 @@ const useSaveDeliveryDetails = () => {
 
 	const onSubmit = (
 		values: IDeliveryDetailsFormValues,
-		{ setSubmitting, setErrors }: FormikHelpers<IDeliveryDetailsFormValues>,
+		{setSubmitting, setErrors}: FormikHelpers<IDeliveryDetailsFormValues>,
 	) => {
-		const { order: checkoutDataOrder, total } = getCheckoutData() || {};
+		const {order: checkoutDataOrder, total} = getCheckoutData() || {};
 		if (!order || !checkoutDataOrder || !total) {
 			setErrors({
 				_error: "No order found. Please return to menu and try again.",
@@ -102,15 +102,15 @@ const useSaveDeliveryDetails = () => {
 
 		const updatedOrder: IOrderWithCustmAttr = {
 			...checkoutDataOrder,
-			...(hasRegularItems && { delivery_time: values.delivery_time }),
+			...(hasRegularItems && {delivery_time: values.delivery_time}),
 			...(hasDropShipItems && {
 				drop_ship_delivery_time: values.drop_ship_delivery_time,
 			}),
 		};
 
-		setLocalStorageCheckoutData({ order: updatedOrder, total });
+		setLocalStorageCheckoutData({order: updatedOrder, total});
 		dispatch(setOrder(updatedOrder));
-		dispatch(addFilledStep({ step: TCheckoutStep.deliveryDetails }));
+		dispatch(addFilledStep({step: TCheckoutStep.deliveryDetails}));
 		dispatch(setCurrentStep(TCheckoutStep.paymentMethod));
 		setSubmitting(false);
 	};
@@ -132,7 +132,7 @@ export default function DeliveryDetailsForm() {
 		dropShipItems,
 		regularItems,
 	} = useSaveDeliveryDetails();
-	const { order } = useAppSelector((state) => state.app);
+	const {order} = useAppSelector((state) => state.app);
 	const {
 		isLoading: loadingDeliveryTimes,
 		isError: errorLoadingDeliveryTimes,
@@ -178,7 +178,7 @@ export default function DeliveryDetailsForm() {
 							errors={formikProps.errors}
 						/>
 					)}
-					<Typography variant="h5" sx={{ mb: 2 }}>
+					<Typography variant="h5" sx={{mb: 2}}>
 						{"Delivery details"}
 					</Typography>
 
@@ -217,10 +217,10 @@ export default function DeliveryDetailsForm() {
 						</DeliveryTimeSelector>
 					)}
 					{(hasRegularItems && isPickup) && (
-						<Box sx={{ mb: 2 }}>
+						<Box sx={{mb: 2}}>
 							<Typography
 								variant="subtitle1"
-								sx={{ mb: 1, fontWeight: "bold" }}
+								sx={{mb: 1, fontWeight: "bold"}}
 							>
 								{"Same day pickup for:"}
 							</Typography>
@@ -232,10 +232,10 @@ export default function DeliveryDetailsForm() {
 						</Box>
 					)}
 					{hasDropShipItems && isPickup && (
-						<Box sx={{ mb: 2 }}>
+						<Box sx={{mb: 2}}>
 							<Typography
 								variant="subtitle1"
-								sx={{ mb: 1, fontWeight: "bold" }}
+								sx={{mb: 1, fontWeight: "bold"}}
 							>
 								{`${getNextTwoBusinessDaysFormatted()} pickup for:`}
 							</Typography>
@@ -247,10 +247,10 @@ export default function DeliveryDetailsForm() {
 						</Box>
 					)}
 					{isShipping && (
-						<Box sx={{ mb: 2 }}>
+						<Box sx={{mb: 2}}>
 							<Typography
 								variant="subtitle1"
-								sx={{ mb: 1, fontWeight: "bold" }}
+								sx={{mb: 1, fontWeight: "bold"}}
 							>
 								{"Expected delivery time in 1-3 business days for:"}
 							</Typography>

@@ -1,7 +1,7 @@
-import { Box, Typography, TextField } from "@mui/material";
-import { fieldAttrs } from "../../lib/formUtils";
-import { CovaCartItem } from "../../types/cart";
-import { FormikProps, FormikValues } from "formik";
+import {Box, Typography, TextField} from "@mui/material";
+import {fieldAttrs} from "../../lib/formUtils";
+import {CovaCartItem} from "../../types/cart";
+import {FormikProps, FormikValues} from "formik";
 
 export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 	items,
@@ -24,10 +24,10 @@ export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 	};
 
 	return (
-		<Box sx={{ mb: 2 }}>
+		<Box sx={{mb: 2}}>
 			{items && (
 				<>
-					<Typography variant="subtitle1" sx={{ mb: 1, fontWeight: "bold" }}>
+					<Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
 						{"Delivery for:"}
 					</Typography>
 					<ul>
@@ -43,7 +43,7 @@ export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 				variant={"outlined"}
 				fullWidth
 				select
-				slotProps={{ select: { native: true } }}
+				slotProps={{select: {native: true}}}
 				helperText={helperText}
 				sx={styles}
 				{...fieldAttrs(field, formikProps)}

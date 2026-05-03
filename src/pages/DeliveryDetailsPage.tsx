@@ -14,7 +14,7 @@ export default function DeliveryDetailsPage() {
 
   useEffect(() => {
     document.title = "Checkout: Delivery details";
-  }, []); // eslint-disable-line
+  }, []);  
 
   useEffect(() => {
     if (stepper && !stepper.filledSteps.includes(TCheckoutStep.shippingAddress)) {

@@ -1,4 +1,4 @@
-import { configureStore, ThunkAction, Action } from "@reduxjs/toolkit";
+import {configureStore, ThunkAction, Action} from "@reduxjs/toolkit";
 import appReducers from "./reducers/app";
 import xhrReducers from "./reducers/xhr";
 

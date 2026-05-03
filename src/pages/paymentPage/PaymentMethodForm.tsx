@@ -35,7 +35,7 @@ import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
 import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
-import { useCheckoutConfig } from "../../contexts/CheckoutConfigContext";
+import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 
 const makeValidatePaymentForm = (requireDeliveryTime: boolean) =>
 	(values: IPaymentMethodFormValues) => {

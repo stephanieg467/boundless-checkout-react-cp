@@ -1,5 +1,5 @@
 import React from "react";
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import {TCheckoutStep} from "../types/common";
 
 // ── mocks ──────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ jest.mock("../hooks/redux", () => ({
 import StepRenderer from "../StepRenderer";
 
 // ── helpers ─────────────────────────────────────────────────────────────
-import { CheckoutConfigProvider } from "../contexts/CheckoutConfigContext";
+import {CheckoutConfigProvider} from "../contexts/CheckoutConfigContext";
 
 const mockOnHide = jest.fn();
 const mockOnThankYouPage = jest.fn();
@@ -36,7 +36,7 @@ const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string |
     },
   };
   return render(
-    <CheckoutConfigProvider config={{ onHide: mockOnHide, onThankYouPage: mockOnThankYouPage }}>
+    <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage}}>
       <StepRenderer />
     </CheckoutConfigProvider>
   );
@@ -63,7 +63,7 @@ describe("StepRenderer scroll-to-top", () => {
       },
     };
     rerender(
-      <CheckoutConfigProvider config={{ onHide: mockOnHide, onThankYouPage: mockOnThankYouPage }}>
+      <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage}}>
         <StepRenderer />
       </CheckoutConfigProvider>
     );
@@ -75,6 +75,11 @@ describe("StepRenderer scroll-to-top", () => {
 });
 
 describe("StepRenderer", () => {
+  beforeEach(() => {
+    window.history.replaceState(null, "", "/checkout");
+    jest.restoreAllMocks();
+  });
+
   it("renders ContactInfoPage for contactInfo step", () => {
     renderWithStep(TCheckoutStep.contactInfo);
     expect(screen.getByTestId("contact-info-page")).toBeInTheDocument();
@@ -109,5 +114,39 @@ describe("StepRenderer", () => {
     renderWithStep("unknownStep" as TCheckoutStep);
     // Should fall back to ContactInfoPage, no throw
     expect(screen.getByTestId("contact-info-page")).toBeInTheDocument();
+  });
+
+  it.each([
+    [TCheckoutStep.contactInfo, "/checkout/info"],
+    [TCheckoutStep.shippingAddress, "/checkout/shipping"],
+    [TCheckoutStep.deliveryDetails, "/checkout/delivery-details"],
+    [TCheckoutStep.paymentMethod, "/checkout/payment"],
+  ])("updates the URL for the %s checkout step", async (step, expectedPath) => {
+    window.history.replaceState(null, "", "/checkout?coupon=save#summary");
+
+    renderWithStep(step);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe(expectedPath);
+    });
+    expect(window.location.search).toBe("?coupon=save");
+    expect(window.location.hash).toBe("#summary");
+  });
+
+  it("does not update the URL when stepper is null", () => {
+    const replaceStateSpy = jest.spyOn(window.history, "replaceState");
+
+    renderWithStep(null);
+
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not update the URL for an unexpected step value", () => {
+    const replaceStateSpy = jest.spyOn(window.history, "replaceState");
+
+    renderWithStep("unknownStep" as TCheckoutStep);
+
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/checkout");
   });
 });

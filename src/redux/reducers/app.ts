@@ -5,14 +5,14 @@ import {
 	ISystemTax,
 	ITotal,
 } from "boundless-api-client";
-import { CovaCartItem, CovaCheckoutInitData } from "../../types/cart";
-import { ICovaCustomer, IOrderWithCustmAttr } from "../../types/Order";
+import {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
+import {ICovaCustomer, IOrderWithCustmAttr} from "../../types/Order";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import { setCart } from "../../hooks/getCartOrRetrieve";
-import { ICheckoutStepper, TCheckoutStep } from "../../types/common";
+import {setCart} from "../../hooks/getCartOrRetrieve";
+import {ICheckoutStepper, TCheckoutStep} from "../../types/common";
 
 const initialState: IAppState = {
 	isInited: false,
@@ -31,7 +31,7 @@ const appSlice = createSlice({
 				cartId?: string;
 			}>,
 		) {
-			const { cartId } = action.payload;
+			const {cartId} = action.payload;
 
 			return {
 				...state,

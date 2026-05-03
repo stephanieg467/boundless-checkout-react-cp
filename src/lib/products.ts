@@ -52,10 +52,10 @@ export const extractSpec = (
 };
 
 export const productIsDropShip = (product: CleanedCovaProduct) => {
-	const isDropShip = extractSpec(product.ProductSpecifications, "Is Drop Shipping Inventory")
+	const isDropShip = extractSpec(product.ProductSpecifications, "Is Drop Shipping Inventory");
 
 	return isDropShip === "Yes";
-}
+};
 
 export const ordersDropShippingItems = (items: CovaCartItem[]) => {
 	const dropShipItems = items.filter((item) => {

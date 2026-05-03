@@ -14,7 +14,7 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
 import {TClickedElement} from "./lib/elementEvents";
 import {useTranslation} from "react-i18next";
-import { useCheckoutConfig } from "./contexts/CheckoutConfigContext";
+import {useCheckoutConfig} from "./contexts/CheckoutConfigContext";
 
 const stepComponents: Partial<Record<TCheckoutStep, React.ComponentType>> = {
   [TCheckoutStep.contactInfo]: ContactInfoPage,
@@ -23,15 +23,45 @@ const stepComponents: Partial<Record<TCheckoutStep, React.ComponentType>> = {
   [TCheckoutStep.paymentMethod]: PaymentPage,
 };
 
+const checkoutStepUrlSlugs: Partial<Record<TCheckoutStep, string>> = {
+  [TCheckoutStep.contactInfo]: "info",
+  [TCheckoutStep.shippingAddress]: "shipping",
+  [TCheckoutStep.deliveryDetails]: "delivery-details",
+  [TCheckoutStep.paymentMethod]: "payment",
+};
+
+const checkoutBasePath = "/checkout";
+
+const syncCheckoutStepUrl = (step: TCheckoutStep) => {
+  if (typeof window === "undefined") return;
+
+  const slug = checkoutStepUrlSlugs[step];
+  if (!slug) return;
+
+  const nextPath = `${checkoutBasePath}/${slug}`;
+  const nextUrl = `${nextPath}${window.location.search}${window.location.hash}`;
+
+  if (window.location.pathname !== nextPath) {
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }
+};
+
 export default function StepRenderer() {
   useInitCheckoutByCart();
   const {stepper, globalError} = useAppSelector((state) => state.app);
-  const { onHide } = useCheckoutConfig();
+  const currentStep = stepper?.currentStep;
+  const {onHide} = useCheckoutConfig();
   const {t} = useTranslation();
 
   useEffect(() => {
-    document.querySelector<HTMLElement>('.bdl-checkout')?.scrollTo({top: 0, behavior: 'smooth'});
-  }, [stepper?.currentStep]);
+    document.querySelector<HTMLElement>(".bdl-checkout")?.scrollTo({top: 0, behavior: "smooth"});
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (currentStep) {
+      syncCheckoutStepUrl(currentStep);
+    }
+  }, [currentStep]);
 
   if (globalError) {
     return (
