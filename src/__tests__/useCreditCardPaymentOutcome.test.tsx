@@ -3,6 +3,7 @@ import {ITotal, TPublishingStatus} from "boundless-api-client";
 import {useCreditCardPaymentOutcome} from "../hooks/useCreditCardPaymentOutcome";
 import {IOrderWithCustmAttr} from "../types/Order";
 import {getCheckoutData, setLocalStorageCheckoutData} from "../hooks/checkoutData";
+import {CovaCartItem} from "../types/cart";
 
 const mockDispatch = jest.fn();
 
@@ -50,7 +51,7 @@ describe("useCreditCardPaymentOutcome", () => {
   it("records approved credit-card PaymentOutcome in localStorage and Redux", () => {
     const order = makeOrder();
     const total = makeTotal();
-    const items = [];
+    const items: CovaCartItem[] = [];
     (getCheckoutData as jest.Mock).mockReturnValue({order, total, items});
 
     const {result} = renderHook(() => useCreditCardPaymentOutcome());
@@ -110,7 +111,7 @@ describe("useCreditCardPaymentOutcome", () => {
 
     testCases.forEach(({ order, total }) => {
       it(`fails when order is ${order ? "present" : "missing"} and total is ${total ? "present" : "missing"}`, () => {
-        (getCheckoutData as jest.Mock).mockReturnValue({ order, total, items: [] });
+        (getCheckoutData as jest.Mock).mockReturnValue({ order, total, items: [] as CovaCartItem[] });
         const { result } = renderHook(() => useCreditCardPaymentOutcome());
 
         expect(() => {
