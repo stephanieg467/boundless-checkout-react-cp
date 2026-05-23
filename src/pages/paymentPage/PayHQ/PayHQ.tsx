@@ -18,6 +18,7 @@ import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
 import {ICheckoutData} from "../../../types/Order";
 import {useAppSelector} from "../../../hooks/redux";
 import {useCheckoutConfig} from "../../../contexts/CheckoutConfigContext";
+import {applyCreditCardTipToSession} from "../../../lib/paymentOutcome";
 
 type PaymentTokenResponse = {
 	payment_token: string;
@@ -210,22 +211,16 @@ function PayHQ({
 				throw new Error("Missing payment token");
 			}
 
-			const tipNum = tip ? parseFloat(tip) : 0;
 			let finalOrder = order;
 			let finalTotal = total;
 
-			if (tipNum > 0 && finalOrder && finalTotal) {
-				finalOrder = {
-					...finalOrder,
-					tip: tipNum.toString(),
-					total_price: ((Number(finalOrder.total_price) || 0) + tipNum).toFixed(
-						2,
-					),
-				};
-				finalTotal = {
-					...finalTotal,
-					price: ((Number(finalTotal.price) || 0) + tipNum).toFixed(2),
-				};
+			if (finalOrder && finalTotal) {
+				const tippedSession = applyCreditCardTipToSession(
+					{order: finalOrder, total: finalTotal},
+					tip,
+				);
+				finalOrder = tippedSession.order;
+				finalTotal = tippedSession.total;
 			}
 
 			const response = await fetch("/api/payfirmaSale", {
