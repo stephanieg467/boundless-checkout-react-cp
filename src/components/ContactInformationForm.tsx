@@ -1,9 +1,6 @@
-import React, {useEffect} from "react";
+import {useEffect} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {useAppDispatch, useAppSelector} from "../hooks/redux";
-import {
-	ICustomer,
-} from "boundless-api-client";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
@@ -35,11 +32,6 @@ export interface IContactInformationFormValues {
 	last_name: string;
 	dob: string | null;
 	register_me?: boolean;
-}
-
-export enum TViewMode {
-	contact = "contact",
-	login = "login",
 }
 
 // Custom validation function
@@ -92,7 +84,7 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 	return errors;
 };
 
-export function ContactFormView() {
+function ContactFormView() {
 	const {order, stepper} = useAppSelector((state) => state.app);
 	const {t} = useTranslation();
 

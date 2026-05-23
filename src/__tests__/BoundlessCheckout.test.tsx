@@ -39,6 +39,7 @@ const mockStore = jest.requireMock("../redux/store").store as {
 const defaultProps = {
   onHide: jest.fn(),
   onThankYouPage: jest.fn(),
+  payfirmaInfo: {token: "mock-token", environment: "sandbox", endpoint: "mock-endpoint"}
 };
 
 describe("BoundlessCheckout", () => {

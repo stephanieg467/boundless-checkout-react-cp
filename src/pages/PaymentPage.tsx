@@ -38,7 +38,7 @@ export default function PaymentPage() {
 }
 
 export interface IPaymentMethod {
-	payment_method_id: number | string;
+	payment_method_id: string;
 	title: string;
 }
 

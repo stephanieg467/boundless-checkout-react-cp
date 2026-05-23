@@ -62,7 +62,8 @@ export const initCheckoutByCart =
 			const initialOrder = {
 				id: cartId ?? "",
 				status_id: null,
-				payment_method_id: checkoutDataOrder?.payment_method_id ?? "0",
+				payment_method_id: checkoutDataOrder?.payment_method_id ?? null,
+				paid_at: checkoutDataOrder?.paid_at ?? null,
 				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
 				payment_mark_up: null,
 				total_price: checkoutDataOrder?.total_price
@@ -86,7 +87,7 @@ export const initCheckoutByCart =
 				created_at: order?.created_at ?? new Date().toISOString(),
 				customer: checkoutDataOrder?.customer ?? undefined,
 				services: checkoutDataOrder?.services ?? [],
-				tax_calculations: {
+				tax_calculations: checkoutDataOrder?.tax_calculations ? checkoutDataOrder.tax_calculations : {
 					price: totalOrderTaxes,
 					itemsSubTotal: {
 						price:
@@ -95,7 +96,6 @@ export const initCheckoutByCart =
 						qty: cartTotal.qty,
 					},
 					discount: checkoutDataOrder?.discount_for_order ?? "0",
-					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
 						price: checkoutDataOrderService
@@ -134,7 +134,7 @@ export const initCheckoutByCart =
 					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
 					steps,
 				},
-				total: {
+				total: checkoutData?.total ? checkoutData.total : {
 					price: checkoutDataOrder?.total_price
 						? checkoutDataOrder?.total_price
 						: (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
@@ -145,7 +145,6 @@ export const initCheckoutByCart =
 						qty: cartTotal.qty,
 					},
 					discount: checkoutDataOrder?.discount_for_order ?? "0",
-					paymentMarkUp: "",
 					tax: tax,
 					servicesSubTotal: {
 						price: checkoutDataOrderService

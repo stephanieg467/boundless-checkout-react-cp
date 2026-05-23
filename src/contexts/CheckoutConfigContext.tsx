@@ -1,10 +1,12 @@
 import React, {createContext, useContext, ReactNode} from "react";
 import {TClickedElement} from "../lib/elementEvents";
 import {TOnThankYouPage, TOnCheckoutInited} from "../redux/reducers/app";
+import {IPayfirmaInfo} from "../types/Order";
 
 export interface ICheckoutConfig {
 	onHide: (element: TClickedElement, error?: string) => void;
 	onThankYouPage: TOnThankYouPage;
+	payfirmaInfo: IPayfirmaInfo;
 	onCheckoutInited?: TOnCheckoutInited;
 	logo?: string | ReactNode;
 }

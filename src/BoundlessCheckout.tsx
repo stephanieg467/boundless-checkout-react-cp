@@ -15,12 +15,14 @@ import {useAppSelector} from "./hooks/redux";
 import {TClickedElement} from "./lib/elementEvents";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {CheckoutConfigProvider} from "./contexts/CheckoutConfigContext";
+import {IPayfirmaInfo} from "./types/Order";
 
 initI18n();
 
 export interface IBoundlessCheckoutProps {
 	onHide: (element: TClickedElement) => void;
 	onThankYouPage: TOnThankYouPage;
+	payfirmaInfo: IPayfirmaInfo;
 	cartId?: string;
 	logo?: string | ReactNode;
 	logoSrc?: string;
@@ -32,6 +34,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	const {
 		onHide,
 		onThankYouPage,
+		payfirmaInfo,
 		cartId,
 		logoSrc,
 		logoText,
@@ -71,8 +74,8 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	}, [cartId]);
 
 	const config = useMemo(
-		() => ({onHide, onThankYouPage, onCheckoutInited, logo: resolvedLogo}),
-		[onHide, onThankYouPage, onCheckoutInited, resolvedLogo],
+		() => ({onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, logo: resolvedLogo}),
+		[onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, resolvedLogo],
 	);
 
 	if (!el) return null;

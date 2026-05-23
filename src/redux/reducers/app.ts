@@ -159,12 +159,10 @@ export const {
 
 export default appSlice.reducer;
 
-export type TOnThankYouPage = ({
-	orderId,
-	error,
-}: {
-	orderId: string;
-	error?: string;
+export type TOnThankYouPage = (data: {
+	order: IOrderWithCustmAttr;
+	total: ITotal;
+	items: CovaCartItem[];
 }) => Promise<void>;
 export type TOnCheckoutInited = (data: CovaCheckoutInitData) => void;
 

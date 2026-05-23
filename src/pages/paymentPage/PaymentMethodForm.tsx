@@ -1,4 +1,4 @@
-import React from "react";
+import {useCallback, useState} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
 	Typography,
@@ -25,20 +25,24 @@ import {
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
 import {fieldAttrs} from "../../lib/formUtils";
-import {RootState} from "../../redux/store";
-import {DELIVERY_ID} from "../../constants";
-import {ITotal} from "boundless-api-client";
+import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID} from "../../constants";
 import {setOrder, setTotal} from "../../redux/reducers/app";
 import {IOrderWithCustmAttr} from "../../types/Order";
-import {cartHasTickets, ordersDropShippingItems, ordersRegularItems} from "../../lib/products";
+import {
+	cartHasTickets,
+	ordersDropShippingItems,
+	ordersRegularItems,
+} from "../../lib/products";
 import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
 import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
+import PayHQ from "./PayHQ/PayHQ";
+import {ITotal} from "boundless-api-client";
 
-const makeValidatePaymentForm = (requireDeliveryTime: boolean) =>
-	(values: IPaymentMethodFormValues) => {
+const makeValidatePaymentForm =
+	(requireDeliveryTime: boolean) => (values: IPaymentMethodFormValues) => {
 		const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
 
 		if (!values.payment_method_id || values.payment_method_id === "0") {
@@ -70,14 +74,46 @@ export default function PaymentMethodForm({
 }: {
 	paymentPage: IPaymentPageData;
 }) {
+	const checkoutData = getCheckoutData();
+	const {order, items, total} = checkoutData || {};
 	const {onSubmit} = useSavePaymentMethod(paymentPage);
 	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
+	const dispatch = useAppDispatch();
+	const [isPaymentApproved, setIsPaymentApproved] = useState(false);
+
+	const handlePaymentApproved = useCallback(
+		(paidAt: string, tipAmount?: string) => {
+			if (!order) return;
+
+			setIsPaymentApproved(true);
+
+			const updatedOrder = {
+				...order,
+				tip: tipAmount ? parseFloat(tipAmount).toString() : "0.00",
+				paid_at: paidAt,
+			};
+
+			setLocalStorageCheckoutData({
+				order: {
+					...updatedOrder,
+				},
+				total: {...total} as ITotal,
+			});
+
+			dispatch(setOrder(updatedOrder));
+		},
+		[items, order, total],
+	);
+
 	const {
 		isLoading: loadingDeliveryTimes,
 		isError: errorLoadingDeliveryTimes,
 		data: deliveryTimes,
 	} = useDeliveryTimes({returnTimeForTodayAndTwoDaysFromNow: false});
+
+	const paymentMethods = paymentPage.paymentMethods;
+	const onlyPaymentMethodIsCreditCard = paymentMethods.length === 1 && paymentMethods[0].payment_method_id === CREDIT_CARD_PAYMENT_METHOD;
 
 	const nextDayHelperText = deliveryTimes?.isNextDay
 		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
@@ -85,76 +121,118 @@ export default function PaymentMethodForm({
 
 	return (
 		<Formik
-			initialValues={getFormInitialValues()}
+			initialValues={getFormInitialValues(order, paymentMethods)}
 			onSubmit={onSubmit}
 			validateOnChange={false}
 			validate={makeValidatePaymentForm(requireDeliveryTime)}
 		>
-			{(formikProps) => (
-				<Form className={"bdl-payment-form"}>
-					{Object.keys(formikProps.errors).length > 0 && (
-						<ExtraErrors
-							excludedFields={["payment_method_id", "delivery_time"]}
-							errors={formikProps.errors}
-						/>
-					)}
-					<Typography variant="h5" sx={{mb: 2}}>
-						{t("paymentMethodForm.pageHeader")}
-					</Typography>
-					{cartHasTickets() && (
-						<Typography variant="body1" sx={{m: 2}}>
-							{
-								"Please note, due to limited seating, to reserve your seats, we require payment by credit card online OR you can come in store to purchase your tickets in person by credit, cash or debit. Seats must be purchased prior to event date. We look forward to hosting you!"
-							}
+			{(formikProps) => {
+				const {values} = formikProps;
+				const selectedPaymentMethodId = values.payment_method_id;
+				const isCreditCard =
+					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD;
+				const showPayHQ = selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD || onlyPaymentMethodIsCreditCard;
+
+				return (
+					<Form className={"bdl-payment-form"}>
+						{Object.keys(formikProps.errors).length > 0 && (
+							<ExtraErrors
+								excludedFields={["payment_method_id", "delivery_time"]}
+								errors={formikProps.errors}
+							/>
+						)}
+						<Typography variant="h5" sx={{mb: 2}}>
+							{t("paymentMethodForm.pageHeader")}
 						</Typography>
-					)}
-					<PaymentMethods
-						formikProps={formikProps}
-						paymentMethods={paymentPage.paymentMethods}
-						isDelivery={isDelivery}
-					/>
-					{requireDeliveryTime && (
-						<DeliveryTimeSelector
-							field="delivery_time"
-							helperText={nextDayHelperText}
+						{cartHasTickets() && (
+							<Typography variant="body1" sx={{m: 2}}>
+								{
+									"Please note, due to limited seating, to reserve your seats, we require payment by credit card online OR you can come in store to purchase your tickets in person by credit, cash or debit. Seats must be purchased prior to event date. We look forward to hosting you!"
+								}
+							</Typography>
+						)}
+						<PaymentMethods
+							order={order}
 							formikProps={formikProps}
-						>
-							{renderDeliveryTimeOptions(
-								deliveryTimes?.times,
-								loadingDeliveryTimes,
-								errorLoadingDeliveryTimes,
-							)}
-						</DeliveryTimeSelector>
-					)}
-					{formikProps.status?.serverError && (
-						<Alert severity="error" sx={{mb: 2}}>
-							{formikProps.status.serverError}
-						</Alert>
-					)}
-					<Box textAlign={"end"}>
-						<Button
-							variant="contained"
-							startIcon={formikProps.isSubmitting ? <CircularProgress size="12px" aria-label="Loading…" /> : <DoneIcon />}
-							type={"submit"}
-							disabled={formikProps.isSubmitting}
-							color="success"
-							size="large"
-						>
-							{t("paymentMethodForm.completeOrder")}
-						</Button>
-					</Box>
-				</Form>
-			)}
+							paymentMethods={paymentMethods}
+							isDelivery={isDelivery}
+							setIsPaymentApproved={setIsPaymentApproved}
+						/>
+						{requireDeliveryTime && (
+							<DeliveryTimeSelector
+								field="delivery_time"
+								helperText={nextDayHelperText}
+								formikProps={formikProps}
+							>
+								{renderDeliveryTimeOptions(
+									deliveryTimes?.times,
+									loadingDeliveryTimes,
+									errorLoadingDeliveryTimes,
+								)}
+							</DeliveryTimeSelector>
+						)}
+						{showPayHQ && (
+							<PayHQ
+								order={order}
+								total={total}
+								items={items}
+								tip={values.tip}
+								onPaymentApproved={(paidAt) => {
+									formikProps.setStatus(undefined);
+									handlePaymentApproved(paidAt, values.tip);
+								}}
+								onPaymentFailed={(error) =>
+									formikProps.setStatus({serverError: error})
+								}
+							/>
+						)}
+						{formikProps.status?.serverError && (
+							<Alert severity="error" sx={{mb: 2}}>
+								{formikProps.status.serverError}
+							</Alert>
+						)}
+						<Box textAlign={"end"}>
+							<Button
+								variant="contained"
+								startIcon={
+									formikProps.isSubmitting ? (
+										<CircularProgress size="12px" aria-label="Loading…" />
+									) : (
+										<DoneIcon />
+									)
+								}
+								type={"submit"}
+								disabled={
+									formikProps.isSubmitting ||
+									(!order?.paid_at && isCreditCard && !isPaymentApproved)
+								}
+								color="success"
+								size="large"
+							>
+								{t("paymentMethodForm.completeOrder")}
+							</Button>
+						</Box>
+					</Form>
+				);
+			}}
 		</Formik>
 	);
 }
 
-const getFormInitialValues = () => {
-	const order = useAppSelector((state: RootState) => state.app.order);
-
+const getFormInitialValues = (
+	order: IOrderWithCustmAttr | undefined,
+	paymentMethods: IPaymentMethod[],
+) => {
+	console.log("paymentMethods", paymentMethods);
+	const paidAt = order?.paid_at;
 	const initialValues: IPaymentMethodFormValues = {
-		payment_method_id: order?.payment_method_id || "0",
+		payment_method_id: paidAt
+			? CREDIT_CARD_PAYMENT_METHOD
+			: (order?.payment_method_id
+				? order.payment_method_id
+				: paymentMethods[0]?.payment_method_id || undefined),
 		delivery_time: order?.delivery_time ?? "",
+		tip: order?.tip !== "0.00" ? order?.tip : "",
 	};
 
 	return initialValues;
@@ -163,14 +241,19 @@ const getFormInitialValues = () => {
 const PaymentMethods = ({
 	formikProps,
 	paymentMethods,
-	isDelivery
+	isDelivery,
+	setIsPaymentApproved,
+	order,
 }: {
 	formikProps: FormikProps<IPaymentMethodFormValues>;
 	paymentMethods: IPaymentMethod[];
 	isDelivery: boolean;
+	setIsPaymentApproved: (isApproved: boolean) => void;
+	order: IOrderWithCustmAttr | undefined;
 }) => {
-	const order = useAppSelector((state: RootState) => state.app.order);
 	const orderHasShipping = hasShipping(order as IOrderWithCustmAttr);
+	const orderPaid = Boolean(order?.paid_at);
+	console.log("formikProps.values.payment_method_id", formikProps.values.payment_method_id);
 
 	return (
 		<Box sx={{mb: 2}}>
@@ -195,7 +278,14 @@ const PaymentMethods = ({
 				)}
 				<RadioGroup
 					name="payment_method_id"
-					onChange={formikProps.handleChange}
+					value={formikProps.values.payment_method_id}
+					onChange={(e) => {
+						formikProps.handleChange(e);
+						setIsPaymentApproved(false);
+						if (formikProps.status?.serverError) {
+							formikProps.setStatus(undefined);
+						}
+					}}
 				>
 					{paymentMethods.map(({payment_method_id, title}) => {
 						return (
@@ -211,6 +301,7 @@ const PaymentMethods = ({
 										}}
 									/>
 								}
+								disabled={orderPaid}
 								label={title}
 								key={payment_method_id}
 							/>
@@ -229,6 +320,13 @@ const PaymentMethods = ({
 							type="number"
 							variant={"outlined"}
 							{...fieldAttrs("tip", formikProps)}
+							onChange={(e) => {
+								formikProps.handleChange(e);
+								if (formikProps.status?.serverError) {
+									formikProps.setStatus(undefined);
+								}
+							}}
+							disabled={orderPaid}
 							helperText={"100% of tip goes to your driver!"}
 							slotProps={{
 								input: {
@@ -256,11 +354,11 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 
 	const onSubmit = async (
 		values: IPaymentMethodFormValues,
-		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>
+		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
 	) => {
-		const {order: checkoutDataOrder} = getCheckoutData() || {};
+		const {order: checkoutDataOrder, items} = getCheckoutData() || {};
 
-		if (!order || !checkoutDataOrder) return;
+		if (!order || !checkoutDataOrder || !total) return;
 
 		try {
 			const {payment_method_id, tip, delivery_time} = values;
@@ -268,7 +366,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 			let updatedOrder = {
 				...checkoutDataOrder,
 				paymentMethod: paymentPage.paymentMethods.find(
-					(method) => method.payment_method_id === payment_method_id
+					(method) => method.payment_method_id === payment_method_id,
 				),
 				tip: tip ? parseFloat(tip).toString() : "0",
 				payment_method_id: payment_method_id,
@@ -277,7 +375,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 					...checkoutDataOrder.custom_attrs,
 					checkoutCompleted: true,
 				},
-			};
+			} as IOrderWithCustmAttr;
 			let updatedTotal = {...total};
 
 			if (tip) {
@@ -297,16 +395,22 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 				order: {
 					...updatedOrder,
 				} as IOrderWithCustmAttr,
-				total: updatedTotal as unknown as ITotal,
+				total: updatedTotal,
 			});
 
-			dispatch(setOrder(updatedOrder as unknown as IOrderWithCustmAttr));
-			dispatch(setTotal(updatedTotal as unknown as ITotal));
+			dispatch(setOrder(updatedOrder));
+			dispatch(setTotal(updatedTotal));
 
-			await onThankYouPage({orderId: checkoutDataOrder.id});
+			await onThankYouPage({
+				order: updatedOrder,
+				total: updatedTotal,
+				items: items ?? [],
+			});
 		} catch (error) {
 			console.error("Checkout completion failed:", error);
-			setStatus({serverError: "Unable to complete your order. Please try again."});
+			setStatus({
+				serverError: "Unable to complete your order. Please try again.",
+			});
 		} finally {
 			setSubmitting(false);
 		}
@@ -318,7 +422,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 };
 
 export interface IPaymentMethodFormValues {
-	payment_method_id: number | string;
+	payment_method_id?: string;
 	tip?: string;
 	delivery_time?: string;
 }

@@ -36,7 +36,7 @@ const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string |
     },
   };
   return render(
-    <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage}}>
+    <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage, payfirmaInfo: {token: "mock", environment: "sandbox", endpoint: "mock"}}}>
       <StepRenderer />
     </CheckoutConfigProvider>
   );
@@ -63,7 +63,7 @@ describe("StepRenderer scroll-to-top", () => {
       },
     };
     rerender(
-      <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage}}>
+      <CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage, payfirmaInfo: {token: "mock", environment: "sandbox", endpoint: "mock"}}}>
         <StepRenderer />
       </CheckoutConfigProvider>
     );
