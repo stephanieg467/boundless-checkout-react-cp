@@ -35,8 +35,15 @@ const ZERO_TIP = "0.00";
 const parseAmount = (value: string | number | null | undefined): number => {
   if (value === undefined || value === null || value === "") return 0;
 
-  const amount = Number.parseFloat(String(value));
-  if (Number.isNaN(amount)) {
+  const stringValue = String(value).trim();
+  if (stringValue === "") return 0;
+
+  if (!/^-?\d+(\.\d+)?$/.test(stringValue)) {
+    throw new PaymentOutcomeError(`Invalid payment amount: ${value}`);
+  }
+
+  const amount = Number(stringValue);
+  if (!Number.isFinite(amount)) {
     throw new PaymentOutcomeError(`Invalid payment amount: ${value}`);
   }
 
@@ -113,7 +120,7 @@ export const completeCreditCardPaymentOutcome = (
   return {
     order: {
       ...tippedSession.order,
-      paymentMethod: input.paymentMethod as IOrderWithCustmAttr["paymentMethod"],
+      ...(input.paymentMethod !== undefined ? {paymentMethod: input.paymentMethod as unknown as IOrderWithCustmAttr["paymentMethod"]} : {}),
       payment_method_id: input.paymentMethodId,
       ...(input.deliveryTime ? {delivery_time: input.deliveryTime} : {}),
       custom_attrs: {

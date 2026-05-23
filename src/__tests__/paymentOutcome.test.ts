@@ -109,4 +109,35 @@ describe("PaymentOutcome", () => {
     expect(result.order.total_price).toBe("105.00");
     expect(result.total.price).toBe("105.00");
   });
+
+  describe("Amount parsing strictness", () => {
+    it("rejects partially invalid strings and non-finite values", () => {
+      const session = {order: makeOrder(), total: makeTotal()};
+
+      expect(() => applyCreditCardTipToSession(session, "5abc")).toThrow(PaymentOutcomeError);
+      expect(() => applyCreditCardTipToSession(session, "5,00")).toThrow(PaymentOutcomeError);
+      expect(() => applyCreditCardTipToSession(session, "Infinity")).toThrow(PaymentOutcomeError);
+      expect(() => applyCreditCardTipToSession(session, "NaN")).toThrow(PaymentOutcomeError);
+    });
+  });
+
+  describe("completeCreditCardPaymentOutcome paymentMethod preservation", () => {
+    it("preserves an existing order.paymentMethod when input.paymentMethod is omitted", () => {
+      const existingPaymentMethod = {payment_method_id: "6", title: "Existing Method"} as any;
+      const result = completeCreditCardPaymentOutcome(
+        {
+          order: makeOrder({
+            paymentMethod: existingPaymentMethod,
+          }),
+          total: makeTotal(),
+        },
+        {
+          paymentMethodId: "5",
+        },
+      );
+
+      expect(result.order.paymentMethod).toBe(existingPaymentMethod);
+      expect(result.order.payment_method_id).toBe("5");
+    });
+  });
 });
