@@ -39,7 +39,7 @@ import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsF
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 import PayHQ from "./PayHQ/PayHQ";
-import {ITotal} from "boundless-api-client";
+import {useCreditCardPaymentOutcome} from "../../hooks/useCreditCardPaymentOutcome";
 
 const makeValidatePaymentForm =
 	(requireDeliveryTime: boolean) => (values: IPaymentMethodFormValues) => {
@@ -79,31 +79,15 @@ export default function PaymentMethodForm({
 	const {onSubmit} = useSavePaymentMethod(paymentPage);
 	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
-	const dispatch = useAppDispatch();
+	const {recordApprovedPayment} = useCreditCardPaymentOutcome();
 	const [isPaymentApproved, setIsPaymentApproved] = useState(false);
 
 	const handlePaymentApproved = useCallback(
 		(paidAt: string, tipAmount?: string) => {
-			if (!order) return;
-
+			recordApprovedPayment({paidAt, tip: tipAmount});
 			setIsPaymentApproved(true);
-
-			const updatedOrder = {
-				...order,
-				tip: tipAmount ? parseFloat(tipAmount).toString() : "0.00",
-				paid_at: paidAt,
-			};
-
-			setLocalStorageCheckoutData({
-				order: {
-					...updatedOrder,
-				},
-				total: {...total} as ITotal,
-			});
-
-			dispatch(setOrder(updatedOrder));
 		},
-		[items, order, total],
+		[recordApprovedPayment],
 	);
 
 	const {
@@ -179,7 +163,17 @@ export default function PaymentMethodForm({
 								tip={values.tip}
 								onPaymentApproved={(paidAt) => {
 									formikProps.setStatus(undefined);
-									handlePaymentApproved(paidAt, values.tip);
+
+									try {
+										handlePaymentApproved(paidAt, values.tip);
+									} catch (error) {
+										formikProps.setStatus({
+											serverError:
+												error instanceof Error
+													? error.message
+													: "Payment was approved, but checkout state could not be updated. Please contact the store.",
+										});
+									}
 								}}
 								onPaymentFailed={(error) =>
 									formikProps.setStatus({serverError: error})
