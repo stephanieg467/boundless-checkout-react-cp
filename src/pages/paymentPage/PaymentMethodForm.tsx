@@ -218,7 +218,6 @@ const getFormInitialValues = (
 	order: IOrderWithCustmAttr | undefined,
 	paymentMethods: IPaymentMethod[],
 ) => {
-	console.log("paymentMethods", paymentMethods);
 	const paidAt = order?.paid_at;
 	const initialValues: IPaymentMethodFormValues = {
 		payment_method_id: paidAt
@@ -248,7 +247,6 @@ const PaymentMethods = ({
 }) => {
 	const orderHasShipping = hasShipping(order as IOrderWithCustmAttr);
 	const orderPaid = Boolean(order?.paid_at);
-	console.log("formikProps.values.payment_method_id", formikProps.values.payment_method_id);
 
 	return (
 		<Box sx={{mb: 2}}>
