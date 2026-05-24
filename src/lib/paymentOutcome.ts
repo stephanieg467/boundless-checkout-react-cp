@@ -32,7 +32,7 @@ export class PaymentOutcomeError extends Error {
 
 const ZERO_TIP = "0.00";
 
-const parseAmount = (value: string | number | null | undefined): number => {
+const parseAmount = (value: string | null | undefined): number => {
   if (value === undefined || value === null || value === "") return 0;
 
   const stringValue = String(value).trim();
@@ -55,8 +55,8 @@ const formatMoney = (amount: number): string => amount.toFixed(2);
 const formatTip = (amount: number): string => (amount > 0 ? amount.toString() : ZERO_TIP);
 
 const amountsMatch = (
-  left: string | number | null | undefined,
-  right: string | number | null | undefined,
+  left: string | null | undefined,
+  right: string | null | undefined,
 ): boolean => formatMoney(parseAmount(left)) === formatMoney(parseAmount(right));
 
 export const applyCreditCardTipToSession = (

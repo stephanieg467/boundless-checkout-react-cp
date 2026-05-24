@@ -104,15 +104,15 @@ describe("useCreditCardPaymentOutcome", () => {
 
   describe("rejects recording when CheckoutSession is missing components", () => {
     const testCases = [
-      { order: undefined, total: undefined },
-      { order: makeOrder(), total: undefined },
-      { order: undefined, total: makeTotal() },
+      {order: undefined, total: undefined},
+      {order: makeOrder(), total: undefined},
+      {order: undefined, total: makeTotal()},
     ];
 
-    testCases.forEach(({ order, total }) => {
+    testCases.forEach(({order, total}) => {
       it(`fails when order is ${order ? "present" : "missing"} and total is ${total ? "present" : "missing"}`, () => {
-        (getCheckoutData as jest.Mock).mockReturnValue({ order, total, items: [] as CovaCartItem[] });
-        const { result } = renderHook(() => useCreditCardPaymentOutcome());
+        (getCheckoutData as jest.Mock).mockReturnValue({order, total, items: [] as CovaCartItem[]});
+        const {result} = renderHook(() => useCreditCardPaymentOutcome());
 
         expect(() => {
           result.current.recordApprovedPayment({

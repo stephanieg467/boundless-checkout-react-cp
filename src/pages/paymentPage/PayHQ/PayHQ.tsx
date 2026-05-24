@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback, useEffect, useRef, useState} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	Box,
@@ -12,13 +12,13 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import {Theme} from "@mui/material/styles";
+import { Theme } from "@mui/material/styles";
 import PaymentIcon from "@mui/icons-material/Payment";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
-import {ICheckoutData} from "../../../types/Order";
-import {useAppSelector} from "../../../hooks/redux";
-import {useCheckoutConfig} from "../../../contexts/CheckoutConfigContext";
-import {applyCreditCardTipToSession} from "../../../lib/paymentOutcome";
+import { ICheckoutData } from "../../../types/Order";
+import { useAppSelector } from "../../../hooks/redux";
+import { useCheckoutConfig } from "../../../contexts/CheckoutConfigContext";
+import { applyCreditCardTipToSession } from "../../../lib/paymentOutcome";
 
 type PaymentTokenResponse = {
 	payment_token: string;
@@ -62,7 +62,7 @@ const PAYFIRMA_FIELD_HEIGHT = "56px";
 const PAYFIRMA_FIELD_FONT_SIZE = "14px";
 
 function getActivePayfirmaFieldMetrics(): PayfirmaFieldMetrics {
-	return {height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE};
+	return { height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE };
 }
 
 function createPayfirmaInputStyle({
@@ -98,7 +98,7 @@ const textFieldSx = {
 
 const payfirmaContainerSx = (theme: Theme) => ({
 	display: "grid",
-	gridTemplateColumns: {xs: "1fr", sm: "1fr 1fr"},
+	gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
 	gap: 2,
 	"& #defaultCardNumber_container": {
 		gridColumn: "1 / -1",
@@ -149,7 +149,7 @@ function PayHQ({
 	onPaymentFailed,
 	createPaymentInstance = createDefaultPaymentInstance,
 }: PayHQProps) {
-	const {payfirmaInfo} = useCheckoutConfig();
+	const { payfirmaInfo } = useCheckoutConfig();
 	const apiKey = payfirmaInfo?.token ?? "";
 	const PAYFIRMA_ENVIRONMENT = payfirmaInfo?.environment ?? "LIVE";
 
@@ -160,9 +160,22 @@ function PayHQ({
 	const total = propTotal || appState.total;
 
 	const hasInitialized = useRef(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const prevIsPaid = useRef<boolean>(false);
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+	useEffect(() => {
+		const isPaid = Boolean(order?.paid_at);
+		if (!prevIsPaid.current && isPaid) {
+			containerRef.current?.scrollIntoView({
+				behavior: "smooth",
+				block: "start",
+			});
+		}
+		prevIsPaid.current = isPaid;
+	}, [order?.paid_at]);
 
 	useEffect(() => {
 		if (!apiKey || hasInitialized.current) {
@@ -190,7 +203,7 @@ function PayHQ({
 			suppressPayfirmaIframeScrollbars(paymentContainer);
 		});
 
-		observer.observe(paymentContainer, {childList: true, subtree: true});
+		observer.observe(paymentContainer, { childList: true, subtree: true });
 
 		return () => {
 			observer.disconnect();
@@ -216,7 +229,7 @@ function PayHQ({
 
 			if (finalOrder && finalTotal) {
 				const tippedSession = applyCreditCardTipToSession(
-					{order: finalOrder, total: finalTotal},
+					{ order: finalOrder, total: finalTotal },
 					tip,
 				);
 				finalOrder = tippedSession.order;
@@ -225,7 +238,7 @@ function PayHQ({
 
 			const response = await fetch("/api/payfirmaSale", {
 				method: "POST",
-				headers: {"Content-Type": "application/json"},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					orderId: finalOrder?.id,
 					paymentToken,
@@ -304,6 +317,7 @@ function PayHQ({
 
 	return (
 		<Box
+			ref={containerRef}
 			component="section"
 			sx={{
 				width: "100%",
@@ -317,7 +331,7 @@ function PayHQ({
 				sx={{
 					width: "100%",
 					maxWidth: 800,
-					p: {xs: 2.5, sm: 4},
+					p: { xs: 2.5, sm: 4 },
 					borderRadius: 3,
 					border: "1px solid",
 					borderColor: "divider",
@@ -326,12 +340,14 @@ function PayHQ({
 			>
 				{order?.paid_at ? (
 					<Alert severity="info">
-						<Typography>This order has been paid; proceed to order completion.</Typography>
+						<Typography>
+							This order has been paid; proceed to order completion.
+						</Typography>
 					</Alert>
 				) : (
 					<Stack spacing={3}>
 						<Box>
-							<Typography component="h2" variant="h6" sx={{fontWeight: 700}}>
+							<Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
 								Payment details
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
@@ -341,24 +357,26 @@ function PayHQ({
 						</Box>
 
 						<Grid container spacing={2}>
-							<Grid size={{xs: 12, sm: 6}}>
+							<Grid size={{ xs: 12, sm: 6 }}>
 								<TextField
+									required
 									fullWidth
 									label="First Name"
 									placeholder="First Name"
 									autoComplete="given-name"
 									sx={textFieldSx}
-									slotProps={{htmlInput: {className: "input-field"}}}
+									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
 							</Grid>
-							<Grid size={{xs: 12, sm: 6}}>
+							<Grid size={{ xs: 12, sm: 6 }}>
 								<TextField
 									fullWidth
+									required
 									label="Last Name"
 									placeholder="Last Name"
 									autoComplete="family-name"
 									sx={textFieldSx}
-									slotProps={{htmlInput: {className: "input-field"}}}
+									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
 							</Grid>
 							<Grid size={12}>
@@ -387,7 +405,7 @@ function PayHQ({
 						</Button>
 
 						{isSubmitting && (
-							<Box sx={{textAlign: "center"}} aria-live="polite">
+							<Box sx={{ textAlign: "center" }} aria-live="polite">
 								<CircularProgress size={32} />
 							</Box>
 						)}

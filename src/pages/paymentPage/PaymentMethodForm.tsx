@@ -98,7 +98,9 @@ export default function PaymentMethodForm({
 	} = useDeliveryTimes({returnTimeForTodayAndTwoDaysFromNow: false});
 
 	const paymentMethods = paymentPage.paymentMethods;
-	const onlyPaymentMethodIsCreditCard = paymentMethods.length === 1 && paymentMethods[0].payment_method_id === CREDIT_CARD_PAYMENT_METHOD;
+	const onlyPaymentMethodIsCreditCard =
+		paymentMethods.length === 1 &&
+		paymentMethods[0].payment_method_id === CREDIT_CARD_PAYMENT_METHOD;
 
 	const nextDayHelperText = deliveryTimes?.isNextDay
 		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
@@ -113,10 +115,13 @@ export default function PaymentMethodForm({
 		>
 			{(formikProps) => {
 				const {values} = formikProps;
+				console.log("Formik values:", values);
 				const selectedPaymentMethodId = values.payment_method_id;
 				const isCreditCard =
 					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD;
-				const showPayHQ = selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD || onlyPaymentMethodIsCreditCard;
+				const showPayHQ =
+					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD ||
+					onlyPaymentMethodIsCreditCard;
 
 				return (
 					<Form className={"bdl-payment-form"}>
@@ -168,11 +173,13 @@ export default function PaymentMethodForm({
 									try {
 										handlePaymentApproved(paidAt, values.tip);
 									} catch (error) {
+										const adminEmail =
+											process.env.NEXT_PUBLIC_ADMIN_EMAIL || "the store";
 										formikProps.setStatus({
 											serverError:
 												error instanceof Error
 													? error.message
-													: "Payment was approved, but checkout state could not be updated. Please contact the store.",
+													: `Payment was approved, but checkout state could not be updated. Please contact ${adminEmail}.`,
 										});
 									}
 								}}
@@ -222,9 +229,9 @@ const getFormInitialValues = (
 	const initialValues: IPaymentMethodFormValues = {
 		payment_method_id: paidAt
 			? CREDIT_CARD_PAYMENT_METHOD
-			: (order?.payment_method_id
+			: order?.payment_method_id
 				? order.payment_method_id
-				: paymentMethods[0]?.payment_method_id || undefined),
+				: paymentMethods[0]?.payment_method_id || undefined,
 		delivery_time: order?.delivery_time ?? "",
 		tip: order?.tip !== "0.00" ? order?.tip : "",
 	};

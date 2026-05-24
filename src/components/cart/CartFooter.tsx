@@ -43,27 +43,6 @@ export default function CartFooter({open}: ICartFooterProps) {
 
 		return "";
 	};
-	// 	e.preventDefault();
-	// 	if (
-	// 		!window.confirm(t("form.areYouSure") as string) ||
-	// 		!order?.id ||
-	// 		submitting
-	// 	)
-	// 		return;
-
-	// 	setSubmitting(true);
-
-	// 	const promise = api.checkout
-	// 		.clearDiscounts(order.id)
-	// 		.then(({ order, total }) => {
-	// 			dispatch(setOrder(order));
-	// 			dispatch(setTotal(total));
-	// 		})
-	// 		.catch((err) => console.error(err))
-	// 		.finally(() => setSubmitting(false));
-
-	// 	dispatch(addPromise(promise));
-	// };
 
 	const hasDiscount = total && total.discount != "0";
 	const orderHasShipping = order && hasShipping(order);
