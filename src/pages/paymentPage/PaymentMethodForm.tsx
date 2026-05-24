@@ -1,3 +1,4 @@
+import {completeCreditCardPaymentOutcome} from "../../lib/paymentOutcome";
 import {useCallback, useState} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
@@ -357,32 +358,51 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		try {
 			const {payment_method_id, tip, delivery_time} = values;
 
-			let updatedOrder = {
-				...checkoutDataOrder,
-				paymentMethod: paymentPage.paymentMethods.find(
-					(method) => method.payment_method_id === payment_method_id,
-				),
-				tip: tip ? parseFloat(tip).toString() : "0",
-				payment_method_id: payment_method_id,
-				...(delivery_time ? {delivery_time} : {}),
-				custom_attrs: {
-					...checkoutDataOrder.custom_attrs,
-					checkoutCompleted: true,
-				},
-			} as IOrderWithCustmAttr;
+			const selectedPaymentMethod = paymentPage.paymentMethods.find(
+				(method) => method.payment_method_id === payment_method_id,
+			);
+
+			let updatedOrder: IOrderWithCustmAttr;
 			let updatedTotal = {...total};
 
-			if (tip) {
+			if (payment_method_id === CREDIT_CARD_PAYMENT_METHOD) {
+				const completedSession = completeCreditCardPaymentOutcome(
+					{order: checkoutDataOrder, total},
+					{
+						paymentMethodId: payment_method_id,
+						paymentMethod: selectedPaymentMethod,
+						tip,
+						deliveryTime: delivery_time,
+					},
+				);
+
+				updatedOrder = completedSession.order;
+				updatedTotal = completedSession.total;
+			} else {
 				updatedOrder = {
-					...updatedOrder,
-					total_price: (
-						(Number(checkoutDataOrder.total_price) || 0) + parseFloat(tip)
-					).toString(),
-				};
-				updatedTotal = {
-					...total,
-					price: ((Number(total?.price) || 0) + parseFloat(tip)).toString(),
-				};
+					...checkoutDataOrder,
+					paymentMethod: selectedPaymentMethod,
+					tip: tip ? parseFloat(tip).toString() : "0",
+					payment_method_id: payment_method_id,
+					...(delivery_time ? {delivery_time} : {}),
+					custom_attrs: {
+						...checkoutDataOrder.custom_attrs,
+						checkoutCompleted: true,
+					},
+				} as IOrderWithCustmAttr;
+
+				if (tip) {
+					updatedOrder = {
+						...updatedOrder,
+						total_price: (
+							(Number(checkoutDataOrder.total_price) || 0) + parseFloat(tip)
+						).toString(),
+					};
+					updatedTotal = {
+						...total,
+						price: ((Number(total?.price) || 0) + parseFloat(tip)).toString(),
+					};
+				}
 			}
 
 			setLocalStorageCheckoutData({
