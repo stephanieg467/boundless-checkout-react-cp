@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	Box,
@@ -58,6 +58,16 @@ type PayfirmaFieldMetrics = {
 	fontSize: string;
 };
 
+type RequiredContactField = "firstName" | "lastName" | "email";
+
+type RequiredContactFieldErrors = Partial<Record<RequiredContactField, string>>;
+
+const requiredContactFieldErrorMessages: Record<RequiredContactField, string> = {
+	firstName: "First name is required",
+	lastName: "Last name is required",
+	email: "Email is required",
+};
+
 const PAYFIRMA_FIELD_HEIGHT = "56px";
 const PAYFIRMA_FIELD_FONT_SIZE = "14px";
 
@@ -112,6 +122,9 @@ const payfirmaContainerSx = (theme: Theme) => ({
 		boxSizing: "border-box !important",
 		boxShadow: "none !important",
 		transition: "border-color 0.2s, box-shadow 0.2s",
+		"&:hover, &:focus": {
+			borderColor: "#1976d2 !important",
+		},
 		"&:focus-within": {
 			border: `2px solid ${theme.palette.primary.main} !important`,
 		},
@@ -139,7 +152,6 @@ const createDefaultPaymentInstance: CreatePaymentInstance = (
 ) =>
 	new PayfirmaIframeTransaction(key, containerId, options) as PayfirmaPayment;
 
-// @todo CI: Improve error handling (eg. invalid field input)
 function PayHQ({
 	order: propOrder,
 	items: propItems,
@@ -160,25 +172,42 @@ function PayHQ({
 	const total = propTotal || appState.total;
 
 	const hasInitialized = useRef(false);
-	const containerRef = useRef<HTMLDivElement>(null);
 	const prevIsPaid = useRef<boolean>(false);
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [firstName, setFirstName] = useState(
+		order?.customer?.first_name ?? "",
+	);
+	const [lastName, setLastName] = useState(order?.customer?.last_name ?? "");
+	const [email, setEmail] = useState(order?.customer?.email ?? "");
+	const [requiredContactFieldErrors, setRequiredContactFieldErrors] =
+		useState<RequiredContactFieldErrors>({});
+
+	useEffect(() => {
+		setFirstName(order?.customer?.first_name ?? "");
+		setLastName(order?.customer?.last_name ?? "");
+		setEmail(order?.customer?.email ?? "");
+		setRequiredContactFieldErrors({});
+	}, [
+		order?.customer?.first_name,
+		order?.customer?.last_name,
+		order?.customer?.email,
+	]);
 
 	useEffect(() => {
 		const isPaid = Boolean(order?.paid_at);
 		if (!prevIsPaid.current && isPaid) {
-			containerRef.current?.scrollIntoView({
-				behavior: "smooth",
-				block: "start",
-			});
+			document
+				.querySelector<HTMLElement>(".bdl-payment-form")
+				?.scrollTo({ top: 0, behavior: "smooth" });
 		}
 		prevIsPaid.current = isPaid;
 	}, [order?.paid_at]);
 
 	useEffect(() => {
-		if (!apiKey || hasInitialized.current) {
+		console.log("[PayHQ] Initializing payment module")
+		if (order?.paid_at || !apiKey || hasInitialized.current) {
 			return;
 		}
 
@@ -210,9 +239,50 @@ function PayHQ({
 		};
 	}, [createPaymentInstance, apiKey, PAYFIRMA_ENVIRONMENT, paymentContainerId]);
 
+	const clearRequiredContactFieldError = useCallback(
+		(field: RequiredContactField, value: string) => {
+			if (!value.trim()) {
+				return;
+			}
+
+			setRequiredContactFieldErrors((currentErrors) => {
+				if (!currentErrors[field]) {
+					return currentErrors;
+				}
+
+				const remainingErrors = { ...currentErrors };
+				delete remainingErrors[field];
+				return remainingErrors;
+			});
+		},
+		[],
+	);
+
 	const handlePaymentClick = useCallback(async () => {
 		if (!payment || isSubmitting) return;
 
+		const trimmedFirstName = firstName.trim();
+		const trimmedLastName = lastName.trim();
+		const trimmedEmail = email.trim();
+		const contactFieldErrors: RequiredContactFieldErrors = {};
+
+		if (!trimmedFirstName) {
+			contactFieldErrors.firstName =
+				requiredContactFieldErrorMessages.firstName;
+		}
+		if (!trimmedLastName) {
+			contactFieldErrors.lastName = requiredContactFieldErrorMessages.lastName;
+		}
+		if (!trimmedEmail) {
+			contactFieldErrors.email = requiredContactFieldErrorMessages.email;
+		}
+
+		if (Object.keys(contactFieldErrors).length > 0) {
+			setRequiredContactFieldErrors(contactFieldErrors);
+			return;
+		}
+
+		setRequiredContactFieldErrors({});
 		setIsSubmitting(true);
 		setSuccessMessage(null);
 
@@ -241,6 +311,9 @@ function PayHQ({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					orderId: finalOrder?.id,
+					firstName: trimmedFirstName,
+					lastName: trimmedLastName,
+					email: trimmedEmail,
 					paymentToken,
 					order: finalOrder,
 					items,
@@ -297,6 +370,9 @@ function PayHQ({
 		items,
 		total,
 		tip,
+		firstName,
+		lastName,
+		email,
 		onPaymentApproved,
 		onPaymentFailed,
 	]);
@@ -317,7 +393,6 @@ function PayHQ({
 
 	return (
 		<Box
-			ref={containerRef}
 			component="section"
 			sx={{
 				width: "100%",
@@ -364,6 +439,14 @@ function PayHQ({
 									label="First Name"
 									placeholder="First Name"
 									autoComplete="given-name"
+									value={firstName}
+									onChange={(event) => {
+										const { value } = event.target;
+										setFirstName(value);
+										clearRequiredContactFieldError("firstName", value);
+									}}
+									error={Boolean(requiredContactFieldErrors.firstName)}
+									helperText={requiredContactFieldErrors.firstName ?? ""}
 									sx={textFieldSx}
 									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
@@ -375,6 +458,34 @@ function PayHQ({
 									label="Last Name"
 									placeholder="Last Name"
 									autoComplete="family-name"
+									value={lastName}
+									onChange={(event) => {
+										const { value } = event.target;
+										setLastName(value);
+										clearRequiredContactFieldError("lastName", value);
+									}}
+									error={Boolean(requiredContactFieldErrors.lastName)}
+									helperText={requiredContactFieldErrors.lastName ?? ""}
+									sx={textFieldSx}
+									slotProps={{ htmlInput: { className: "input-field" } }}
+								/>
+							</Grid>
+							<Grid size={12}>
+								<TextField
+									fullWidth
+									required
+									type="email"
+									label="Email"
+									placeholder="Email"
+									autoComplete="email"
+									value={email}
+									onChange={(event) => {
+										const { value } = event.target;
+										setEmail(value);
+										clearRequiredContactFieldError("email", value);
+									}}
+									error={Boolean(requiredContactFieldErrors.email)}
+									helperText={requiredContactFieldErrors.email ?? ""}
 									sx={textFieldSx}
 									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>

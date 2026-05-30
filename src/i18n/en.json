@@ -74,6 +74,7 @@
 			"couponTitle": "Coupon: {{amount}}",
 			"shipping": "Shipping:",
 			"delivery": "Delivery:",
+			"tip": "Tip:",
 			"total": "Total:"
 		},
 		"items": {

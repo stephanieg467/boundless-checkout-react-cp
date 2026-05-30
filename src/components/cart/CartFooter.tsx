@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import clsx from "clsx";
 import useFormatCurrency from "../../hooks/useFormatCurrency";
 import {useTranslation} from "react-i18next";
@@ -6,32 +6,45 @@ import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
 import {DELIVERY_ID} from "../../constants";
+import {useAppSelector} from "../../hooks/redux";
+
+const parseAmount = (value: string | number | null | undefined): number => {
+	const amount = Number(value ?? 0);
+	return Number.isFinite(amount) ? amount : 0;
+};
+
+const parsePositiveAmount = (
+	value: string | number | null | undefined,
+): number => {
+	const amount = parseAmount(value);
+	return amount > 0 ? amount : 0;
+};
 
 export default function CartFooter({open}: ICartFooterProps) {
-	const {order, total} = getCheckoutData() || {};
+	const {order: reduxOrder, total: reduxTotal} = useAppSelector(
+		(state) => state.app,
+	);
+	const checkoutData = !reduxOrder || !reduxTotal ? getCheckoutData() : undefined;
+	const order = reduxOrder ?? checkoutData?.order;
+	const total = reduxTotal ?? checkoutData?.total;
 	const cart = getCartOrRetrieve();
 	
 	const {formatCurrency} = useFormatCurrency();
 	const {t} = useTranslation();
-	const [totalPrice, setTotalPrice] = useState(0);
-	const [totalTaxAmount, setTotalTaxAmount] = useState(0);
 
-	useEffect(() => {
-		if (total) {
-			const totalTaxAmount = total.tax.totalTaxAmount;
-			const servicesSubTotal = Number(total.servicesSubTotal.price) || 0;
-			const itemsSubTotal = Number(total.itemsSubTotal.price) || 0;
-			const tax = Number(totalTaxAmount) || 0;
-
-			setTotalPrice(servicesSubTotal + itemsSubTotal + tax);
-			setTotalTaxAmount(Number(totalTaxAmount));
-		} else {
-			const cartTotal = Number(cart?.total?.total || 0);
-			const cartTaxAmount = Number(cart?.taxAmount || 0);
-			setTotalPrice(cartTotal + cartTaxAmount);
-			setTotalTaxAmount(cartTaxAmount);
-		}
-	}, [total, cart]);
+	const itemsSubTotal = parseAmount(total?.itemsSubTotal?.price);
+	const servicesSubTotal = parseAmount(total?.servicesSubTotal?.price);
+	const totalTaxAmount = total
+		? parseAmount(total.tax?.totalTaxAmount)
+		: parseAmount(cart?.taxAmount);
+	const tipAmount = parsePositiveAmount(order?.tip);
+	const fallbackTotalPrice = total
+		? itemsSubTotal + servicesSubTotal + totalTaxAmount + tipAmount
+		: parseAmount(cart?.total?.total) + totalTaxAmount + tipAmount;
+	const totalPrice =
+		total?.price !== undefined && total.price !== null && total.price !== ""
+			? parseAmount(total.price)
+			: fallbackTotalPrice;
 
 	const getDiscountAmount = () => {
 		if (!order?.discounts || !order?.discounts.length) return "";
@@ -88,6 +101,16 @@ export default function CartFooter({open}: ICartFooterProps) {
 							) : (
 								` ${formatCurrency(total.servicesSubTotal.price)}`
 							)}
+						</span>
+					</h5>
+				</div>
+			)}
+			{tipAmount > 0 && (
+				<div className="bdl-cart__footer-row">
+					<h5 className="bdl-cart__footer-title">
+						{t("cart.footer.tip")}
+						<span className="bdl-cart__footer-value">
+							{" "}{formatCurrency(tipAmount)}
 						</span>
 					</h5>
 				</div>

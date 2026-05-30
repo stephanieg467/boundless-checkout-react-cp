@@ -115,7 +115,6 @@ export default function PaymentMethodForm({
 		>
 			{(formikProps) => {
 				const {values} = formikProps;
-				console.log("Formik values:", values);
 				const selectedPaymentMethodId = values.payment_method_id;
 				const isCreditCard =
 					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD;
