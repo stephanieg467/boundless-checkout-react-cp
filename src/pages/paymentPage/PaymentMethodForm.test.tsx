@@ -1,0 +1,234 @@
+import React from "react";
+// This is a test-environment workaround for the existing component runtime and not part of production behavior.
+global.React = React;
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {TPublishingStatus} from "boundless-api-client";
+import PaymentMethodForm from "./PaymentMethodForm";
+import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD} from "../../constants";
+
+const mockDispatch = jest.fn();
+let mockState: any = {};
+let mockCheckoutData: any = {};
+const mockOnThankYouPage = jest.fn();
+const mockSubmitPayment = jest.fn();
+const mockRecordApprovedPayment = jest.fn();
+
+jest.mock("../../hooks/redux", () => ({
+  useAppSelector: (selector: any) => selector(mockState),
+  useAppDispatch: () => mockDispatch,
+}));
+
+jest.mock("../../hooks/checkoutData", () => ({
+  getCheckoutData: jest.fn(() => mockCheckoutData),
+  setLocalStorageCheckoutData: jest.fn((updates) => {
+    mockCheckoutData = {...mockCheckoutData, ...updates};
+  }),
+}));
+
+jest.mock("../../contexts/CheckoutConfigContext", () => ({
+  useCheckoutConfig: () => ({
+    onThankYouPage: mockOnThankYouPage,
+    payfirmaInfo: {token: "payfirma-api-key", environment: "TEST", endpoint: ""},
+  }),
+}));
+
+jest.mock("../../hooks/useDeliveryTimes", () => ({
+  useDeliveryTimes: () => ({
+    isLoading: false,
+    isError: false,
+    data: {
+      isNextDay: false,
+      times: ["10:00 AM", "11:00 AM"],
+    },
+  }),
+}));
+
+jest.mock("../../hooks/useCreditCardPaymentOutcome", () => ({
+  useCreditCardPaymentOutcome: () => ({
+    recordApprovedPayment: mockRecordApprovedPayment,
+  }),
+}));
+
+jest.mock("./PayHQ/PayHQ", () => {
+  const React = require("react");
+
+  // The mock intentionally does not invoke `props.onPaymentApproved(paidAt)`.
+  // In the intended final architecture, PaymentMethodForm should record the payment
+  // approval after `submitPayment()` resolves, serving as a single source of truth.
+  return {
+    __esModule: true,
+    default: React.forwardRef((_props: any, ref: any) => {
+      React.useImperativeHandle(ref, () => ({
+        submitPayment: mockSubmitPayment,
+      }));
+      return <div data-testid="payhq">PayHQ mock</div>;
+    }),
+  };
+});
+
+const creditCardMethod = {
+  payment_method_id: CREDIT_CARD_PAYMENT_METHOD,
+  title: "Credit Card",
+} as any;
+
+const payInStoreMethod = {
+  payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
+  title: "Pay in store",
+} as any;
+
+function makeOrder(overrides: any = {}) {
+  return {
+    id: "order-1",
+    status_id: null,
+    payment_method_id: CREDIT_CARD_PAYMENT_METHOD,
+    paid_at: null,
+    service_total_price: "0.00",
+    payment_mark_up: null,
+    total_price: "100.00",
+    discount_for_order: null,
+    tax_amount: "0.00",
+    publishing_status: TPublishingStatus.published,
+    created_at: "2026-05-23T00:00:00.000Z",
+    tax_calculations: null,
+    custom_attrs: {},
+    tip: "0.00",
+    services: [],
+    customer: {
+      first_name: "Ada",
+      last_name: "Lovelace",
+      email: "ada@example.com",
+    },
+    ...overrides,
+  };
+}
+
+const total = {
+  price: "100.00",
+  itemsSubTotal: {price: "100.00", qty: 1},
+  discount: "0",
+  tax: {totalTaxAmount: "0.00"},
+  servicesSubTotal: {price: "0.00", qty: 0},
+} as any;
+
+const items: any[] = [];
+
+function setup({
+  order = makeOrder(),
+  paymentMethods = [creditCardMethod],
+}: {
+  order?: any;
+  paymentMethods?: any[];
+} = {}) {
+  mockState = {app: {order, total, items}};
+  mockCheckoutData = {order, total, items};
+
+  return render(
+    <PaymentMethodForm
+      paymentPage={{paymentMethods} as any}
+    />,
+  );
+}
+
+describe("PaymentMethodForm shared PayHQ submit button", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSubmitPayment.mockResolvedValue({paidAt: "2026-05-23T12:00:00.000Z"});
+    mockRecordApprovedPayment.mockImplementation(({paidAt}: {paidAt: string}) => {
+      mockCheckoutData = {
+        ...mockCheckoutData,
+        order: {...mockCheckoutData.order, paid_at: paidAt},
+      };
+    });
+    mockOnThankYouPage.mockResolvedValue(undefined);
+  });
+
+  it("uses the single visible button to pay by card and complete checkout", async () => {
+    const user = userEvent.setup();
+
+    setup();
+
+    expect(screen.getByTestId("payhq")).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: /^pay$/i})).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: /^complete order$/i})).not.toBeInTheDocument();
+
+    const actionButtons = screen.getAllByRole("button").filter(b => b.textContent?.match(/pay|complete/i));
+    expect(actionButtons).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await waitFor(() => {
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+    });
+    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+    expect(mockRecordApprovedPayment).toHaveBeenCalledWith({
+      paidAt: "2026-05-23T12:00:00.000Z",
+      tip: "",
+    });
+    
+    await waitFor(() => {
+      expect(mockOnThankYouPage).toHaveBeenCalledTimes(1);
+    });
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
+    expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
+    
+    expect(mockRecordApprovedPayment.mock.invocationCallOrder[0]).toBeLessThan(
+      mockOnThankYouPage.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("validates delivery time before submitting PayHQ payment", async () => {
+    const user = userEvent.setup();
+    const deliveryOrder = makeOrder({
+      delivery_time: "",
+      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+    });
+
+    setup({order: deliveryOrder});
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
+  it("retries only checkout completion after card approval when checkout completion fails", async () => {
+    const user = userEvent.setup();
+    mockOnThankYouPage
+      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockResolvedValueOnce(undefined);
+
+    setup();
+
+    const button = screen.getByRole("button", {name: /^pay and complete order$/i});
+    await user.click(button);
+
+    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps non-credit-card methods on the normal Formik submit path", async () => {
+    const user = userEvent.setup();
+    const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    expect(screen.queryByTestId("payhq")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+  });
+});

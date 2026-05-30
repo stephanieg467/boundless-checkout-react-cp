@@ -1,5 +1,5 @@
 import {completeCreditCardPaymentOutcome} from "../../lib/paymentOutcome";
-import {useCallback, useState} from "react";
+import {useCallback, useRef, useState} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
 	Typography,
@@ -39,7 +39,7 @@ import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
 import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
-import PayHQ from "./PayHQ/PayHQ";
+import PayHQ, {PayHQHandle} from "./PayHQ/PayHQ";
 import {useCreditCardPaymentOutcome} from "../../hooks/useCreditCardPaymentOutcome";
 
 const makeValidatePaymentForm =
@@ -82,6 +82,8 @@ export default function PaymentMethodForm({
 	const {t} = useTranslation();
 	const {recordApprovedPayment} = useCreditCardPaymentOutcome();
 	const [isPaymentApproved, setIsPaymentApproved] = useState(false);
+	const payHQRef = useRef<PayHQHandle | null>(null);
+	const [isPayHQSubmitting, setIsPayHQSubmitting] = useState(false);
 
 	const handlePaymentApproved = useCallback(
 		(paidAt: string, tipAmount?: string) => {
@@ -121,6 +123,63 @@ export default function PaymentMethodForm({
 				const showPayHQ =
 					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD ||
 					onlyPaymentMethodIsCreditCard;
+
+				const submitCreditCardCheckout = async () => {
+					if (formikProps.isSubmitting || isPayHQSubmitting) {
+						return;
+					}
+
+					formikProps.setStatus(undefined);
+
+					const validationErrors = await formikProps.validateForm();
+					if (Object.keys(validationErrors).length > 0) {
+						return;
+					}
+
+					if (order?.paid_at || isPaymentApproved) {
+						await formikProps.submitForm();
+						return;
+					}
+
+					if (!payHQRef.current) {
+						formikProps.setStatus({
+							serverError: "Payment module is still loading. Please try again.",
+						});
+						return;
+					}
+
+					setIsPayHQSubmitting(true);
+
+					try {
+						const {paidAt} = await payHQRef.current.submitPayment();
+						handlePaymentApproved(paidAt, values.tip);
+						await formikProps.submitForm();
+					} catch (error) {
+						if (error instanceof Error && error.message === "Required payment contact fields are missing.") {
+							return;
+						}
+
+						if (!formikProps.status?.serverError) {
+							formikProps.setStatus({
+								serverError:
+									error instanceof Error
+										? error.message
+										: "Payment could not be completed. Please try again.",
+							});
+						}
+					} finally {
+						setIsPayHQSubmitting(false);
+					}
+				};
+
+				const creditCardPaymentComplete = Boolean(order?.paid_at || isPaymentApproved);
+				const isSharedButtonBusy = formikProps.isSubmitting || isPayHQSubmitting;
+				const submitButtonLabel =
+					isCreditCard && !creditCardPaymentComplete
+						? isPayHQSubmitting
+							? "Processing payment..."
+							: "Pay and complete order"
+						: t("paymentMethodForm.completeOrder");
 
 				return (
 					<Form className={"bdl-payment-form"}>
@@ -162,6 +221,7 @@ export default function PaymentMethodForm({
 						)}
 						{showPayHQ && (
 							<PayHQ
+								ref={payHQRef}
 								order={order}
 								total={total}
 								items={items}
@@ -196,21 +256,19 @@ export default function PaymentMethodForm({
 							<Button
 								variant="contained"
 								startIcon={
-									formikProps.isSubmitting ? (
+									isSharedButtonBusy ? (
 										<CircularProgress size="12px" aria-label="Loading…" />
 									) : (
 										<DoneIcon />
 									)
 								}
-								type={"submit"}
-								disabled={
-									formikProps.isSubmitting ||
-									(!order?.paid_at && isCreditCard && !isPaymentApproved)
-								}
+								type={isCreditCard ? "button" : "submit"}
+								onClick={isCreditCard ? submitCreditCardCheckout : undefined}
+								disabled={isSharedButtonBusy}
 								color="success"
 								size="large"
 							>
-								{t("paymentMethodForm.completeOrder")}
+								{submitButtonLabel}
 							</Button>
 						</Box>
 					</Form>
