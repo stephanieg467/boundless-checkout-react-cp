@@ -226,22 +226,6 @@ export default function PaymentMethodForm({
 								total={total}
 								items={items}
 								tip={values.tip}
-								onPaymentApproved={(paidAt) => {
-									formikProps.setStatus(undefined);
-
-									try {
-										handlePaymentApproved(paidAt, values.tip);
-									} catch (error) {
-										const adminEmail =
-											process.env.NEXT_PUBLIC_ADMIN_EMAIL || "the store";
-										formikProps.setStatus({
-											serverError:
-												error instanceof Error
-													? error.message
-													: `Payment was approved, but checkout state could not be updated. Please contact ${adminEmail}.`,
-										});
-									}
-								}}
 								onPaymentFailed={(error) =>
 									formikProps.setStatus({serverError: error})
 								}

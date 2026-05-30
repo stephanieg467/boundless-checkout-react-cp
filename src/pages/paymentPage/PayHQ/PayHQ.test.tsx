@@ -54,12 +54,10 @@ const total = {
 const items = [{ id: "item-1", title: "Test item" }] as any;
 
 function PayHQSubmitHarness({
-	onPaymentApproved = jest.fn(),
 	onPaymentFailed = jest.fn(),
 	createPaymentInstance,
 	payHQRef,
 }: {
-	onPaymentApproved?: (paidAt: string) => void;
 	onPaymentFailed?: (message: string) => void;
 	createPaymentInstance: CreatePaymentInstance;
 	payHQRef?: React.Ref<PayHQHandle>;
@@ -72,7 +70,6 @@ function PayHQSubmitHarness({
 		<>
 			<PayHQ
 				ref={ref}
-				onPaymentApproved={onPaymentApproved}
 				onPaymentFailed={onPaymentFailed}
 				createPaymentInstance={createPaymentInstance}
 			/>
@@ -128,7 +125,6 @@ describe("PayHQ", () => {
 
 		render(
 			<PayHQSubmitHarness
-				onPaymentApproved={jest.fn()}
 				onPaymentFailed={jest.fn()}
 				createPaymentInstance={createPaymentInstance}
 			/>,
@@ -161,7 +157,6 @@ describe("PayHQ", () => {
 
 		render(
 			<PayHQSubmitHarness
-				onPaymentApproved={jest.fn()}
 				onPaymentFailed={jest.fn()}
 				createPaymentInstance={createPaymentInstance}
 			/>,
@@ -194,7 +189,6 @@ describe("PayHQ", () => {
 
 		render(
 			<PayHQSubmitHarness
-				onPaymentApproved={jest.fn()}
 				onPaymentFailed={jest.fn()}
 				createPaymentInstance={createPaymentInstance}
 			/>,
@@ -256,7 +250,6 @@ describe("PayHQ", () => {
 		render(
 			<PayHQSubmitHarness
 				payHQRef={payHQRef}
-				onPaymentApproved={jest.fn()}
 				onPaymentFailed={jest.fn()}
 				createPaymentInstance={createPaymentInstance}
 			/>,
@@ -298,7 +291,6 @@ describe("PayHQ", () => {
 		render(
 			<PayHQSubmitHarness
 				payHQRef={payHQRef}
-				onPaymentApproved={jest.fn()}
 				onPaymentFailed={jest.fn()}
 				createPaymentInstance={createPaymentInstance}
 			/>,
@@ -359,37 +351,5 @@ describe("PayHQ", () => {
 		expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
 	});
 
-	it("does not report payment failure if onPaymentApproved throws", async () => {
-		const getPaymentToken = jest.fn().mockResolvedValue({
-			payment_token: "payment-token-1",
-		});
-		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
-			getPaymentToken,
-		}));
 
-		const onPaymentApproved = jest.fn().mockImplementation(() => {
-			throw new Error("Callback error");
-		});
-		const onPaymentFailed = jest.fn();
-		const payHQRef = React.createRef<PayHQHandle>();
-
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentApproved={onPaymentApproved}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
-
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
-
-		await act(async () => {
-			const submitResult = await payHQRef.current?.submitPayment();
-			expect(submitResult).toEqual({ paidAt: "2026-05-23T12:00:00.000Z" });
-		});
-
-		expect(onPaymentFailed).not.toHaveBeenCalled();
-		expect(onPaymentApproved).toHaveBeenCalled();
-	});
 });

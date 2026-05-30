@@ -47,7 +47,6 @@ type PayHQProps = {
 	items?: ICheckoutData["items"];
 	total?: ICheckoutData["total"];
 	tip?: string;
-	onPaymentApproved: (paidAt: string) => void;
 	onPaymentFailed: (errorMessage: string) => void;
 	createPaymentInstance?: CreatePaymentInstance;
 };
@@ -167,7 +166,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		items: propItems,
 		total: propTotal,
 		tip,
-		onPaymentApproved,
 		onPaymentFailed,
 		createPaymentInstance = createDefaultPaymentInstance,
 	},
@@ -395,15 +393,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 		paymentApprovedRef.current = true;
 		setSuccessMessage("Payment approved.");
-		
-		try {
-			onPaymentApproved(paidAtResult);
-		} catch (error) {
-			console.error(
-				"[PayHQ] onPaymentApproved callback failed",
-				error instanceof Error ? error.message : String(error),
-			);
-		}
 
 		return {paidAt: paidAtResult};
 	}, [
@@ -416,7 +405,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		firstName,
 		lastName,
 		email,
-		onPaymentApproved,
 		onPaymentFailed,
 	]);
 

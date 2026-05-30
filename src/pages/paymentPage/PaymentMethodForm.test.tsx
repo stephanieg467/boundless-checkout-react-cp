@@ -53,9 +53,9 @@ jest.mock("../../hooks/useCreditCardPaymentOutcome", () => ({
 jest.mock("./PayHQ/PayHQ", () => {
   const React = require("react");
 
-  // The mock intentionally does not invoke `props.onPaymentApproved(paidAt)`.
-  // In the intended final architecture, PaymentMethodForm should record the payment
-  // approval after `submitPayment()` resolves, serving as a single source of truth.
+  // The PayHQ mock only resolves `submitPayment()`.
+  // PaymentMethodForm records the payment approval from that result,
+  // serving as a single source of truth.
   return {
     __esModule: true,
     default: React.forwardRef((_props: any, ref: any) => {
@@ -165,7 +165,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
       paidAt: "2026-05-23T12:00:00.000Z",
       tip: "",
     });
-    
+
     await waitFor(() => {
       expect(mockOnThankYouPage).toHaveBeenCalledTimes(1);
     });
@@ -173,7 +173,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
     expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
     expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
-    
+
     expect(mockRecordApprovedPayment.mock.invocationCallOrder[0]).toBeLessThan(
       mockOnThankYouPage.mock.invocationCallOrder[0]
     );
