@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 import {
 	Alert,
 	Box,
-	Button,
 	CircularProgress,
 	Grid,
 	Paper,
@@ -13,7 +19,6 @@ import {
 	Typography,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import PaymentIcon from "@mui/icons-material/Payment";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
 import { ICheckoutData } from "../../../types/Order";
 import { useAppSelector } from "../../../hooks/redux";
@@ -45,6 +50,10 @@ type PayHQProps = {
 	onPaymentApproved: (paidAt: string) => void;
 	onPaymentFailed: (errorMessage: string) => void;
 	createPaymentInstance?: CreatePaymentInstance;
+};
+
+export type PayHQHandle = {
+	submitPayment: () => Promise<{paidAt: string}>;
 };
 
 export type CreatePaymentInstance = (
@@ -152,15 +161,18 @@ const createDefaultPaymentInstance: CreatePaymentInstance = (
 ) =>
 	new PayfirmaIframeTransaction(key, containerId, options) as PayfirmaPayment;
 
-function PayHQ({
-	order: propOrder,
-	items: propItems,
-	total: propTotal,
-	tip,
-	onPaymentApproved,
-	onPaymentFailed,
-	createPaymentInstance = createDefaultPaymentInstance,
-}: PayHQProps) {
+const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
+	{
+		order: propOrder,
+		items: propItems,
+		total: propTotal,
+		tip,
+		onPaymentApproved,
+		onPaymentFailed,
+		createPaymentInstance = createDefaultPaymentInstance,
+	},
+	ref,
+) {
 	const { payfirmaInfo } = useCheckoutConfig();
 	const apiKey = payfirmaInfo?.token ?? "";
 	const PAYFIRMA_ENVIRONMENT = payfirmaInfo?.environment ?? "LIVE";
@@ -173,6 +185,8 @@ function PayHQ({
 
 	const hasInitialized = useRef(false);
 	const prevIsPaid = useRef<boolean>(false);
+	const submitInFlightRef = useRef(false);
+	const paymentApprovedRef = useRef(false);
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -258,8 +272,20 @@ function PayHQ({
 		[],
 	);
 
-	const handlePaymentClick = useCallback(async () => {
-		if (!payment || isSubmitting) return;
+	const submitPayment = useCallback(async (): Promise<{paidAt: string}> => {
+		if (paymentApprovedRef.current || order?.paid_at) {
+			throw new Error("Payment has already been approved.");
+		}
+
+		if (!payment) {
+			const message = "Payment module is still loading. Please try again.";
+			onPaymentFailed(message);
+			throw new Error(message);
+		}
+
+		if (submitInFlightRef.current || isSubmitting) {
+			throw new Error("Payment is already being processed.");
+		}
 
 		const trimmedFirstName = firstName.trim();
 		const trimmedLastName = lastName.trim();
@@ -279,12 +305,15 @@ function PayHQ({
 
 		if (Object.keys(contactFieldErrors).length > 0) {
 			setRequiredContactFieldErrors(contactFieldErrors);
-			return;
+			throw new Error("Required payment contact fields are missing.");
 		}
 
 		setRequiredContactFieldErrors({});
+		submitInFlightRef.current = true;
 		setIsSubmitting(true);
 		setSuccessMessage(null);
+
+		let paidAtResult: string | undefined;
 
 		try {
 			const tokenResponse = await payment.getPaymentToken();
@@ -345,9 +374,7 @@ function PayHQ({
 				);
 			}
 
-			const paidAt = data.paidAt ?? new Date().toISOString();
-			setSuccessMessage("Payment approved.");
-			onPaymentApproved(paidAt);
+			paidAtResult = data.paidAt ?? new Date().toISOString();
 		} catch (error) {
 			console.error(
 				"[PayHQ] Payment failed",
@@ -360,9 +387,25 @@ function PayHQ({
 					: `Payment could not be completed. Please try again or contact the store at ${adminEmail}.`;
 
 			onPaymentFailed(finalErrorMessage);
+			throw error instanceof Error ? error : new Error(finalErrorMessage);
 		} finally {
+			submitInFlightRef.current = false;
 			setIsSubmitting(false);
 		}
+
+		paymentApprovedRef.current = true;
+		setSuccessMessage("Payment approved.");
+		
+		try {
+			onPaymentApproved(paidAtResult);
+		} catch (error) {
+			console.error(
+				"[PayHQ] onPaymentApproved callback failed",
+				error instanceof Error ? error.message : String(error),
+			);
+		}
+
+		return {paidAt: paidAtResult};
 	}, [
 		payment,
 		isSubmitting,
@@ -376,6 +419,14 @@ function PayHQ({
 		onPaymentApproved,
 		onPaymentFailed,
 	]);
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			submitPayment,
+		}),
+		[submitPayment],
+	);
 
 	if (!apiKey) {
 		return (
@@ -495,26 +546,6 @@ function PayHQ({
 							</Grid>
 						</Grid>
 
-						<Button
-							id="payButton"
-							variant="contained"
-							color="success"
-							startIcon={<PaymentIcon />}
-							size="large"
-							fullWidth
-							onClick={handlePaymentClick}
-							disabled={successMessage !== null || !payment || isSubmitting}
-							sx={{
-								py: 1.5,
-								borderRadius: 2,
-								fontWeight: 700,
-								textTransform: "none",
-								boxShadow: 2,
-							}}
-						>
-							{isSubmitting ? "Processing payment..." : "Pay"}
-						</Button>
-
 						{isSubmitting && (
 							<Box sx={{ textAlign: "center" }} aria-live="polite">
 								<CircularProgress size={32} />
@@ -529,6 +560,6 @@ function PayHQ({
 			</Paper>
 		</Box>
 	);
-}
+});
 
 export default PayHQ;
