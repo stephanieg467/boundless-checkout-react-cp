@@ -173,7 +173,13 @@ export default function PaymentMethodForm({
 				};
 
 				const creditCardPaymentComplete = Boolean(order?.paid_at || isPaymentApproved);
-				const isSharedButtonBusy = formikProps.isSubmitting || isPayHQSubmitting;
+				const isCheckoutCompletionInProgress = Boolean(
+					formikProps.status?.checkoutCompletionInProgress,
+				);
+				const isSharedButtonBusy =
+					formikProps.isSubmitting ||
+					isPayHQSubmitting ||
+					isCheckoutCompletionInProgress;
 				const submitButtonLabel =
 					isCreditCard && !creditCardPaymentComplete
 						? isPayHQSubmitting
@@ -460,6 +466,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 
 			dispatch(setOrder(updatedOrder));
 			dispatch(setTotal(updatedTotal));
+			setStatus({checkoutCompletionInProgress: true});
 
 			await onThankYouPage({
 				order: updatedOrder,

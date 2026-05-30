@@ -5,6 +5,7 @@ import React, {
 	useCallback,
 	useEffect,
 	useImperativeHandle,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -19,6 +20,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
+import { Country, State, type ICountry, type IState } from "country-state-city";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
 import { ICheckoutData } from "../../../types/Order";
 import { useAppSelector } from "../../../hooks/redux";
@@ -66,18 +68,47 @@ type PayfirmaFieldMetrics = {
 	fontSize: string;
 };
 
-type RequiredContactField = "firstName" | "lastName" | "email";
+type RequiredPaymentField =
+	| "firstName"
+	| "lastName"
+	| "email"
+	| "address1"
+	| "city"
+	| "country"
+	| "postalCode"
+	| "province";
 
-type RequiredContactFieldErrors = Partial<Record<RequiredContactField, string>>;
+type RequiredPaymentFieldErrors = Partial<Record<RequiredPaymentField, string>>;
 
-const requiredContactFieldErrorMessages: Record<RequiredContactField, string> = {
+type PaymentAddressFields = {
+	address1: string;
+	address2: string;
+	city: string;
+	country: string;
+	postalCode: string;
+	province: string;
+};
+
+type CustomerAddress = NonNullable<
+	NonNullable<ICheckoutData["order"]>["customer"]
+>["addresses"][number];
+
+const requiredPaymentFieldErrorMessages: Record<RequiredPaymentField, string> = {
 	firstName: "First name is required",
 	lastName: "Last name is required",
 	email: "Email is required",
+	address1: "Address 1 is required",
+	city: "City is required",
+	country: "Country is required",
+	postalCode: "Postal code is required",
+	province: "Province/State is required",
 };
 
 const PAYFIRMA_FIELD_HEIGHT = "56px";
 const PAYFIRMA_FIELD_FONT_SIZE = "14px";
+const COUNTRY_IDS_BY_ISO_CODE: Record<string, number[]> = {
+	CA: [0, 40],
+};
 
 function getActivePayfirmaFieldMetrics(): PayfirmaFieldMetrics {
 	return { height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE };
@@ -97,6 +128,60 @@ function createPayfirmaInputStyle({
 		"line-height": height,
 		"font-size": fontSize,
 		background: "transparent",
+	};
+}
+
+function countryCodeFromAddress(
+	address: CustomerAddress | null | undefined,
+): string {
+	const vwCountryCode = address?.vwCountry?.code;
+	if (vwCountryCode) {
+		return vwCountryCode.toUpperCase();
+	}
+
+	const countryId = address?.country_id;
+	if (countryId != null) {
+		const matchingCountryCode = Object.entries(COUNTRY_IDS_BY_ISO_CODE).find(
+			([, countryIds]) => countryIds.includes(countryId),
+		)?.[0];
+
+		if (matchingCountryCode) {
+			return matchingCountryCode;
+		}
+	}
+
+	return "";
+}
+
+function normalizeProvinceValue(province: string, countryCode: string): string {
+	if (!province || !countryCode) {
+		return province;
+	}
+
+	const provinceOptions = State.getStatesOfCountry(countryCode);
+	const matchingProvince = provinceOptions.find(
+		(option) =>
+			option.name.toLowerCase() === province.toLowerCase() ||
+			option.isoCode.toLowerCase() === province.toLowerCase(),
+	);
+
+	return matchingProvince?.name ?? province;
+}
+
+function getPaymentAddressDefaults(
+	order?: ICheckoutData["order"],
+): PaymentAddressFields {
+	const firstAddress = order?.customer?.addresses?.[0];
+	const country = countryCodeFromAddress(firstAddress);
+	const rawProvince = firstAddress?.state ?? "";
+
+	return {
+		address1: firstAddress?.address_line_1 ?? "",
+		address2: firstAddress?.address_line_2 ?? "",
+		city: firstAddress?.city ?? "",
+		country,
+		postalCode: firstAddress?.zip ?? "",
+		province: normalizeProvinceValue(rawProvince, country),
 	};
 }
 
@@ -193,18 +278,55 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	);
 	const [lastName, setLastName] = useState(order?.customer?.last_name ?? "");
 	const [email, setEmail] = useState(order?.customer?.email ?? "");
-	const [requiredContactFieldErrors, setRequiredContactFieldErrors] =
-		useState<RequiredContactFieldErrors>({});
+	const initialAddressFields = getPaymentAddressDefaults(order);
+	const [address1, setAddress1] = useState(initialAddressFields.address1);
+	const [address2, setAddress2] = useState(initialAddressFields.address2);
+	const [city, setCity] = useState(initialAddressFields.city);
+	const [country, setCountry] = useState(initialAddressFields.country);
+	const [postalCode, setPostalCode] = useState(initialAddressFields.postalCode);
+	const [province, setProvince] = useState(initialAddressFields.province);
+	const [requiredPaymentFieldErrors, setRequiredPaymentFieldErrors] =
+		useState<RequiredPaymentFieldErrors>({});
+	const countryOptions = useMemo(
+		() =>
+			Country.getAllCountries()
+				.filter(
+					(countryOption) =>
+						State.getStatesOfCountry(countryOption.isoCode).length > 0,
+				)
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[],
+	);
+	const provinceOptions = useMemo(
+		() => (country ? State.getStatesOfCountry(country) : []),
+		[country],
+	);
+	const selectedCountry = useMemo(
+		() =>
+			countryOptions.find(
+				(countryOption) => countryOption.isoCode === country,
+			) ?? null,
+		[country, countryOptions],
+	);
 
 	useEffect(() => {
+		const addressDefaults = getPaymentAddressDefaults(order);
 		setFirstName(order?.customer?.first_name ?? "");
 		setLastName(order?.customer?.last_name ?? "");
 		setEmail(order?.customer?.email ?? "");
-		setRequiredContactFieldErrors({});
+		setAddress1(addressDefaults.address1);
+		setAddress2(addressDefaults.address2);
+		setCity(addressDefaults.city);
+		setCountry(addressDefaults.country);
+		setPostalCode(addressDefaults.postalCode);
+		setProvince(addressDefaults.province);
+		setRequiredPaymentFieldErrors({});
 	}, [
+		order,
 		order?.customer?.first_name,
 		order?.customer?.last_name,
 		order?.customer?.email,
+		order?.customer?.addresses,
 	]);
 
 	useEffect(() => {
@@ -218,7 +340,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	}, [order?.paid_at]);
 
 	useEffect(() => {
-		console.log("[PayHQ] Initializing payment module")
 		if (order?.paid_at || !apiKey || hasInitialized.current) {
 			return;
 		}
@@ -251,13 +372,13 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		};
 	}, [createPaymentInstance, apiKey, PAYFIRMA_ENVIRONMENT, paymentContainerId]);
 
-	const clearRequiredContactFieldError = useCallback(
-		(field: RequiredContactField, value: string) => {
+	const clearRequiredPaymentFieldError = useCallback(
+		(field: RequiredPaymentField, value: string) => {
 			if (!value.trim()) {
 				return;
 			}
 
-			setRequiredContactFieldErrors((currentErrors) => {
+			setRequiredPaymentFieldErrors((currentErrors) => {
 				if (!currentErrors[field]) {
 					return currentErrors;
 				}
@@ -288,25 +409,48 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		const trimmedFirstName = firstName.trim();
 		const trimmedLastName = lastName.trim();
 		const trimmedEmail = email.trim();
-		const contactFieldErrors: RequiredContactFieldErrors = {};
+		const trimmedAddress1 = address1.trim();
+		const trimmedAddress2 = address2.trim();
+		const trimmedCity = city.trim();
+		const trimmedPostalCode = postalCode.trim();
+		const trimmedProvince = province.trim();
+		const selectedCountryName = selectedCountry?.name ?? "";
+		const paymentFieldErrors: RequiredPaymentFieldErrors = {};
 
 		if (!trimmedFirstName) {
-			contactFieldErrors.firstName =
-				requiredContactFieldErrorMessages.firstName;
+			paymentFieldErrors.firstName =
+				requiredPaymentFieldErrorMessages.firstName;
 		}
 		if (!trimmedLastName) {
-			contactFieldErrors.lastName = requiredContactFieldErrorMessages.lastName;
+			paymentFieldErrors.lastName = requiredPaymentFieldErrorMessages.lastName;
 		}
 		if (!trimmedEmail) {
-			contactFieldErrors.email = requiredContactFieldErrorMessages.email;
+			paymentFieldErrors.email = requiredPaymentFieldErrorMessages.email;
+		}
+		if (!trimmedAddress1) {
+			paymentFieldErrors.address1 = requiredPaymentFieldErrorMessages.address1;
+		}
+		if (!trimmedCity) {
+			paymentFieldErrors.city = requiredPaymentFieldErrorMessages.city;
+		}
+		if (!country) {
+			paymentFieldErrors.country = requiredPaymentFieldErrorMessages.country;
+		}
+		if (!trimmedPostalCode) {
+			paymentFieldErrors.postalCode =
+				requiredPaymentFieldErrorMessages.postalCode;
+		}
+		if (!trimmedProvince) {
+			paymentFieldErrors.province =
+				requiredPaymentFieldErrorMessages.province;
 		}
 
-		if (Object.keys(contactFieldErrors).length > 0) {
-			setRequiredContactFieldErrors(contactFieldErrors);
-			throw new Error("Required payment contact fields are missing.");
+		if (Object.keys(paymentFieldErrors).length > 0) {
+			setRequiredPaymentFieldErrors(paymentFieldErrors);
+			throw new Error("Required payment fields are missing.");
 		}
 
-		setRequiredContactFieldErrors({});
+		setRequiredPaymentFieldErrors({});
 		submitInFlightRef.current = true;
 		setIsSubmitting(true);
 		setSuccessMessage(null);
@@ -341,6 +485,12 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					firstName: trimmedFirstName,
 					lastName: trimmedLastName,
 					email: trimmedEmail,
+					address1: trimmedAddress1,
+					address2: trimmedAddress2,
+					city: trimmedCity,
+					country: selectedCountryName,
+					postalCode: trimmedPostalCode,
+					province: trimmedProvince,
 					paymentToken,
 					order: finalOrder,
 					items,
@@ -405,6 +555,13 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		firstName,
 		lastName,
 		email,
+		address1,
+		address2,
+		city,
+		country,
+		postalCode,
+		province,
+		selectedCountry,
 		onPaymentFailed,
 	]);
 
@@ -455,7 +612,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				{order?.paid_at ? (
 					<Alert severity="info">
 						<Typography>
-							This order has been paid; proceed to order completion.
+							Your payment was approved. Please wait while we process your order.
 						</Typography>
 					</Alert>
 				) : (
@@ -482,10 +639,10 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									onChange={(event) => {
 										const { value } = event.target;
 										setFirstName(value);
-										clearRequiredContactFieldError("firstName", value);
+										clearRequiredPaymentFieldError("firstName", value);
 									}}
-									error={Boolean(requiredContactFieldErrors.firstName)}
-									helperText={requiredContactFieldErrors.firstName ?? ""}
+									error={Boolean(requiredPaymentFieldErrors.firstName)}
+									helperText={requiredPaymentFieldErrors.firstName ?? ""}
 									sx={textFieldSx}
 									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
@@ -501,10 +658,10 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									onChange={(event) => {
 										const { value } = event.target;
 										setLastName(value);
-										clearRequiredContactFieldError("lastName", value);
+										clearRequiredPaymentFieldError("lastName", value);
 									}}
-									error={Boolean(requiredContactFieldErrors.lastName)}
-									helperText={requiredContactFieldErrors.lastName ?? ""}
+									error={Boolean(requiredPaymentFieldErrors.lastName)}
+									helperText={requiredPaymentFieldErrors.lastName ?? ""}
 									sx={textFieldSx}
 									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
@@ -521,13 +678,140 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									onChange={(event) => {
 										const { value } = event.target;
 										setEmail(value);
-										clearRequiredContactFieldError("email", value);
+										clearRequiredPaymentFieldError("email", value);
 									}}
-									error={Boolean(requiredContactFieldErrors.email)}
-									helperText={requiredContactFieldErrors.email ?? ""}
+									error={Boolean(requiredPaymentFieldErrors.email)}
+									helperText={requiredPaymentFieldErrors.email ?? ""}
 									sx={textFieldSx}
 									slotProps={{ htmlInput: { className: "input-field" } }}
 								/>
+							</Grid>
+							<Grid size={12}>
+								<TextField
+									fullWidth
+									required
+									label="Address 1"
+									placeholder="Address 1"
+									autoComplete="address-line1"
+									value={address1}
+									onChange={(event) => {
+										const { value } = event.target;
+										setAddress1(value);
+										clearRequiredPaymentFieldError("address1", value);
+									}}
+									error={Boolean(requiredPaymentFieldErrors.address1)}
+									helperText={requiredPaymentFieldErrors.address1 ?? ""}
+									sx={textFieldSx}
+									slotProps={{ htmlInput: { className: "input-field" } }}
+								/>
+							</Grid>
+							<Grid size={12}>
+								<TextField
+									fullWidth
+									label="Address 2"
+									placeholder="Address 2"
+									autoComplete="address-line2"
+									value={address2}
+									onChange={(event) => setAddress2(event.target.value)}
+									sx={textFieldSx}
+									slotProps={{ htmlInput: { className: "input-field" } }}
+								/>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6 }}>
+								<TextField
+									fullWidth
+									required
+									label="City"
+									placeholder="City"
+									autoComplete="address-level2"
+									value={city}
+									onChange={(event) => {
+										const { value } = event.target;
+										setCity(value);
+										clearRequiredPaymentFieldError("city", value);
+									}}
+									error={Boolean(requiredPaymentFieldErrors.city)}
+									helperText={requiredPaymentFieldErrors.city ?? ""}
+									sx={textFieldSx}
+									slotProps={{ htmlInput: { className: "input-field" } }}
+								/>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6 }}>
+								<TextField
+									fullWidth
+									required
+									select
+									label="Select Country"
+									value={country}
+									onChange={(event) => {
+										const { value } = event.target;
+										const nextProvinceOptions = State.getStatesOfCountry(value);
+										setCountry(value);
+										setProvince((currentProvince) =>
+											nextProvinceOptions.some(
+												(option) => option.name === currentProvince,
+											)
+												? currentProvince
+												: "",
+										);
+										clearRequiredPaymentFieldError("country", value);
+									}}
+									error={Boolean(requiredPaymentFieldErrors.country)}
+									helperText={requiredPaymentFieldErrors.country ?? ""}
+									sx={textFieldSx}
+									SelectProps={{ native: true }}
+								>
+									<option value="">Select Country</option>
+									{countryOptions.map((countryOption: ICountry) => (
+										<option key={countryOption.isoCode} value={countryOption.isoCode}>
+											{countryOption.name}
+										</option>
+									))}
+								</TextField>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6 }}>
+								<TextField
+									fullWidth
+									required
+									label="Postal Code"
+									placeholder="Postal Code"
+									autoComplete="postal-code"
+									value={postalCode}
+									onChange={(event) => {
+										const { value } = event.target;
+										setPostalCode(value);
+										clearRequiredPaymentFieldError("postalCode", value);
+									}}
+									error={Boolean(requiredPaymentFieldErrors.postalCode)}
+									helperText={requiredPaymentFieldErrors.postalCode ?? ""}
+									sx={textFieldSx}
+									slotProps={{ htmlInput: { className: "input-field" } }}
+								/>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 6 }}>
+								<TextField
+									fullWidth
+									required
+									select
+									label="Province/State"
+									value={province}
+									onChange={(event) => {
+										const { value } = event.target;
+										setProvince(value);
+										clearRequiredPaymentFieldError("province", value);
+									}}
+									error={Boolean(requiredPaymentFieldErrors.province)}
+									helperText={requiredPaymentFieldErrors.province ?? ""}
+									sx={textFieldSx}
+									SelectProps={{ native: true }}
+								>
+									<option value="">Province/State</option>
+									{provinceOptions.map((provinceOption: IState) => (
+										<option key={provinceOption.isoCode} value={provinceOption.name}>
+											{provinceOption.name}
+										</option>
+									))}
+								</TextField>
 							</Grid>
 							<Grid size={12}>
 								<Box id={paymentContainerId} sx={payfirmaContainerSx} />

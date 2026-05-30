@@ -103,6 +103,7 @@
     "@tanem/react-nprogress": "^5.0.55",
     "await-to-js": "^3.0.0",
     "clsx": "^1.1.1",
+    "country-state-city": "^3.2.1",
     "currency.js": "^2.0.4",
     "date-holidays": "^3.26.12",
     "dayjs": "^1.11.18",

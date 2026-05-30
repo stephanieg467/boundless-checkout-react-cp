@@ -1,7 +1,7 @@
 import React from "react";
 // This is a test-environment workaround for the existing component runtime and not part of production behavior.
 global.React = React;
-import {render, screen, waitFor} from "@testing-library/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {TPublishingStatus} from "boundless-api-client";
 import PaymentMethodForm from "./PaymentMethodForm";
@@ -194,6 +194,32 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockSubmitPayment).not.toHaveBeenCalled();
     expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
     expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
+  it("keeps the shared button busy after thank-you callback resolves", async () => {
+    const user = userEvent.setup();
+    let resolveThankYou!: () => void;
+    const thankYouPromise = new Promise<void>((resolve) => {
+      resolveThankYou = resolve;
+    });
+    mockOnThankYouPage.mockReturnValue(thankYouPromise);
+
+    setup();
+
+    const button = screen.getByRole("button", {name: /^pay and complete order$/i});
+    await user.click(button);
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+    expect(button).toBeDisabled();
+    expect(screen.getByLabelText("Loading…")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveThankYou();
+      await thankYouPromise;
+    });
+
+    expect(button).toBeDisabled();
+    expect(screen.getByLabelText("Loading…")).toBeInTheDocument();
   });
 
   it("retries only checkout completion after card approval when checkout completion fails", async () => {

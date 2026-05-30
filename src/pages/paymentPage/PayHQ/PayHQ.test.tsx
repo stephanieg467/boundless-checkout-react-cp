@@ -40,6 +40,29 @@ const order = {
 		first_name: "Original",
 		last_name: "Customer",
 		email: "original@example.com",
+		addresses: [
+			{
+				id: "address-1",
+				type: "billing",
+				is_default: true,
+				first_name: "Original",
+				last_name: "Customer",
+				company: null,
+				address_line_1: "123 Main St",
+				address_line_2: "Unit 4",
+				city: "Vancouver",
+				state: "British Columbia",
+				country_id: 0,
+				zip: "V5K 0A1",
+				phone: null,
+				created_at: "2026-05-23T00:00:00.000Z",
+				vwCountry: {
+					country_id: 0,
+					code: "CA",
+					title: "Canada",
+				},
+			},
+		],
 	},
 } as any;
 
@@ -178,6 +201,96 @@ describe("PayHQ", () => {
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
 
+	it("defaults billing address fields from the first customer address", async () => {
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		render(
+			<PayHQSubmitHarness
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		expect(screen.getByLabelText(/address 1/i)).toHaveValue("123 Main St");
+		expect(screen.getByLabelText(/address 2/i)).toHaveValue("Unit 4");
+		expect(screen.getByLabelText(/city/i)).toHaveValue("Vancouver");
+		expect(screen.getByLabelText(/postal code/i)).toHaveValue("V5K 0A1");
+		expect(screen.getByLabelText(/select country/i)).toHaveValue("CA");
+		expect(screen.getByLabelText(/province\/state/i)).toHaveValue("British Columbia");
+	});
+
+	it("updates province/state options when the selected country changes", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		render(
+			<PayHQSubmitHarness
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		const countryField = screen.getByLabelText(/select country/i);
+		const provinceField = screen.getByLabelText(/province\/state/i);
+
+		expect(screen.getByRole("option", { name: "British Columbia" })).toBeInTheDocument();
+		expect(screen.queryByRole("option", { name: "California" })).not.toBeInTheDocument();
+
+		await user.selectOptions(countryField, "US");
+
+		expect(countryField).toHaveValue("US");
+		expect(provinceField).toHaveValue("");
+		expect(screen.getByRole("option", { name: "California" })).toBeInTheDocument();
+		expect(screen.queryByRole("option", { name: "British Columbia" })).not.toBeInTheDocument();
+	});
+
+	it("shows required field errors and does not request payment when required address details are empty", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		render(
+			<PayHQSubmitHarness
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		await user.clear(screen.getByLabelText(/address 1/i));
+		await user.clear(screen.getByLabelText(/city/i));
+		await user.clear(screen.getByLabelText(/postal code/i));
+		await user.selectOptions(screen.getByLabelText(/select country/i), "");
+		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+
+		expect(await screen.findByText("Address 1 is required")).toBeInTheDocument();
+		expect(screen.getByText("City is required")).toBeInTheDocument();
+		expect(screen.getByText("Country is required")).toBeInTheDocument();
+		expect(screen.getByText("Postal code is required")).toBeInTheDocument();
+		expect(screen.getByText("Province/State is required")).toBeInTheDocument();
+		expect(getPaymentToken).not.toHaveBeenCalled();
+		expect(global.fetch).not.toHaveBeenCalled();
+	});
+
 	it("sends the cardholder contact details to the Payfirma sale endpoint", async () => {
 		const user = userEvent.setup();
 		const getPaymentToken = jest.fn().mockResolvedValue({
@@ -206,6 +319,14 @@ describe("PayHQ", () => {
 		await user.type(screen.getByLabelText(/last name/i), " Lovelace ");
 		await user.clear(emailField);
 		await user.type(emailField, " ada@example.com ");
+		await user.clear(screen.getByLabelText(/address 1/i));
+		await user.type(screen.getByLabelText(/address 1/i), " 456 Oak Ave ");
+		await user.clear(screen.getByLabelText(/address 2/i));
+		await user.type(screen.getByLabelText(/address 2/i), " Suite 12 ");
+		await user.clear(screen.getByLabelText(/city/i));
+		await user.type(screen.getByLabelText(/city/i), " Victoria ");
+		await user.clear(screen.getByLabelText(/postal code/i));
+		await user.type(screen.getByLabelText(/postal code/i), " V8W 1A1 ");
 		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
 
 		await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
@@ -222,6 +343,12 @@ describe("PayHQ", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				email: "ada@example.com",
+				address1: "456 Oak Ave",
+				address2: "Suite 12",
+				city: "Victoria",
+				country: "Canada",
+				postalCode: "V8W 1A1",
+				province: "British Columbia",
 				paymentToken: "payment-token-1",
 				items,
 				total,
@@ -351,5 +478,30 @@ describe("PayHQ", () => {
 		expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
 	});
 
+	it("shows processing guidance when the order is already paid", () => {
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken: jest.fn(),
+		}));
 
+		mockState = {
+			app: {
+				order: {...order, paid_at: "2026-05-23T12:00:00.000Z"},
+				items,
+				total,
+			},
+		};
+
+		render(
+			<PayHQ
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Your payment was approved. Please wait while we process your order.",
+			),
+		).toBeInTheDocument();
+	});
 });
