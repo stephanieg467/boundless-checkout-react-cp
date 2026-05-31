@@ -279,7 +279,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
 
     const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
-    
+
     expect(checkoutArg.order.tip).toBe("15");
     expect(checkoutArg.order.total_price).toBe("115");
     expect(checkoutArg.total.price).toBe("115");
