@@ -1,5 +1,6 @@
 "use client";
 
+import {PaymentValidationError} from "../../../lib/paymentOutcome";
 import React, {
 	forwardRef,
 	useCallback,
@@ -447,7 +448,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 		if (Object.keys(paymentFieldErrors).length > 0) {
 			setRequiredPaymentFieldErrors(paymentFieldErrors);
-			throw new Error("Required payment fields are missing.");
+			throw new PaymentValidationError("Required payment fields are missing.");
 		}
 
 		setRequiredPaymentFieldErrors({});

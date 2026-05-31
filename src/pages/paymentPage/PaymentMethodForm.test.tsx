@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {TPublishingStatus} from "boundless-api-client";
 import PaymentMethodForm from "./PaymentMethodForm";
 import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD} from "../../constants";
+import {PaymentValidationError} from "../../lib/paymentOutcome";
 
 const mockDispatch = jest.fn();
 let mockState: any = {};
@@ -256,5 +257,29 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockSubmitPayment).not.toHaveBeenCalled();
     expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+  });
+
+  it("drops PayHQ validation errors silently", async () => {
+    const user = userEvent.setup();
+    mockSubmitPayment.mockRejectedValue(new PaymentValidationError("Required payment fields are missing."));
+
+    setup();
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("renders server error alert for unhandled PayHQ submit errors", async () => {
+    const user = userEvent.setup();
+    mockSubmitPayment.mockRejectedValue(new Error("Card declined"));
+
+    setup();
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Card declined");
   });
 });

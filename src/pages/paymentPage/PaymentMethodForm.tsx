@@ -1,4 +1,4 @@
-import {completeCreditCardPaymentOutcome} from "../../lib/paymentOutcome";
+import {completeCreditCardPaymentOutcome, PaymentValidationError} from "../../lib/paymentOutcome";
 import {useCallback, useRef, useState} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
@@ -155,7 +155,8 @@ export default function PaymentMethodForm({
 						handlePaymentApproved(paidAt, values.tip);
 						await formikProps.submitForm();
 					} catch (error) {
-						if (error instanceof Error && error.message === "Required payment contact fields are missing.") {
+						console.error("[PaymentMethodForm] submitCreditCardCheckout failed", error);
+						if (error instanceof PaymentValidationError) {
 							return;
 						}
 

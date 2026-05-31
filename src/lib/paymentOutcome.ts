@@ -30,6 +30,13 @@ export class PaymentOutcomeError extends Error {
   }
 }
 
+export class PaymentValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PaymentValidationError";
+  }
+}
+
 const ZERO_TIP = "0.00";
 
 const parseAmount = (value: string | null | undefined): number => {
