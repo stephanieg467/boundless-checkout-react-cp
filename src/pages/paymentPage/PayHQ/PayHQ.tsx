@@ -521,13 +521,13 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				);
 			}
 
+			paymentApprovedRef.current = true;
+			setSuccessMessage("Payment approved.");
+
 			const paidAtResult: string = data.paidAt ?? (() => {
 				console.warn("[PayHQ] /api/payfirmaSale returned success without paidAt; using client timestamp as fallback.");
 				return new Date().toISOString();
 			})();
-
-			paymentApprovedRef.current = true;
-			setSuccessMessage("Payment approved.");
 
 			return {paidAt: paidAtResult};
 		} catch (error) {
