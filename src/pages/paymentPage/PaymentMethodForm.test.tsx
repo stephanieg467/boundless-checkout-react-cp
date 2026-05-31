@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {TPublishingStatus} from "boundless-api-client";
 import PaymentMethodForm from "./PaymentMethodForm";
 import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD} from "../../constants";
-import {PaymentValidationError} from "../../lib/paymentOutcome";
+import {PaymentValidationError, PaymentOutcomeError, completeCreditCardPaymentOutcome} from "../../lib/paymentOutcome";
 
 const mockDispatch = jest.fn();
 let mockState: any = {};
@@ -19,6 +19,14 @@ jest.mock("../../hooks/redux", () => ({
   useAppSelector: (selector: any) => selector(mockState),
   useAppDispatch: () => mockDispatch,
 }));
+
+jest.mock("../../lib/paymentOutcome", () => {
+  const original = jest.requireActual("../../lib/paymentOutcome");
+  return {
+    ...original,
+    completeCreditCardPaymentOutcome: jest.fn(original.completeCreditCardPaymentOutcome),
+  };
+});
 
 jest.mock("../../hooks/checkoutData", () => ({
   getCheckoutData: jest.fn(() => mockCheckoutData),
@@ -358,6 +366,40 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
       expect(await screen.findByRole("alert")).toHaveTextContent(
         "Unable to complete your order. Please refresh and try again."
       );
+      expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
+
+  it("handles PaymentOutcomeError with a specific support error message", async () => {
+    const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    // Force checkout completion logic to throw PaymentOutcomeError
+    (completeCreditCardPaymentOutcome as jest.Mock).mockImplementationOnce(() => {
+      throw new PaymentOutcomeError("tip mismatch");
+    });
+
+    try {
+      setup({
+        order: { ...makeOrder(), paid_at: "2026-05-23T12:00:00.000Z" }, // Payment already approved
+        paymentMethods: [creditCardMethod],
+      });
+
+      // Submit form
+      const button = screen.getByRole("button", {name: /^complete order$/i});
+      await user.click(button);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[useSavePaymentMethod] PaymentOutcomeError during checkout completion",
+        expect.any(PaymentOutcomeError)
+      );
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("Order data error: tip mismatch Please contact support.");
+      expect(alert).not.toHaveTextContent("Please try again.");
+
       expect(mockOnThankYouPage).not.toHaveBeenCalled();
     } finally {
       consoleSpy.mockRestore();

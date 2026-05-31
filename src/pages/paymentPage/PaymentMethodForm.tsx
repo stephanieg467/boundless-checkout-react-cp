@@ -1,6 +1,7 @@
 import {
 	completeCreditCardPaymentOutcome,
 	parseLenientAmount,
+	PaymentOutcomeError,
 	PaymentValidationError,
 } from "../../lib/paymentOutcome";
 import {useCallback, useRef, useState} from "react";
@@ -501,10 +502,17 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 				items: items ?? [],
 			});
 		} catch (error) {
-			console.error("Checkout completion failed:", error);
-			setStatus({
-				serverError: "Unable to complete your order. Please try again.",
-			});
+			if (error instanceof PaymentOutcomeError) {
+				console.error("[useSavePaymentMethod] PaymentOutcomeError during checkout completion", error);
+				setStatus({
+					serverError: `Order data error: ${error.message} Please contact support.`,
+				});
+			} else {
+				console.error("[useSavePaymentMethod] Checkout completion failed", error);
+				setStatus({
+					serverError: "Unable to complete your order. Please try again.",
+				});
+			}
 		} finally {
 			setSubmitting(false);
 		}
