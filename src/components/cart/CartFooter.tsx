@@ -26,7 +26,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const totalTaxAmount = total
 		? parseLenientAmount(total.tax?.totalTaxAmount)
 		: parseLenientAmount(cart?.taxAmount);
-	const tipAmount = parseLenientAmount(order?.tip);
+	const tipAmount = Math.max(0, parseLenientAmount(order?.tip));
 	const fallbackTotalPrice = total
 		? itemsSubTotal + servicesSubTotal + totalTaxAmount + tipAmount
 		: parseLenientAmount(cart?.total?.total) + totalTaxAmount + tipAmount;

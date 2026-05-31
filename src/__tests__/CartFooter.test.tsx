@@ -113,4 +113,21 @@ describe("CartFooter", () => {
 		expect(screen.getByText("$5.00")).toBeInTheDocument();
 		expect(screen.getByText("$105.00")).toBeInTheDocument();
 	});
+
+	it("ignores negative tip values for total calculations", () => {
+		setReduxCheckoutState({
+			order: {tip: "-5.00"},
+			total: {
+				price: undefined,
+				itemsSubTotal: {price: "90.00", qty: 1},
+				servicesSubTotal: {price: "0.00", qty: 0},
+				tax: {totalTaxAmount: "10.00"} as any,
+			},
+		});
+
+		render(<CartFooter open />);
+
+		expect(screen.queryByText("Tip:")).not.toBeInTheDocument();
+		expect(screen.getByText("$100.00")).toBeInTheDocument(); // fallback total: 90 + 0 + 10 + 0 (tip is clamped)
+	});
 });
