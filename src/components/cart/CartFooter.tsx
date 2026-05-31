@@ -9,13 +9,6 @@ import {DELIVERY_ID} from "../../constants";
 import {useAppSelector} from "../../hooks/redux";
 import {parseLenientAmount} from "../../lib/paymentOutcome";
 
-const parsePositiveAmount = (
-	value: string | number | null | undefined,
-): number => {
-	const amount = parseLenientAmount(value);
-	return amount > 0 ? amount : 0;
-};
-
 export default function CartFooter({open}: ICartFooterProps) {
 	const {order: reduxOrder, total: reduxTotal} = useAppSelector(
 		(state) => state.app,
@@ -33,7 +26,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const totalTaxAmount = total
 		? parseLenientAmount(total.tax?.totalTaxAmount)
 		: parseLenientAmount(cart?.taxAmount);
-	const tipAmount = parsePositiveAmount(order?.tip);
+	const tipAmount = parseLenientAmount(order?.tip);
 	const fallbackTotalPrice = total
 		? itemsSubTotal + servicesSubTotal + totalTaxAmount + tipAmount
 		: parseLenientAmount(cart?.total?.total) + totalTaxAmount + tipAmount;
