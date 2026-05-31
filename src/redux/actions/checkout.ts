@@ -1,24 +1,22 @@
-import {AppThunk} from "../store";
+import { AppThunk } from "../store";
 import {
 	setCheckoutData,
 	setCheckoutInited,
 	setGlobalError,
 	TOnCheckoutInited,
 } from "../reducers/app";
-import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
-import {ITotal, TPublishingStatus} from "boundless-api-client";
-import {TCheckoutStep} from "../../types/common";
-import {getCheckoutData} from "../../hooks/checkoutData";
-import {getOrderTaxes} from "../../lib/taxes";
-import {ordersDropShippingItems} from "../../lib/products";
+import { getCartOrRetrieve } from "../../hooks/getCartOrRetrieve";
+import { ITotal, TPublishingStatus } from "boundless-api-client";
+import { TCheckoutStep } from "../../types/common";
+import { getCheckoutData } from "../../hooks/checkoutData";
+import { getOrderTaxes } from "../../lib/taxes";
+import { ordersDropShippingItems } from "../../lib/products";
 
 export const initCheckoutByCart =
-	(config: {
-		onCheckoutInited?: TOnCheckoutInited;
-	}): AppThunk =>
+	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
 	async (dispatch, getState) => {
-		const {cartId, order, stepper} = getState().app;
-		const {onCheckoutInited} = config;
+		const { cartId, order, stepper } = getState().app;
+		const { onCheckoutInited } = config;
 
 		const cart = getCartOrRetrieve();
 
@@ -32,7 +30,7 @@ export const initCheckoutByCart =
 				return;
 			}
 
-			const {items, total: cartTotal} = cart;
+			const { items, total: cartTotal } = cart;
 			const hasDropShipItems = ordersDropShippingItems(items).length > 0;
 			const steps: TCheckoutStep[] = [
 				TCheckoutStep.contactInfo,
@@ -57,6 +55,10 @@ export const initCheckoutByCart =
 				},
 			};
 
+			const orderTotal = checkoutDataOrder?.total_price
+				? checkoutDataOrder?.total_price
+				: (Number(cartTotal.total) + Number(totalOrderTaxes)).toFixed(2);
+
 			const checkoutDataOrderService = checkoutDataOrder?.services?.[0] ?? null;
 
 			const initialOrder = {
@@ -66,9 +68,7 @@ export const initCheckoutByCart =
 				paid_at: checkoutDataOrder?.paid_at ?? null,
 				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
 				payment_mark_up: null,
-				total_price: checkoutDataOrder?.total_price
-					? checkoutDataOrder?.total_price
-					: (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
+				total_price: orderTotal,
 				tip: checkoutDataOrder?.tip ?? "0.00",
 				...(checkoutDataOrder?.delivery_time && {
 					delivery_time: checkoutDataOrder.delivery_time,
@@ -87,23 +87,27 @@ export const initCheckoutByCart =
 				created_at: order?.created_at ?? new Date().toISOString(),
 				customer: checkoutDataOrder?.customer ?? undefined,
 				services: checkoutDataOrder?.services ?? [],
-				tax_calculations: checkoutDataOrder?.tax_calculations ? checkoutDataOrder.tax_calculations : {
-					price: totalOrderTaxes,
-					itemsSubTotal: {
-						price:
-							checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
-							cartTotal.total,
-						qty: cartTotal.qty,
-					},
-					discount: checkoutDataOrder?.discount_for_order ?? "0",
-					tax: tax,
-					servicesSubTotal: {
-						price: checkoutDataOrderService
-							? checkoutDataOrderService.total_price
-							: 0,
-						qty: checkoutDataOrderService ? checkoutDataOrderService.qty : 0,
-					},
-				} as unknown as ITotal,
+				tax_calculations: checkoutDataOrder?.tax_calculations
+					? checkoutDataOrder.tax_calculations
+					: ({
+							price: totalOrderTaxes,
+							itemsSubTotal: {
+								price:
+									checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
+									cartTotal.total,
+								qty: cartTotal.qty,
+							},
+							discount: checkoutDataOrder?.discount_for_order ?? "0",
+							tax: tax,
+							servicesSubTotal: {
+								price: checkoutDataOrderService
+									? checkoutDataOrderService.total_price
+									: 0,
+								qty: checkoutDataOrderService
+									? checkoutDataOrderService.qty
+									: 0,
+							},
+						} as unknown as ITotal),
 				custom_attrs: {
 					...checkoutDataOrder?.custom_attrs,
 					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
@@ -114,7 +118,7 @@ export const initCheckoutByCart =
 
 			const data = {
 				items: items,
-				order: {...initialOrder},
+				order: { ...initialOrder },
 				currency: {
 					currency_id: 0,
 					alias: "CAD",
@@ -134,29 +138,33 @@ export const initCheckoutByCart =
 					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
 					steps,
 				},
-				total: checkoutData?.total ? checkoutData.total : {
-					price: checkoutDataOrder?.total_price
-						? checkoutDataOrder?.total_price
-						: (Number(cartTotal.total) + Number(totalOrderTaxes)).toString(),
-					itemsSubTotal: {
-						price:
-							checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
-							cartTotal.total,
-						qty: cartTotal.qty,
-					},
-					discount: checkoutDataOrder?.discount_for_order ?? "0",
-					tax: tax,
-					servicesSubTotal: {
-						price: checkoutDataOrderService
-							? checkoutDataOrderService.total_price
-							: 0,
-						qty: checkoutDataOrderService ? checkoutDataOrderService.qty : 0,
-					},
-				} as unknown as ITotal,
+				total: checkoutData?.total
+					? checkoutData.total
+					: ({
+							price: checkoutDataOrder?.total_price
+								? checkoutDataOrder?.total_price
+								: orderTotal,
+							itemsSubTotal: {
+								price:
+									checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
+									cartTotal.total,
+								qty: cartTotal.qty,
+							},
+							discount: checkoutDataOrder?.discount_for_order ?? "0",
+							tax: tax,
+							servicesSubTotal: {
+								price: checkoutDataOrderService
+									? checkoutDataOrderService.total_price
+									: 0,
+								qty: checkoutDataOrderService
+									? checkoutDataOrderService.qty
+									: 0,
+							},
+						} as unknown as ITotal),
 			};
 			dispatch(setCheckoutData(data));
 
-			dispatch(setCheckoutInited({isInited: true}));
+			dispatch(setCheckoutInited({ isInited: true }));
 
 			if (onCheckoutInited) {
 				onCheckoutInited(data);

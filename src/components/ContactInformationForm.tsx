@@ -1,29 +1,33 @@
-import {useEffect} from "react";
-import {Form, Formik, FormikHelpers, FormikProps} from "formik";
-import {useAppDispatch, useAppSelector} from "../hooks/redux";
+import { useEffect } from "react";
+import { Form, Formik, FormikHelpers, FormikProps } from "formik";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import dayjs from "dayjs";
-import {fieldAttrs} from "../lib/formUtils";
+import { fieldAttrs } from "../lib/formUtils";
 import ExtraErrors from "./ExtraErrors";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {addFilledStep, setOrdersCustomer, setCurrentStep} from "../redux/reducers/app";
+import {
+	addFilledStep,
+	setOrdersCustomer,
+	setCurrentStep,
+} from "../redux/reducers/app";
 import Typography from "@mui/material/Typography";
 import clsx from "clsx";
-import {useTranslation} from "react-i18next";
-import {v4} from "uuid";
+import { useTranslation } from "react-i18next";
+import { v4 } from "uuid";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../hooks/checkoutData";
-import {IOrderWithCustmAttr} from "../types/Order";
-import {PhoneInput} from "./PhoneInput";
-import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
-import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
-import {DatePicker} from "@mui/x-date-pickers/DatePicker";
-import {ICheckoutStepper, TCheckoutStep} from "../types/common";
+import { IOrderWithCustmAttr } from "../types/Order";
+import { PhoneInput } from "./PhoneInput";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { ICheckoutStepper, TCheckoutStep } from "../types/common";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -69,7 +73,7 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 	} else if (values.dob) {
 		const birthDate = dayjs(values.dob);
 		const today = dayjs();
-		
+
 		// Check if the date is valid
 		if (!birthDate.isValid()) {
 			errors.dob = "Please enter a valid date";
@@ -85,16 +89,16 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 };
 
 function ContactFormView() {
-	const {order, stepper} = useAppSelector((state) => state.app);
-	const {t} = useTranslation();
+	const { order, stepper } = useAppSelector((state) => state.app);
+	const { t } = useTranslation();
 
 	useEffect(() => {
 		document.title = t("contactForm.pageTitle");
 	}, []); //eslint-disable-line
 
 	const fieldsList = getFieldsList();
-	const {onSubmit} = useSaveContactInfo();
-	const excludedFields = fieldsList.map(({type}) => type);
+	const { onSubmit } = useSaveContactInfo();
+	const excludedFields = fieldsList.map(({ type }) => type);
 
 	return (
 		<Formik<IContactInformationFormValues>
@@ -116,12 +120,12 @@ function ContactFormView() {
 							errors={formikProps.errors}
 						/>
 					)}
-					<Typography variant="h5" sx={{mb: 2}}>
+					<Typography variant="h5" sx={{ mb: 2 }}>
 						{t("contactForm.pageHeader")}
 					</Typography>
-					<Grid container spacing={{xs: 2, md: 3}}>
-						{fieldsList.map(({type, required}, i) => (
-							<Grid size={{xs: 12, md: 6}} key={i}>
+					<Grid container spacing={{ xs: 2, md: 3 }}>
+						{fieldsList.map(({ type, required }, i) => (
+							<Grid size={{ xs: 12, md: 6 }} key={i}>
 								{type === "email" && (
 									<TextField
 										label={t("contactForm.email")}
@@ -131,7 +135,7 @@ function ContactFormView() {
 										fullWidth
 										{...fieldAttrs<IContactInformationFormValues>(
 											"email",
-											formikProps
+											formikProps,
 										)}
 									/>
 								)}
@@ -142,7 +146,7 @@ function ContactFormView() {
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"phone",
-											formikProps
+											formikProps,
 										)}
 										fullWidth
 										InputProps={{
@@ -157,7 +161,7 @@ function ContactFormView() {
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"first_name",
-											formikProps
+											formikProps,
 										)}
 										fullWidth
 									/>
@@ -169,7 +173,7 @@ function ContactFormView() {
 										required={required}
 										{...fieldAttrs<IContactInformationFormValues>(
 											"last_name",
-											formikProps
+											formikProps,
 										)}
 										fullWidth
 									/>
@@ -185,7 +189,10 @@ function ContactFormView() {
 											}
 											onChange={(date) => {
 												if (date) {
-													formikProps.setFieldValue("dob", date.format("YYYY-MM-DD"));
+													formikProps.setFieldValue(
+														"dob",
+														date.format("YYYY-MM-DD"),
+													);
 												} else {
 													formikProps.setFieldValue("dob", null);
 												}
@@ -199,17 +206,22 @@ function ContactFormView() {
 												textField: {
 													required: required,
 													fullWidth: true,
-													error: Boolean(formikProps.touched.dob && formikProps.errors.dob),
-													helperText: formikProps.touched.dob && formikProps.errors.dob ? formikProps.errors.dob : "",
+													error: Boolean(
+														formikProps.touched.dob && formikProps.errors.dob,
+													),
+													helperText:
+														formikProps.touched.dob && formikProps.errors.dob
+															? formikProps.errors.dob
+															: "",
 													name: "dob",
-												}
+												},
 											}}
 										/>
 									</LocalizationProvider>
 								)}
 							</Grid>
 						))}
-						<Grid size={{xs: 12}} sx={{textAlign: "right"}}>
+						<Grid size={{ xs: 12 }} sx={{ textAlign: "right" }}>
 							<NextStepBtn
 								stepper={stepper!}
 								isSubmitting={formikProps.isSubmitting}
@@ -229,7 +241,7 @@ const NextStepBtn = ({
 	stepper: ICheckoutStepper;
 	isSubmitting: boolean;
 }) => {
-	const {t} = useTranslation();
+	const { t } = useTranslation();
 
 	if (stepper.steps.includes(TCheckoutStep.shippingAddress)) {
 		return (
@@ -261,15 +273,15 @@ const NextStepBtn = ({
 };
 
 const useSaveContactInfo = () => {
-	const {order, total} = getCheckoutData() || {};
+	const { order, total } = getCheckoutData() || {};
 
 	const dispatch = useAppDispatch();
 
 	const onSubmit = (
 		values: IContactInformationFormValues,
-		{setSubmitting, setErrors}: FormikHelpers<IContactInformationFormValues>
+		{ setSubmitting }: FormikHelpers<IContactInformationFormValues>,
 	) => {
-		const {email, first_name, last_name, phone, dob} = values;
+		const { email, first_name, last_name, phone, dob } = values;
 
 		const customer = {
 			id: v4(),
@@ -280,18 +292,20 @@ const useSaveContactInfo = () => {
 			phone: phone ?? null,
 			dob: dob ?? "",
 			custom_attrs: null,
-			addresses: [],
+			addresses: order?.customer?.addresses ?? [],
 		};
 
 		setLocalStorageCheckoutData({
-			order: {
-				...(order as IOrderWithCustmAttr),
-				customer: customer,
-			},
+			order: order
+				? {
+						...order,
+						customer: customer,
+					}
+				: undefined,
 			total: total,
 		});
 		dispatch(setOrdersCustomer(customer));
-		dispatch(addFilledStep({step: TCheckoutStep.contactInfo}));
+		dispatch(addFilledStep({ step: TCheckoutStep.contactInfo }));
 
 		setSubmitting(false);
 
@@ -316,7 +330,7 @@ const getFieldsList = () => {
 			//@ts-ignore
 			show: true,
 		}))
-		.filter(({show}) => show);
+		.filter(({ show }) => show);
 
 	//required fields should be first:
 	fields.sort((a, b) => {
@@ -351,7 +365,7 @@ const getFieldsList = () => {
 };
 
 const getInitialValues = (
-	order: IOrderWithCustmAttr
+	order: IOrderWithCustmAttr,
 ): IContactInformationFormValues => {
 	const customer = order.customer;
 
