@@ -81,7 +81,9 @@ export default function PaymentMethodForm({
 	paymentPage: IPaymentPageData;
 }) {
 	const checkoutData = getCheckoutData();
-	const {order, items, total} = checkoutData || {};
+	const order = checkoutData?.order;
+	const items = checkoutData?.items;
+	const total = checkoutData?.total;
 	const {onSubmit} = useSavePaymentMethod(paymentPage);
 	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
@@ -414,7 +416,7 @@ const PaymentMethods = ({
 };
 
 const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
-	const {order, total} = useAppSelector((state) => state.app);
+	const {order} = useAppSelector((state) => state.app);
 	const {onThankYouPage} = useCheckoutConfig();
 	const dispatch = useAppDispatch();
 
@@ -422,12 +424,10 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		values: IPaymentMethodFormValues,
 		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
 	) => {
-		const checkoutData = getCheckoutData() || {};
-		const {
-			order: checkoutDataOrder,
-			total: checkoutDataTotal,
-			items,
-		} = checkoutData;
+		const checkoutData = getCheckoutData();
+		const checkoutDataOrder = checkoutData?.order;
+		const checkoutDataTotal = checkoutData?.total;
+		const items = checkoutData?.items;
 
 		if (!order || !checkoutDataOrder || !checkoutDataTotal) {
 			console.error("[useSavePaymentMethod] Missing checkout session data at submission", {
