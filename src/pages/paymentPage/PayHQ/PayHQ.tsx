@@ -456,8 +456,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		setIsSubmitting(true);
 		setSuccessMessage(null);
 
-		let paidAtResult: string | undefined;
-
 		try {
 			const tokenResponse = await payment.getPaymentToken();
 			const paymentToken = tokenResponse.payment_token;
@@ -523,7 +521,15 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				);
 			}
 
-			paidAtResult = data.paidAt ?? new Date().toISOString();
+			const paidAtResult: string = data.paidAt ?? (() => {
+				console.warn("[PayHQ] /api/payfirmaSale returned success without paidAt; using client timestamp as fallback.");
+				return new Date().toISOString();
+			})();
+
+			paymentApprovedRef.current = true;
+			setSuccessMessage("Payment approved.");
+
+			return {paidAt: paidAtResult};
 		} catch (error) {
 			console.error(
 				"[PayHQ] Payment failed",
@@ -541,11 +547,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			submitInFlightRef.current = false;
 			setIsSubmitting(false);
 		}
-
-		paymentApprovedRef.current = true;
-		setSuccessMessage("Payment approved.");
-
-		return {paidAt: paidAtResult};
 	}, [
 		payment,
 		isSubmitting,
