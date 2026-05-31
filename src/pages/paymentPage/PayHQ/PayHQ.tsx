@@ -506,8 +506,8 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					const errorData = await response.json();
 					if (typeof errorData.message === "string")
 						message = errorData.message;
-				} catch {
-					// Keep generic message.
+				} catch (parseError) {
+					console.error("[PayHQ] Failed to parse error response body", parseError);
 				}
 				throw new Error(message);
 			}
