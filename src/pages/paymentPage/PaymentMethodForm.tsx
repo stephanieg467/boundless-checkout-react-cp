@@ -313,7 +313,7 @@ const PaymentMethods = ({
 	setIsPaymentApproved: (isApproved: boolean) => void;
 	order: IOrderWithCustmAttr | undefined;
 }) => {
-	const orderHasShipping = hasShipping(order as IOrderWithCustmAttr);
+	const orderHasShipping = order ? hasShipping(order as IOrderWithCustmAttr) : false;
 	const orderPaid = Boolean(order?.paid_at);
 
 	return (
@@ -419,7 +419,16 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 	) => {
 		const {order: checkoutDataOrder, items} = getCheckoutData() || {};
 
-		if (!order || !checkoutDataOrder || !total) return;
+		if (!order || !checkoutDataOrder || !total) {
+			console.error("[useSavePaymentMethod] Missing checkout session data at submission", {
+				hasOrder: Boolean(order),
+				hasCheckoutDataOrder: Boolean(checkoutDataOrder),
+				hasTotal: Boolean(total),
+			});
+			setStatus({serverError: "Unable to complete your order. Please refresh and try again."});
+			setSubmitting(false);
+			return;
+		}
 
 		try {
 			const {payment_method_id, tip, delivery_time} = values;

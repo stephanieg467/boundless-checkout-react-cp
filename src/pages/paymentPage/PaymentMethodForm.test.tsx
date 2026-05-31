@@ -307,4 +307,31 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(button).not.toBeDisabled();
     expect(screen.queryByLabelText("Loading…")).not.toBeInTheDocument();
   });
+
+  it("renders error banner when session data is missing on submit", async () => {
+    const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    setup({
+      order: null,
+      paymentMethods: [payInStoreMethod]
+    });
+
+    const button = screen.getByRole("button", {name: /^complete order$/i});
+    await user.click(button);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[useSavePaymentMethod] Missing checkout session data at submission",
+      {
+        hasOrder: false,
+        hasCheckoutDataOrder: false,
+        hasTotal: true,
+      }
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to complete your order. Please refresh and try again."
+    );
+
+    consoleSpy.mockRestore();
+  });
 });
