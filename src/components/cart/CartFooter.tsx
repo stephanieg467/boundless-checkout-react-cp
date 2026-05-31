@@ -80,7 +80,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 						<span className="bdl-cart__footer-value">
 							{Number(total.itemsSubTotal.price) >= 100 ? (
 								<>
-									<span style={{textDecoration: "line-through", color: "#999"}}>
+									<span className="strikethrough" style={{textDecoration: "line-through", color: "#999"}}>
 										{formatCurrency(isDelivery ? "4.00" : "0.00")}
 									</span>
 									<span style={{color: "#4a7c4d", fontWeight: "bold", marginLeft: "8px"}}>

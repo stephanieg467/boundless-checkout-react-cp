@@ -157,7 +157,7 @@ describe("CartFooter", () => {
 		expect(screen.getByText(/Shipping/i)).toBeInTheDocument();
 		expect(screen.getByText("FREE")).toBeInTheDocument();
 		const originalPrice = screen.getByText("$0.00");
-		expect(originalPrice).toHaveStyle({textDecoration: "line-through"});
+		expect(originalPrice).toHaveClass("strikethrough");
 	});
 
 	it("shows the regular shipping price when itemsSubTotal < 100", () => {
