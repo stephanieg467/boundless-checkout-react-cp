@@ -7,16 +7,12 @@ import {getCheckoutData} from "../../hooks/checkoutData";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
 import {DELIVERY_ID} from "../../constants";
 import {useAppSelector} from "../../hooks/redux";
-
-const parseAmount = (value: string | number | null | undefined): number => {
-	const amount = Number(value ?? 0);
-	return Number.isFinite(amount) ? amount : 0;
-};
+import {parseLenientAmount} from "../../lib/paymentOutcome";
 
 const parsePositiveAmount = (
 	value: string | number | null | undefined,
 ): number => {
-	const amount = parseAmount(value);
+	const amount = parseLenientAmount(value);
 	return amount > 0 ? amount : 0;
 };
 
@@ -32,18 +28,18 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const {formatCurrency} = useFormatCurrency();
 	const {t} = useTranslation();
 
-	const itemsSubTotal = parseAmount(total?.itemsSubTotal?.price);
-	const servicesSubTotal = parseAmount(total?.servicesSubTotal?.price);
+	const itemsSubTotal = parseLenientAmount(total?.itemsSubTotal?.price);
+	const servicesSubTotal = parseLenientAmount(total?.servicesSubTotal?.price);
 	const totalTaxAmount = total
-		? parseAmount(total.tax?.totalTaxAmount)
-		: parseAmount(cart?.taxAmount);
+		? parseLenientAmount(total.tax?.totalTaxAmount)
+		: parseLenientAmount(cart?.taxAmount);
 	const tipAmount = parsePositiveAmount(order?.tip);
 	const fallbackTotalPrice = total
 		? itemsSubTotal + servicesSubTotal + totalTaxAmount + tipAmount
-		: parseAmount(cart?.total?.total) + totalTaxAmount + tipAmount;
+		: parseLenientAmount(cart?.total?.total) + totalTaxAmount + tipAmount;
 	const totalPrice =
 		total?.price !== undefined && total.price !== null && total.price !== ""
-			? parseAmount(total.price)
+			? parseLenientAmount(total.price)
 			: fallbackTotalPrice;
 
 	const getDiscountAmount = () => {

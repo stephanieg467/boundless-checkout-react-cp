@@ -3,6 +3,7 @@ import {
   completeCreditCardPaymentOutcome,
   PaymentOutcomeError,
   recordCreditCardPaymentOutcome,
+  parseLenientAmount,
 } from "../lib/paymentOutcome";
 import {IOrderWithCustmAttr} from "../types/Order";
 import {ITotal, TPublishingStatus} from "boundless-api-client";
@@ -118,6 +119,24 @@ describe("PaymentOutcome", () => {
       expect(() => applyCreditCardTipToSession(session, "5,00")).toThrow(PaymentOutcomeError);
       expect(() => applyCreditCardTipToSession(session, "Infinity")).toThrow(PaymentOutcomeError);
       expect(() => applyCreditCardTipToSession(session, "NaN")).toThrow(PaymentOutcomeError);
+    });
+  });
+
+  describe("parseLenientAmount", () => {
+    it("coerces invalid or empty inputs to 0", () => {
+      expect(parseLenientAmount(null)).toBe(0);
+      expect(parseLenientAmount(undefined)).toBe(0);
+      expect(parseLenientAmount("")).toBe(0);
+      expect(parseLenientAmount("not-a-number")).toBe(0);
+      expect(parseLenientAmount("NaN")).toBe(0);
+      expect(parseLenientAmount("Infinity")).toBe(0);
+    });
+
+    it("parses valid numeric values", () => {
+      expect(parseLenientAmount("0")).toBe(0);
+      expect(parseLenientAmount("5.50")).toBe(5.5);
+      expect(parseLenientAmount("-3.14")).toBe(-3.14);
+      expect(parseLenientAmount(42)).toBe(42);
     });
   });
 

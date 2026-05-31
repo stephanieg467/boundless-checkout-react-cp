@@ -1,4 +1,8 @@
-import {completeCreditCardPaymentOutcome, PaymentValidationError} from "../../lib/paymentOutcome";
+import {
+	completeCreditCardPaymentOutcome,
+	parseLenientAmount,
+	PaymentValidationError,
+} from "../../lib/paymentOutcome";
 import {useCallback, useRef, useState} from "react";
 import {Form, Formik, FormikHelpers, FormikProps} from "formik";
 import {
@@ -457,7 +461,7 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 				updatedOrder = {
 					...checkoutDataOrder,
 					paymentMethod: selectedPaymentMethod,
-					tip: tip ? parseFloat(tip).toString() : "0",
+					tip: tip ? parseLenientAmount(tip).toString() : "0",
 					payment_method_id: payment_method_id,
 					...(delivery_time ? {delivery_time} : {}),
 					custom_attrs: {
@@ -470,12 +474,12 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 					updatedOrder = {
 						...updatedOrder,
 						total_price: (
-							(Number(checkoutDataOrder.total_price) || 0) + parseFloat(tip)
+							parseLenientAmount(checkoutDataOrder.total_price) + parseLenientAmount(tip)
 						).toString(),
 					};
 					updatedTotal = {
 						...total,
-						price: ((Number(total?.price) || 0) + parseFloat(tip)).toString(),
+						price: (parseLenientAmount(total?.price) + parseLenientAmount(tip)).toString(),
 					};
 				}
 			}
