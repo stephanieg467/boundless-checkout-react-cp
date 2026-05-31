@@ -599,7 +599,7 @@ describe("PayHQ", () => {
 			const submitResult = payHQRef.current!.submitPayment();
 			await expect(submitResult).rejects.toThrow("Missing payment token");
 		});
-		
+
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
 });

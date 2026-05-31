@@ -156,7 +156,7 @@ describe("CartFooter", () => {
 
 		expect(screen.getByText(/Shipping/i)).toBeInTheDocument();
 		expect(screen.getByText("FREE")).toBeInTheDocument();
-		const originalPrice = screen.getByText("$0.00");
+		const originalPrice = screen.getByText("$4.00");
 		expect(originalPrice).toHaveClass("strikethrough");
 	});
 

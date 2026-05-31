@@ -81,7 +81,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 							{Number(total.itemsSubTotal.price) >= 100 ? (
 								<>
 									<span className="strikethrough" style={{textDecoration: "line-through", color: "#999"}}>
-										{formatCurrency(isDelivery ? "4.00" : "0.00")}
+										{formatCurrency(total.servicesSubTotal.price)}
 									</span>
 									<span style={{color: "#4a7c4d", fontWeight: "bold", marginLeft: "8px"}}>
 										FREE
