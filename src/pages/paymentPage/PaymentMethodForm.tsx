@@ -175,10 +175,11 @@ export default function PaymentMethodForm({
 
 						await formikProps.submitForm();
 					} catch (error) {
-						console.error("[PaymentMethodForm] submitCreditCardCheckout failed", error);
 						if (error instanceof PaymentValidationError) {
 							return;
 						}
+
+						console.error("[PaymentMethodForm] submitCreditCardCheckout failed", error);
 
 						if (!formikProps.status?.serverError) {
 							formikProps.setStatus({

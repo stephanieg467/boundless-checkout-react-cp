@@ -334,16 +334,24 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(checkoutArg.total.price).toBe("115");
   });
 
-  it("drops PayHQ validation errors silently", async () => {
+  it("drops PayHQ validation errors silently without logging an error", async () => {
     const user = userEvent.setup();
-    mockSubmitPayment.mockRejectedValue(new PaymentValidationError("Required payment fields are missing."));
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    mockSubmitPayment.mockRejectedValue(
+      new PaymentValidationError("Required payment fields are missing."),
+    );
 
-    setup();
+    try {
+      setup();
 
-    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(consoleSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("renders server error alert for unhandled PayHQ submit errors", async () => {
