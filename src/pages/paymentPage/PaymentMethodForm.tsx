@@ -152,7 +152,20 @@ export default function PaymentMethodForm({
 
 					try {
 						const {paidAt} = await payHQRef.current.submitPayment();
-						handlePaymentApproved(paidAt, values.tip);
+
+						// Payment approved — card has been charged. Failures here need distinct handling.
+						try {
+							handlePaymentApproved(paidAt, values.tip);
+						} catch (recordError) {
+							console.error("[PaymentMethodForm] Failed to record approved payment", recordError);
+							formikProps.setStatus({
+								serverError:
+									"Your payment was approved but we could not update your order. Please contact support.",
+							});
+							setIsPayHQSubmitting(false);
+							return;
+						}
+
 						await formikProps.submitForm();
 					} catch (error) {
 						console.error("[PaymentMethodForm] submitCreditCardCheckout failed", error);

@@ -282,4 +282,29 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
     expect(await screen.findByRole("alert")).toHaveTextContent("Card declined");
   });
+
+  it("handles failure to record approved payment gracefully", async () => {
+    const user = userEvent.setup();
+    mockRecordApprovedPayment.mockImplementation(() => {
+      throw new Error("Local storage full");
+    });
+
+    setup();
+
+    const button = screen.getByRole("button", {name: /^pay and complete order$/i});
+    await user.click(button);
+
+    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+    
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Your payment was approved but we could not update your order. Please contact support."
+    );
+
+    // Form submission (onThankYouPage) should not have been called
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+
+    // Button should be re-enabled
+    expect(button).not.toBeDisabled();
+    expect(screen.queryByLabelText("Loading…")).not.toBeInTheDocument();
+  });
 });
