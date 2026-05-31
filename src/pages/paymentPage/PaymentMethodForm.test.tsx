@@ -295,7 +295,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     await user.click(button);
 
     await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
-    
+
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Your payment was approved but we could not update your order. Please contact support."
     );
