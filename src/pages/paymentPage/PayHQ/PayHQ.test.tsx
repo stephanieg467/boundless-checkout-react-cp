@@ -488,6 +488,53 @@ describe("PayHQ", () => {
 		expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
 	});
 
+	it("logs parse errors from non-OK Payfirma responses and reports the generic failure", async () => {
+		const parseError = new Error("invalid json");
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+		const onPaymentFailed = jest.fn();
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		global.fetch = jest.fn().mockResolvedValue({
+			ok: false,
+			json: jest.fn().mockRejectedValue(parseError),
+		}) as jest.Mock;
+
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
+
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow(
+					"Payment could not be completed. Please try again or contact the store.",
+				);
+			});
+
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Failed to parse error response body",
+				parseError,
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith(
+				"Payment could not be completed. Please try again or contact the store.",
+			);
+		} finally {
+			consoleSpy.mockRestore();
+		}
+	});
+
 	it("does not tokenize or submit a sale when persisted checkout session data is missing", async () => {
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
