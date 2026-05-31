@@ -24,6 +24,7 @@ import { Theme } from "@mui/material/styles";
 import { Country, State, type ICountry, type IState } from "country-state-city";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
 import { ICheckoutData } from "../../../types/Order";
+import { getCheckoutData } from "../../../hooks/checkoutData";
 import { useAppSelector } from "../../../hooks/redux";
 import { useCheckoutConfig } from "../../../contexts/CheckoutConfigContext";
 import { applyCreditCardTipToSession } from "../../../lib/paymentOutcome";
@@ -407,6 +408,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			throw new Error("Payment is already being processed.");
 		}
 
+		const checkoutData = getCheckoutData();
+		if (!checkoutData?.order || !checkoutData.total) {
+			const message =
+				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
+			onPaymentFailed(message);
+			throw new Error(message);
+		}
+
 		const trimmedFirstName = firstName.trim();
 		const trimmedLastName = lastName.trim();
 		const trimmedEmail = email.trim();
@@ -464,8 +473,9 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				throw new Error("Missing payment token");
 			}
 
-			let finalOrder = order;
-			let finalTotal = total;
+			let finalOrder = checkoutData.order;
+			let finalTotal = checkoutData.total;
+			const finalItems = checkoutData.items ?? items;
 
 			if (finalOrder && finalTotal) {
 				const tippedSession = applyCreditCardTipToSession(
@@ -492,7 +502,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					province: trimmedProvince,
 					paymentToken,
 					order: finalOrder,
-					items,
+					items: finalItems,
 					total: finalTotal,
 				}),
 			});
