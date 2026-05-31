@@ -312,26 +312,29 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const user = userEvent.setup();
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-    setup({
-      order: null,
-      paymentMethods: [payInStoreMethod]
-    });
+    try {
+      setup({
+        order: null,
+        paymentMethods: [payInStoreMethod]
+      });
 
-    const button = screen.getByRole("button", {name: /^complete order$/i});
-    await user.click(button);
+      const button = screen.getByRole("button", {name: /^complete order$/i});
+      await user.click(button);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[useSavePaymentMethod] Missing checkout session data at submission",
-      {
-        hasOrder: false,
-        hasCheckoutDataOrder: false,
-        hasTotal: true,
-      }
-    );
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Unable to complete your order. Please refresh and try again."
-    );
-
-    consoleSpy.mockRestore();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[useSavePaymentMethod] Missing checkout session data at submission",
+        {
+          hasOrder: false,
+          hasCheckoutDataOrder: false,
+          hasTotal: true,
+        }
+      );
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Unable to complete your order. Please refresh and try again."
+      );
+      expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 });
