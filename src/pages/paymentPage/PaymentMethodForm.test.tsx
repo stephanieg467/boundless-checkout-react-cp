@@ -259,6 +259,32 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
   });
 
+  it("updates non-credit-card checkout completion data with a tip", async () => {
+    const user = userEvent.setup();
+    const order = makeOrder({
+      payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
+      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+      delivery_time: "10:00 AM",
+      total_price: "100.00",
+    });
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    const tipInput = screen.getByRole("spinbutton", {name: /tip/i});
+    await user.clear(tipInput);
+    await user.type(tipInput, "15.00");
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    
+    expect(checkoutArg.order.tip).toBe("15");
+    expect(checkoutArg.order.total_price).toBe("115");
+    expect(checkoutArg.total.price).toBe("115");
+  });
+
   it("drops PayHQ validation errors silently", async () => {
     const user = userEvent.setup();
     mockSubmitPayment.mockRejectedValue(new PaymentValidationError("Required payment fields are missing."));
