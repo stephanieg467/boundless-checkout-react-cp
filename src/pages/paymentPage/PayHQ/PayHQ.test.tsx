@@ -683,4 +683,88 @@ describe("PayHQ", () => {
 
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
+
+	it("warns and uses a client timestamp when a successful sale omits paidAt", async () => {
+		jest.useFakeTimers().setSystemTime(new Date("2026-05-30T10:00:00.000Z"));
+		const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		global.fetch = jest.fn().mockResolvedValue({
+			ok: true,
+			json: jest.fn().mockResolvedValue({success: true}),
+		}) as jest.Mock;
+
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={jest.fn()}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
+
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+			let result: {paidAt: string} | undefined;
+			await act(async () => {
+				result = await payHQRef.current!.submitPayment();
+			});
+
+			expect(result?.paidAt).toBe("2026-05-30T10:00:00.000Z");
+			expect(warnSpy).toHaveBeenCalledWith(
+				"[PayHQ] /api/payfirmaSale returned success without a valid paidAt; using client timestamp as fallback.",
+			);
+		} finally {
+			warnSpy.mockRestore();
+			jest.useRealTimers();
+		}
+	});
+
+	it("warns and uses a client timestamp when paidAt is not a string", async () => {
+		jest.useFakeTimers().setSystemTime(new Date("2026-05-30T11:00:00.000Z"));
+		const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		global.fetch = jest.fn().mockResolvedValue({
+			ok: true,
+			json: jest.fn().mockResolvedValue({success: true, paidAt: 12345}),
+		}) as jest.Mock;
+
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={jest.fn()}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
+
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+			let result: {paidAt: string} | undefined;
+			await act(async () => {
+				result = await payHQRef.current!.submitPayment();
+			});
+
+			expect(result?.paidAt).toBe("2026-05-30T11:00:00.000Z");
+			expect(warnSpy).toHaveBeenCalledWith(
+				"[PayHQ] /api/payfirmaSale returned success without a valid paidAt; using client timestamp as fallback.",
+			);
+		} finally {
+			warnSpy.mockRestore();
+			jest.useRealTimers();
+		}
+	});
 });

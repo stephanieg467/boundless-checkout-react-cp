@@ -106,6 +106,17 @@ const requiredPaymentFieldErrorMessages: Record<RequiredPaymentField, string> = 
 	province: "Province/State is required",
 };
 
+const resolvePaidAt = (paidAt: unknown): string => {
+	if (typeof paidAt === "string" && paidAt.trim() !== "") {
+		return paidAt;
+	}
+
+	console.warn(
+		"[PayHQ] /api/payfirmaSale returned success without a valid paidAt; using client timestamp as fallback.",
+	);
+	return new Date().toISOString();
+};
+
 const PAYFIRMA_FIELD_HEIGHT = "56px";
 const PAYFIRMA_FIELD_FONT_SIZE = "14px";
 const COUNTRY_IDS_BY_ISO_CODE: Record<string, number[]> = {
@@ -531,7 +542,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 			const data = (await response.json()) as {
 				success?: boolean;
-				paidAt?: string;
+				paidAt?: unknown;
 				message?: string;
 			};
 
@@ -544,10 +555,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			paymentApprovedRef.current = true;
 			setSuccessMessage("Payment approved.");
 
-			const paidAtResult: string = data.paidAt ?? (() => {
-				console.warn("[PayHQ] /api/payfirmaSale returned success without paidAt; using client timestamp as fallback.");
-				return new Date().toISOString();
-			})();
+			const paidAtResult = resolvePaidAt(data.paidAt);
 
 			return {paidAt: paidAtResult};
 		} catch (error) {
