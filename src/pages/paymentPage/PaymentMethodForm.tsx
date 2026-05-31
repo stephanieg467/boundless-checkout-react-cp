@@ -422,13 +422,18 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 		values: IPaymentMethodFormValues,
 		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
 	) => {
-		const {order: checkoutDataOrder, items} = getCheckoutData() || {};
+		const checkoutData = getCheckoutData() || {};
+		const {
+			order: checkoutDataOrder,
+			total: checkoutDataTotal,
+			items,
+		} = checkoutData;
 
-		if (!order || !checkoutDataOrder || !total) {
+		if (!order || !checkoutDataOrder || !checkoutDataTotal) {
 			console.error("[useSavePaymentMethod] Missing checkout session data at submission", {
 				hasOrder: Boolean(order),
 				hasCheckoutDataOrder: Boolean(checkoutDataOrder),
-				hasTotal: Boolean(total),
+				hasTotal: Boolean(checkoutDataTotal),
 			});
 			setStatus({serverError: "Unable to complete your order. Please refresh and try again."});
 			setSubmitting(false);
@@ -443,11 +448,11 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 			);
 
 			let updatedOrder: IOrderWithCustmAttr;
-			let updatedTotal = {...total};
+			let updatedTotal = {...checkoutDataTotal};
 
 			if (payment_method_id === CREDIT_CARD_PAYMENT_METHOD) {
 				const completedSession = completeCreditCardPaymentOutcome(
-					{order: checkoutDataOrder, total},
+					{order: checkoutDataOrder, total: checkoutDataTotal},
 					{
 						paymentMethodId: payment_method_id,
 						paymentMethod: selectedPaymentMethod,
@@ -479,8 +484,8 @@ const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
 						).toString(),
 					};
 					updatedTotal = {
-						...total,
-						price: (parseLenientAmount(total?.price) + parseLenientAmount(tip)).toString(),
+						...checkoutDataTotal,
+						price: (parseLenientAmount(checkoutDataTotal?.price) + parseLenientAmount(tip)).toString(),
 					};
 				}
 			}

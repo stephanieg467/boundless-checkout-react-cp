@@ -188,6 +188,47 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     );
   });
 
+  it("uses the latest persisted tipped total when completing checkout after card approval", async () => {
+    const user = userEvent.setup();
+    const deliveryOrder = makeOrder({
+      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+      delivery_time: "10:00 AM",
+      total_price: "100.00",
+      tip: "0.00",
+    });
+    const tippedTotal = {...total, price: "105.00"};
+
+    mockRecordApprovedPayment.mockImplementation(({paidAt}: {paidAt: string}) => {
+      mockCheckoutData = {
+        ...mockCheckoutData,
+        order: {
+          ...mockCheckoutData.order,
+          paid_at: paidAt,
+          tip: "5",
+          total_price: "105.00",
+        },
+        total: tippedTotal,
+      };
+      return {order: mockCheckoutData.order, total: mockCheckoutData.total};
+    });
+
+    setup({order: deliveryOrder});
+
+    const tipInput = screen.getByRole("spinbutton", {name: /tip/i});
+    await user.clear(tipInput);
+    await user.type(tipInput, "5");
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
+    expect(checkoutArg.order.tip).toBe("5");
+    expect(checkoutArg.order.total_price).toBe("105.00");
+    expect(checkoutArg.total.price).toBe("105.00");
+  });
+
   it("validates delivery time before submitting PayHQ payment", async () => {
     const user = userEvent.setup();
     const deliveryOrder = makeOrder({
