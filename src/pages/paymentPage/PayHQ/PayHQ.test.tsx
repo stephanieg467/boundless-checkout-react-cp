@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TPublishingStatus } from "boundless-api-client";
+import { getCheckoutData } from "../../../hooks/checkoutData";
 import PayHQ, { CreatePaymentInstance, PayHQHandle } from "./PayHQ";
 
 let mockState: any = {};
@@ -498,6 +499,44 @@ describe("PayHQ", () => {
 		const payHQRef = React.createRef<PayHQHandle>();
 
 		mockCheckoutData = null;
+
+		render(
+			<PayHQSubmitHarness
+				payHQRef={payHQRef}
+				onPaymentFailed={onPaymentFailed}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		await act(async () => {
+			const submitResult = payHQRef.current!.submitPayment();
+			await expect(submitResult).rejects.toThrow(
+				"Unable to start payment because checkout session data is missing. Please refresh and try again.",
+			);
+		});
+
+		expect(onPaymentFailed).toHaveBeenCalledWith(
+			"Unable to start payment because checkout session data is missing. Please refresh and try again.",
+		);
+		expect(getPaymentToken).not.toHaveBeenCalled();
+		expect(global.fetch).not.toHaveBeenCalled();
+	});
+
+	it("does not tokenize or submit a sale when persisted checkout session data is unreadable", async () => {
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+		const onPaymentFailed = jest.fn();
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		(getCheckoutData as jest.Mock).mockImplementationOnce(() => {
+			throw new Error("Unexpected token u in JSON at position 0");
+		});
 
 		render(
 			<PayHQSubmitHarness

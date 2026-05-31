@@ -408,7 +408,16 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			throw new Error("Payment is already being processed.");
 		}
 
-		const checkoutData = getCheckoutData();
+		let checkoutData;
+		try {
+			checkoutData = getCheckoutData();
+		} catch (error) {
+			const message =
+				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
+			onPaymentFailed(message);
+			throw new Error(message);
+		}
+
 		if (!checkoutData?.order || !checkoutData.total) {
 			const message =
 				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
