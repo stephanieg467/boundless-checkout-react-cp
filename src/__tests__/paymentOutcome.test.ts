@@ -47,6 +47,28 @@ describe("PaymentOutcome", () => {
     expect(result.total.price).toBe("105.00");
   });
 
+  it("returns the session unchanged when the applied tip is undefined", () => {
+    const result = applyCreditCardTipToSession(
+      {order: makeOrder(), total: makeTotal()},
+      undefined,
+    );
+
+    expect(result.order.tip).toBe("0.00");
+    expect(result.order.total_price).toBe("100.00");
+    expect(result.total.price).toBe("100.00");
+  });
+
+  it("returns the session unchanged when the applied tip is zero", () => {
+    const result = applyCreditCardTipToSession(
+      {order: makeOrder(), total: makeTotal()},
+      "0",
+    );
+
+    expect(result.order.tip).toBe("0.00");
+    expect(result.order.total_price).toBe("100.00");
+    expect(result.total.price).toBe("100.00");
+  });
+
   it("does not re-apply an existing matching tip", () => {
     const result = applyCreditCardTipToSession(
       {
@@ -109,6 +131,26 @@ describe("PaymentOutcome", () => {
     expect(result.order.custom_attrs.checkoutCompleted).toBe(true);
     expect(result.order.total_price).toBe("105.00");
     expect(result.total.price).toBe("105.00");
+  });
+
+  it("completes a paid credit-card CheckoutSession without a deliveryTime", () => {
+    const result = completeCreditCardPaymentOutcome(
+      {
+        order: makeOrder({
+          paid_at: "2026-05-23T12:00:00.000Z",
+          tip: "5",
+          total_price: "105.00",
+        }),
+        total: makeTotal({price: "105.00"}),
+      },
+      {
+        paymentMethodId: "5",
+        tip: "5.00",
+      },
+    );
+
+    expect(result.order).not.toHaveProperty("delivery_time");
+    expect(result.order.custom_attrs.checkoutCompleted).toBe(true);
   });
 
   describe("Amount parsing strictness", () => {

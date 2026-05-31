@@ -130,4 +130,82 @@ describe("CartFooter", () => {
 		expect(screen.queryByText("Tip:")).not.toBeInTheDocument();
 		expect(screen.getByText("$100.00")).toBeInTheDocument(); // fallback total: 90 + 0 + 10 + 0 (tip is clamped)
 	});
+
+	it("shows the free shipping badge and struck-through original price when itemsSubTotal >= 100", () => {
+		setReduxCheckoutState({
+			order: {
+				services: [
+					{
+						service_id: 1,
+						serviceDelivery: {
+							delivery: {
+								title: "Shipping",
+							},
+						},
+					},
+				] as any,
+			},
+			total: {
+				itemsSubTotal: {price: "100.00", qty: 2},
+				servicesSubTotal: {price: "4.00", qty: 1},
+				price: "104.00",
+			},
+		});
+
+		render(<CartFooter open />);
+
+		expect(screen.getByText(/Shipping/i)).toBeInTheDocument();
+		expect(screen.getByText("FREE")).toBeInTheDocument();
+		const originalPrice = screen.getByText("$0.00");
+		expect(originalPrice).toHaveStyle({textDecoration: "line-through"});
+	});
+
+	it("shows the regular shipping price when itemsSubTotal < 100", () => {
+		setReduxCheckoutState({
+			order: {
+				services: [
+					{
+						service_id: 1,
+						serviceDelivery: {
+							delivery: {
+								title: "Shipping",
+							},
+						},
+					},
+				] as any,
+			},
+			total: {
+				itemsSubTotal: {price: "99.00", qty: 1},
+				servicesSubTotal: {price: "4.00", qty: 1},
+				price: "103.00",
+			},
+		});
+
+		render(<CartFooter open />);
+
+		expect(screen.getByText(/Shipping/i)).toBeInTheDocument();
+		expect(screen.getByText("$4.00")).toBeInTheDocument();
+		expect(screen.queryByText("FREE")).not.toBeInTheDocument();
+	});
+
+	it("falls back to data from localStorage via getCheckoutData when Redux state is missing", () => {
+		mockState = {
+			app: {
+				order: null,
+				total: null,
+				localeSettings: undefined,
+			},
+		};
+
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({tip: "8.00", total_price: "108.00"}),
+			total: makeTotal({price: "108.00"}),
+		});
+
+		render(<CartFooter open />);
+
+		expect(screen.getByText("Tip:")).toBeInTheDocument();
+		expect(screen.getByText("$8.00")).toBeInTheDocument();
+		expect(screen.getByText("$108.00")).toBeInTheDocument();
+	});
 });

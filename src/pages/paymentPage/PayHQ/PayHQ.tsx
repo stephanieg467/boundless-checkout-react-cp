@@ -458,7 +458,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 		try {
 			const tokenResponse = await payment.getPaymentToken();
-			const paymentToken = tokenResponse.payment_token;
+			const paymentToken = tokenResponse?.payment_token;
 
 			if (!paymentToken) {
 				throw new Error("Missing payment token");
@@ -513,11 +513,12 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			const data = (await response.json()) as {
 				success?: boolean;
 				paidAt?: string;
+				message?: string;
 			};
 
 			if (!data.success) {
 				throw new Error(
-					"Payment could not be completed. Please try again or contact the store.",
+					data.message || "Payment could not be completed. Please try again or contact the store.",
 				);
 			}
 

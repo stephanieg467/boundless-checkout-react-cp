@@ -80,10 +80,12 @@ function PayHQSubmitHarness({
 	onPaymentFailed = jest.fn(),
 	createPaymentInstance,
 	payHQRef,
+	tip,
 }: {
 	onPaymentFailed?: (message: string) => void;
 	createPaymentInstance: CreatePaymentInstance;
 	payHQRef?: React.Ref<PayHQHandle>;
+	tip?: string;
 }) {
 	const internalRef = React.useRef<PayHQHandle | null>(null);
 	const ref = payHQRef || internalRef;
@@ -93,6 +95,7 @@ function PayHQSubmitHarness({
 		<>
 			<PayHQ
 				ref={ref}
+				tip={tip}
 				onPaymentFailed={onPaymentFailed}
 				createPaymentInstance={createPaymentInstance}
 			/>
@@ -503,5 +506,100 @@ describe("PayHQ", () => {
 				"Your payment was approved. Please wait while we process your order.",
 			),
 		).toBeInTheDocument();
+	});
+
+	it("applies the tip prop to the payment POST payload", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		render(
+			<PayHQSubmitHarness
+				tip="5"
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
+			"/api/payfirmaSale",
+			expect.any(Object),
+		));
+
+		const [, requestInit] = (global.fetch as jest.Mock).mock.calls[0];
+		const body = JSON.parse(requestInit.body);
+
+		expect(body.order.total_price).toBe("105.00");
+		expect(body.total.price).toBe("105.00");
+	});
+
+	it("rejects when the API response has success: false", async () => {
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		global.fetch = jest.fn().mockResolvedValue({
+			ok: true,
+			json: jest.fn().mockResolvedValue({
+				success: false,
+				message: "Declined by bank",
+			}),
+		});
+
+		const onPaymentFailed = jest.fn();
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		render(
+			<PayHQSubmitHarness
+				payHQRef={payHQRef}
+				onPaymentFailed={onPaymentFailed}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		await act(async () => {
+			const submitResult = payHQRef.current!.submitPayment();
+			await expect(submitResult).rejects.toThrow("Declined by bank");
+		});
+
+		expect(onPaymentFailed).toHaveBeenCalledWith("Declined by bank");
+	});
+
+	it("rejects when getPaymentToken resolves with no token", async () => {
+		const getPaymentToken = jest.fn().mockResolvedValue(null);
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		const payHQRef = React.createRef<PayHQHandle>();
+
+		render(
+			<PayHQSubmitHarness
+				payHQRef={payHQRef}
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		await act(async () => {
+			const submitResult = payHQRef.current!.submitPayment();
+			await expect(submitResult).rejects.toThrow("Missing payment token");
+		});
+		
+		expect(global.fetch).not.toHaveBeenCalled();
 	});
 });
