@@ -140,6 +140,20 @@ function setup({
 }
 
 describe("PaymentMethodForm shared PayHQ submit button", () => {
+  const originalScrollIntoView = Element.prototype.scrollIntoView;
+
+  beforeAll(() => {
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  afterAll(() => {
+    if (originalScrollIntoView === undefined) {
+      delete (Element.prototype as any).scrollIntoView;
+    } else {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockSubmitPayment.mockResolvedValue({paidAt: "2026-05-23T12:00:00.000Z"});
@@ -421,6 +435,58 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     }
   });
 
+  it("scrolls to the first errored field when credit-card payment validation fails", async () => {
+    const user = userEvent.setup();
+    const scrollIntoViewMock = jest.spyOn(Element.prototype, "scrollIntoView");
+
+    const deliveryOrder = makeOrder({
+      delivery_time: "",
+      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+    });
+
+    setup({order: deliveryOrder});
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
+
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+    const scrolledElement = scrollIntoViewMock.mock.contexts[0] as HTMLElement;
+    expect(scrolledElement.getAttribute("name") || scrolledElement.querySelector("[name='delivery_time']")).toBeTruthy();
+
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+  });
+
+  it("scrolls to the first errored field when non-credit-card payment validation fails", async () => {
+    const user = userEvent.setup();
+    const scrollIntoViewMock = jest.spyOn(Element.prototype, "scrollIntoView");
+
+    const order = makeOrder({
+      payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
+      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+      delivery_time: "10:00 AM",
+      total_price: "100.00",
+    });
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    const tipInput = screen.getByRole("spinbutton", {name: /tip/i}) as HTMLInputElement;
+    tipInput.removeAttribute("min");
+    await user.clear(tipInput);
+    await user.type(tipInput, "-5");
+    await user.tab(); // trigger blur
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    expect(await screen.findByText(/tip must be positive/i)).toBeInTheDocument();
+
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+    const scrolledElement = scrollIntoViewMock.mock.contexts[0] as HTMLElement;
+    expect(scrolledElement.getAttribute("name")).toBe("tip");
+
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
   it("handles PaymentOutcomeError with a specific support error message", async () => {
     const user = userEvent.setup();
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -432,7 +498,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     try {
       setup({
-        order: { ...makeOrder(), paid_at: "2026-05-23T12:00:00.000Z" }, // Payment already approved
+        order: {...makeOrder(), paid_at: "2026-05-23T12:00:00.000Z"}, // Payment already approved
         paymentMethods: [creditCardMethod],
       });
 

@@ -4,8 +4,8 @@ import {
 	PaymentOutcomeError,
 	PaymentValidationError,
 } from "../../lib/paymentOutcome";
-import {useCallback, useRef, useState} from "react";
-import {Form, Formik, FormikHelpers, FormikProps} from "formik";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {Form, Formik, FormikErrors, FormikHelpers, FormikProps} from "formik";
 import {
 	Typography,
 	Radio,
@@ -46,6 +46,53 @@ import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 import PayHQ, {PayHQHandle} from "./PayHQ/PayHQ";
 import {useCreditCardPaymentOutcome} from "../../hooks/useCreditCardPaymentOutcome";
+
+const paymentFormFieldOrder: Array<keyof IPaymentMethodFormValues> = [
+	"payment_method_id",
+	"tip",
+	"delivery_time",
+];
+
+const scrollToFirstPaymentFormError = (
+	errors: FormikErrors<IPaymentMethodFormValues>,
+) => {
+	if (typeof document === "undefined") return;
+
+	const firstErrorField = paymentFormFieldOrder.find((field) => Boolean(errors[field]));
+	if (!firstErrorField) return;
+
+	const paymentForm = document.querySelector<HTMLElement>(".bdl-payment-form");
+	const fieldElement = Array.from(
+		(paymentForm ?? document).querySelectorAll<HTMLElement>("[name]"),
+	).find((element) => element.getAttribute("name") === firstErrorField);
+
+	fieldElement?.scrollIntoView({behavior: "smooth", block: "center"});
+};
+
+const ScrollToFirstPaymentFormError = ({
+	errors,
+	submitCount,
+}: {
+	errors: FormikErrors<IPaymentMethodFormValues>;
+	submitCount: number;
+}) => {
+	const lastHandledSubmitCount = useRef(0);
+
+	useEffect(() => {
+		if (submitCount === 0 || submitCount === lastHandledSubmitCount.current) {
+			return;
+		}
+
+		if (Object.keys(errors).length === 0) {
+			return;
+		}
+
+		lastHandledSubmitCount.current = submitCount;
+		scrollToFirstPaymentFormError(errors);
+	}, [errors, submitCount]);
+
+	return null;
+};
 
 const makeValidatePaymentForm =
 	(requireDeliveryTime: boolean) => (values: IPaymentMethodFormValues) => {
@@ -140,6 +187,7 @@ export default function PaymentMethodForm({
 
 					const validationErrors = await formikProps.validateForm();
 					if (Object.keys(validationErrors).length > 0) {
+						scrollToFirstPaymentFormError(validationErrors);
 						return;
 					}
 
@@ -211,6 +259,10 @@ export default function PaymentMethodForm({
 
 				return (
 					<Form className={"bdl-payment-form"}>
+						<ScrollToFirstPaymentFormError
+							errors={formikProps.errors}
+							submitCount={formikProps.submitCount}
+						/>
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={["payment_method_id", "delivery_time"]}

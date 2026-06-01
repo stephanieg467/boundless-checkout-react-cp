@@ -1,9 +1,9 @@
 import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import {render, screen, waitFor, act} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TPublishingStatus } from "boundless-api-client";
-import { getCheckoutData } from "../../../hooks/checkoutData";
-import PayHQ, { CreatePaymentInstance, PayHQHandle } from "./PayHQ";
+import {TPublishingStatus} from "boundless-api-client";
+import {getCheckoutData} from "../../../hooks/checkoutData";
+import PayHQ, {CreatePaymentInstance, PayHQHandle} from "./PayHQ";
 
 let mockState: any = {};
 let mockCheckoutData: any = {};
@@ -74,13 +74,13 @@ const order = {
 
 const total = {
 	price: "100.00",
-	itemsSubTotal: { price: "90.00", qty: 1 },
+	itemsSubTotal: {price: "90.00", qty: 1},
 	discount: "0",
-	tax: { totalTaxAmount: "10.00" },
-	servicesSubTotal: { price: "0.00", qty: 0 },
+	tax: {totalTaxAmount: "10.00"},
+	servicesSubTotal: {price: "0.00", qty: 0},
 } as any;
 
-const items = [{ id: "item-1", title: "Test item" }] as any;
+const items = [{id: "item-1", title: "Test item"}] as any;
 
 function PayHQSubmitHarness({
 	onPaymentFailed = jest.fn(),
@@ -110,7 +110,7 @@ function PayHQSubmitHarness({
 				onClick={async () => {
 					try {
 						// Fallback if payHQRef wasn't provided but the button is clicked
-						const targetRef = typeof ref === 'function' ? null : ref;
+						const targetRef = typeof ref === "function" ? null : ref;
 						const paymentResult = await targetRef?.current?.submitPayment();
 						if (paymentResult?.paidAt) {
 							setResult(paymentResult.paidAt);
@@ -130,7 +130,7 @@ function PayHQSubmitHarness({
 describe("PayHQ", () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
-		mockCheckoutData = { order, items, total };
+		mockCheckoutData = {order, items, total};
 		mockState = {
 			app: {
 				order,
@@ -147,7 +147,7 @@ describe("PayHQ", () => {
 		}) as jest.Mock;
 	});
 
-	it("shows required field errors and does not request payment when contact details are empty", async () => {
+	it("shows required field errors, focuses the first invalid field, and does not request payment when contact details are empty", async () => {
 		const user = userEvent.setup();
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
@@ -164,17 +164,19 @@ describe("PayHQ", () => {
 		);
 
 		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
-		expect(screen.queryByRole("button", { name: /^pay$/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", {name: /^pay$/i})).not.toBeInTheDocument();
 
-		await user.clear(screen.getByLabelText(/first name/i));
+		const firstNameField = screen.getByLabelText(/first name/i);
+		await user.clear(firstNameField);
 		await user.clear(screen.getByLabelText(/last name/i));
 		await user.type(screen.getByLabelText(/last name/i), "   ");
 		await user.clear(screen.getByLabelText(/email/i));
-		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		expect(await screen.findByText("First name is required")).toBeInTheDocument();
 		expect(screen.getByText("Last name is required")).toBeInTheDocument();
 		expect(screen.getByText("Email is required")).toBeInTheDocument();
+		expect(firstNameField).toHaveFocus();
 		expect(getPaymentToken).not.toHaveBeenCalled();
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
@@ -196,11 +198,11 @@ describe("PayHQ", () => {
 		);
 
 		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
-		expect(screen.queryByRole("button", { name: /^pay$/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", {name: /^pay$/i})).not.toBeInTheDocument();
 
 		const firstNameField = screen.getByLabelText(/first name/i);
 		await user.clear(firstNameField);
-		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		expect(await screen.findByText("First name is required")).toBeInTheDocument();
 
@@ -257,18 +259,18 @@ describe("PayHQ", () => {
 		const countryField = screen.getByLabelText(/select country/i);
 		const provinceField = screen.getByLabelText(/province\/state/i);
 
-		expect(screen.getByRole("option", { name: "British Columbia" })).toBeInTheDocument();
-		expect(screen.queryByRole("option", { name: "California" })).not.toBeInTheDocument();
+		expect(screen.getByRole("option", {name: "British Columbia"})).toBeInTheDocument();
+		expect(screen.queryByRole("option", {name: "California"})).not.toBeInTheDocument();
 
 		await user.selectOptions(countryField, "US");
 
 		expect(countryField).toHaveValue("US");
 		expect(provinceField).toHaveValue("");
-		expect(screen.getByRole("option", { name: "California" })).toBeInTheDocument();
-		expect(screen.queryByRole("option", { name: "British Columbia" })).not.toBeInTheDocument();
+		expect(screen.getByRole("option", {name: "California"})).toBeInTheDocument();
+		expect(screen.queryByRole("option", {name: "British Columbia"})).not.toBeInTheDocument();
 	});
 
-	it("shows required field errors and does not request payment when required address details are empty", async () => {
+	it("shows required field errors, focuses the first invalid field, and does not request payment when required address details are empty", async () => {
 		const user = userEvent.setup();
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
@@ -286,17 +288,19 @@ describe("PayHQ", () => {
 
 		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await user.clear(screen.getByLabelText(/address 1/i));
+		const address1Field = screen.getByLabelText(/address 1/i);
+		await user.clear(address1Field);
 		await user.clear(screen.getByLabelText(/city/i));
 		await user.clear(screen.getByLabelText(/postal code/i));
 		await user.selectOptions(screen.getByLabelText(/select country/i), "");
-		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		expect(await screen.findByText("Address 1 is required")).toBeInTheDocument();
 		expect(screen.getByText("City is required")).toBeInTheDocument();
 		expect(screen.getByText("Country is required")).toBeInTheDocument();
 		expect(screen.getByText("Postal code is required")).toBeInTheDocument();
 		expect(screen.getByText("Province/State is required")).toBeInTheDocument();
+		expect(address1Field).toHaveFocus();
 		expect(getPaymentToken).not.toHaveBeenCalled();
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
@@ -318,7 +322,7 @@ describe("PayHQ", () => {
 		);
 
 		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
-		expect(screen.queryByRole("button", { name: /^pay$/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", {name: /^pay$/i})).not.toBeInTheDocument();
 
 		await user.clear(screen.getByLabelText(/first name/i));
 		await user.type(screen.getByLabelText(/first name/i), " Ada ");
@@ -337,7 +341,7 @@ describe("PayHQ", () => {
 		await user.type(screen.getByLabelText(/city/i), " Victoria ");
 		await user.clear(screen.getByLabelText(/postal code/i));
 		await user.type(screen.getByLabelText(/postal code/i), " V8W 1A1 ");
-		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
 			"/api/payfirmaSale",
@@ -364,7 +368,7 @@ describe("PayHQ", () => {
 				total,
 			}),
 		);
-		expect(body.order).toEqual(expect.objectContaining({ id: "order-1" }));
+		expect(body.order).toEqual(expect.objectContaining({id: "order-1"}));
 
 		expect(await screen.findByTestId("payment-result")).toHaveTextContent(
 			"2026-05-23T12:00:00.000Z",
@@ -407,7 +411,7 @@ describe("PayHQ", () => {
 
 		// Resolve first
 		await act(async () => {
-			resolveToken({ payment_token: "payment-token-1" });
+			resolveToken({payment_token: "payment-token-1"});
 			await submit1;
 		});
 
@@ -654,7 +658,7 @@ describe("PayHQ", () => {
 		);
 
 		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
-		await user.click(screen.getByRole("button", { name: /external payment submit/i }));
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
 			"/api/payfirmaSale",

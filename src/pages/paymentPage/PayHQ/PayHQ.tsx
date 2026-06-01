@@ -20,14 +20,14 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import { Country, State, type ICountry, type IState } from "country-state-city";
+import {Theme} from "@mui/material/styles";
+import {Country, State, type ICountry, type IState} from "country-state-city";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
-import { ICheckoutData } from "../../../types/Order";
-import { getCheckoutData } from "../../../hooks/checkoutData";
-import { useAppSelector } from "../../../hooks/redux";
-import { useCheckoutConfig } from "../../../contexts/CheckoutConfigContext";
-import { applyCreditCardTipToSession } from "../../../lib/paymentOutcome";
+import {ICheckoutData} from "../../../types/Order";
+import {getCheckoutData} from "../../../hooks/checkoutData";
+import {useAppSelector} from "../../../hooks/redux";
+import {useCheckoutConfig} from "../../../contexts/CheckoutConfigContext";
+import {applyCreditCardTipToSession} from "../../../lib/paymentOutcome";
 
 type PaymentTokenResponse = {
 	payment_token: string;
@@ -81,6 +81,21 @@ type RequiredPaymentField =
 	| "province";
 
 type RequiredPaymentFieldErrors = Partial<Record<RequiredPaymentField, string>>;
+type RequiredPaymentFieldElement =
+	| HTMLInputElement
+	| HTMLTextAreaElement
+	| HTMLSelectElement;
+
+const requiredPaymentFieldOrder: RequiredPaymentField[] = [
+	"firstName",
+	"lastName",
+	"email",
+	"address1",
+	"city",
+	"country",
+	"postalCode",
+	"province",
+];
 
 type PaymentAddressFields = {
 	address1: string;
@@ -124,7 +139,7 @@ const COUNTRY_IDS_BY_ISO_CODE: Record<string, number[]> = {
 };
 
 function getActivePayfirmaFieldMetrics(): PayfirmaFieldMetrics {
-	return { height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE };
+	return {height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE};
 }
 
 function createPayfirmaInputStyle({
@@ -223,7 +238,7 @@ const textFieldSx = {
 
 const payfirmaContainerSx = (theme: Theme) => ({
 	display: "grid",
-	gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+	gridTemplateColumns: {xs: "1fr", sm: "1fr 1fr"},
 	gap: 2,
 	"& #defaultCardNumber_container": {
 		gridColumn: "1 / -1",
@@ -278,7 +293,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	},
 	ref,
 ) {
-	const { payfirmaInfo } = useCheckoutConfig();
+	const {payfirmaInfo} = useCheckoutConfig();
 	const apiKey = payfirmaInfo?.token ?? "";
 	const PAYFIRMA_ENVIRONMENT = payfirmaInfo?.environment ?? "LIVE";
 
@@ -292,6 +307,9 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	const prevIsPaid = useRef<boolean>(false);
 	const submitInFlightRef = useRef(false);
 	const paymentApprovedRef = useRef(false);
+	const requiredPaymentFieldRefs = useRef<
+		Partial<Record<RequiredPaymentField, RequiredPaymentFieldElement | null>>
+	>({});
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -348,7 +366,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		if (!prevIsPaid.current && isPaid) {
 			document
 				.querySelector<HTMLElement>(".bdl-payment-form")
-				?.scrollTo({ top: 0, behavior: "smooth" });
+				?.scrollTo({top: 0, behavior: "smooth"});
 		}
 		prevIsPaid.current = isPaid;
 	}, [order?.paid_at]);
@@ -379,12 +397,37 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			suppressPayfirmaIframeScrollbars(paymentContainer);
 		});
 
-		observer.observe(paymentContainer, { childList: true, subtree: true });
+		observer.observe(paymentContainer, {childList: true, subtree: true});
 
 		return () => {
 			observer.disconnect();
 		};
 	}, [createPaymentInstance, apiKey, PAYFIRMA_ENVIRONMENT, paymentContainerId]);
+
+	const setRequiredPaymentFieldRef = useCallback(
+		(field: RequiredPaymentField) =>
+			(element: RequiredPaymentFieldElement | null) => {
+				requiredPaymentFieldRefs.current[field] = element;
+			},
+		[],
+	);
+
+	const focusFirstRequiredPaymentFieldError = useCallback(
+		(fieldErrors: RequiredPaymentFieldErrors) => {
+			const firstErrorField = requiredPaymentFieldOrder.find((field) =>
+				Boolean(fieldErrors[field]),
+			);
+
+			if (!firstErrorField) {
+				return;
+			}
+
+			const fieldElement = requiredPaymentFieldRefs.current[firstErrorField];
+			fieldElement?.scrollIntoView?.({behavior: "smooth", block: "center"});
+			fieldElement?.focus();
+		},
+		[],
+	);
 
 	const clearRequiredPaymentFieldError = useCallback(
 		(field: RequiredPaymentField, value: string) => {
@@ -397,7 +440,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					return currentErrors;
 				}
 
-				const remainingErrors = { ...currentErrors };
+				const remainingErrors = {...currentErrors};
 				delete remainingErrors[field];
 				return remainingErrors;
 			});
@@ -478,6 +521,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 		if (Object.keys(paymentFieldErrors).length > 0) {
 			setRequiredPaymentFieldErrors(paymentFieldErrors);
+			focusFirstRequiredPaymentFieldError(paymentFieldErrors);
 			throw new PaymentValidationError("Required payment fields are missing.");
 		}
 
@@ -485,7 +529,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			trimmedProvince,
 			trimmedCountry,
 		);
-		console.log('paymentProvinceCode', paymentProvinceCode);
 
 		setRequiredPaymentFieldErrors({});
 		submitInFlightRef.current = true;
@@ -506,7 +549,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 			if (finalOrder && finalTotal) {
 				const tippedSession = applyCreditCardTipToSession(
-					{ order: finalOrder, total: finalTotal },
+					{order: finalOrder, total: finalTotal},
 					tip,
 				);
 				finalOrder = tippedSession.order;
@@ -515,7 +558,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 			const response = await fetch("/api/payfirmaSale", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {"Content-Type": "application/json"},
 				body: JSON.stringify({
 					orderId: finalOrder?.id,
 					firstName: trimmedFirstName,
@@ -599,6 +642,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		postalCode,
 		province,
 		onPaymentFailed,
+		focusFirstRequiredPaymentFieldError,
 	]);
 
 	useImperativeHandle(
@@ -638,7 +682,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				sx={{
 					width: "100%",
 					maxWidth: 800,
-					p: { xs: 2.5, sm: 4 },
+					p: {xs: 2.5, sm: 4},
 					borderRadius: 3,
 					border: "1px solid",
 					borderColor: "divider",
@@ -654,7 +698,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				) : (
 					<Stack spacing={3}>
 						<Box>
-							<Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
+							<Typography component="h2" variant="h6" sx={{fontWeight: 700}}>
 								Payment details
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
@@ -664,42 +708,44 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 						</Box>
 
 						<Grid container spacing={2}>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									required
 									fullWidth
 									label="First Name"
 									placeholder="First Name"
 									autoComplete="given-name"
+									inputRef={setRequiredPaymentFieldRef("firstName")}
 									value={firstName}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setFirstName(value);
 										clearRequiredPaymentFieldError("firstName", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.firstName)}
 									helperText={requiredPaymentFieldErrors.firstName ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									fullWidth
 									required
 									label="Last Name"
 									placeholder="Last Name"
 									autoComplete="family-name"
+									inputRef={setRequiredPaymentFieldRef("lastName")}
 									value={lastName}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setLastName(value);
 										clearRequiredPaymentFieldError("lastName", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.lastName)}
 									helperText={requiredPaymentFieldErrors.lastName ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
 							<Grid size={12}>
@@ -710,16 +756,17 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									label="Email"
 									placeholder="Email"
 									autoComplete="email"
+									inputRef={setRequiredPaymentFieldRef("email")}
 									value={email}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setEmail(value);
 										clearRequiredPaymentFieldError("email", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.email)}
 									helperText={requiredPaymentFieldErrors.email ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
 							<Grid size={12}>
@@ -729,16 +776,17 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									label="Address 1"
 									placeholder="Address 1"
 									autoComplete="address-line1"
+									inputRef={setRequiredPaymentFieldRef("address1")}
 									value={address1}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setAddress1(value);
 										clearRequiredPaymentFieldError("address1", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.address1)}
 									helperText={requiredPaymentFieldErrors.address1 ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
 							<Grid size={12}>
@@ -750,37 +798,39 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									value={address2}
 									onChange={(event) => setAddress2(event.target.value)}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									fullWidth
 									required
 									label="City"
 									placeholder="City"
 									autoComplete="address-level2"
+									inputRef={setRequiredPaymentFieldRef("city")}
 									value={city}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setCity(value);
 										clearRequiredPaymentFieldError("city", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.city)}
 									helperText={requiredPaymentFieldErrors.city ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									fullWidth
 									required
 									select
 									label="Select Country"
+									inputRef={setRequiredPaymentFieldRef("country")}
 									value={country}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										const nextProvinceOptions = State.getStatesOfCountry(value);
 										setCountry(value);
 										setProvince((currentProvince) =>
@@ -795,7 +845,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									error={Boolean(requiredPaymentFieldErrors.country)}
 									helperText={requiredPaymentFieldErrors.country ?? ""}
 									sx={textFieldSx}
-									SelectProps={{ native: true }}
+									SelectProps={{native: true}}
 								>
 									<option value="">Select Country</option>
 									{countryOptions.map((countryOption: ICountry) => (
@@ -805,41 +855,43 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 									))}
 								</TextField>
 							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									fullWidth
 									required
 									label="Postal Code"
 									placeholder="Postal Code"
 									autoComplete="postal-code"
+									inputRef={setRequiredPaymentFieldRef("postalCode")}
 									value={postalCode}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setPostalCode(value);
 										clearRequiredPaymentFieldError("postalCode", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.postalCode)}
 									helperText={requiredPaymentFieldErrors.postalCode ?? ""}
 									sx={textFieldSx}
-									slotProps={{ htmlInput: { className: "input-field" } }}
+									slotProps={{htmlInput: {className: "input-field"}}}
 								/>
 							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
+							<Grid size={{xs: 12, sm: 6}}>
 								<TextField
 									fullWidth
 									required
 									select
 									label="Province/State"
+									inputRef={setRequiredPaymentFieldRef("province")}
 									value={province}
 									onChange={(event) => {
-										const { value } = event.target;
+										const {value} = event.target;
 										setProvince(value);
 										clearRequiredPaymentFieldError("province", value);
 									}}
 									error={Boolean(requiredPaymentFieldErrors.province)}
 									helperText={requiredPaymentFieldErrors.province ?? ""}
 									sx={textFieldSx}
-									SelectProps={{ native: true }}
+									SelectProps={{native: true}}
 								>
 									<option value="">Province/State</option>
 									{provinceOptions.map((provinceOption: IState) => (
@@ -855,7 +907,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 						</Grid>
 
 						{isSubmitting && (
-							<Box sx={{ textAlign: "center" }} aria-live="polite">
+							<Box sx={{textAlign: "center"}} aria-live="polite">
 								<CircularProgress size={32} />
 							</Box>
 						)}
