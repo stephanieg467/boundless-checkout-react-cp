@@ -166,19 +166,28 @@ function countryCodeFromAddress(
 	return "";
 }
 
-function normalizeProvinceValue(province: string, countryCode: string): string {
+function findProvinceOption(
+	province: string,
+	countryCode: string,
+): IState | undefined {
 	if (!province || !countryCode) {
-		return province;
+		return undefined;
 	}
 
-	const provinceOptions = State.getStatesOfCountry(countryCode);
-	const matchingProvince = provinceOptions.find(
+	const normalizedProvince = province.toLowerCase();
+	return State.getStatesOfCountry(countryCode).find(
 		(option) =>
-			option.name.toLowerCase() === province.toLowerCase() ||
-			option.isoCode.toLowerCase() === province.toLowerCase(),
+			option.name.toLowerCase() === normalizedProvince ||
+			option.isoCode.toLowerCase() === normalizedProvince,
 	);
+}
 
-	return matchingProvince?.name ?? province;
+function normalizeProvinceValue(province: string, countryCode: string): string {
+	return findProvinceOption(province, countryCode)?.name ?? province;
+}
+
+function provinceCodeFromValue(province: string, countryCode: string): string {
+	return findProvinceOption(province, countryCode)?.isoCode ?? province;
 }
 
 function getPaymentAddressDefaults(
@@ -314,14 +323,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		() => (country ? State.getStatesOfCountry(country) : []),
 		[country],
 	);
-	const selectedCountry = useMemo(
-		() =>
-			countryOptions.find(
-				(countryOption) => countryOption.isoCode === country,
-			) ?? null,
-		[country, countryOptions],
-	);
-
 	useEffect(() => {
 		const addressDefaults = getPaymentAddressDefaults(order);
 		setFirstName(order?.customer?.first_name ?? "");
@@ -442,9 +443,9 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		const trimmedAddress1 = address1.trim();
 		const trimmedAddress2 = address2.trim();
 		const trimmedCity = city.trim();
+		const trimmedCountry = country.trim();
 		const trimmedPostalCode = postalCode.trim();
 		const trimmedProvince = province.trim();
-		const selectedCountryName = selectedCountry?.name ?? "";
 		const paymentFieldErrors: RequiredPaymentFieldErrors = {};
 
 		if (!trimmedFirstName) {
@@ -463,7 +464,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		if (!trimmedCity) {
 			paymentFieldErrors.city = requiredPaymentFieldErrorMessages.city;
 		}
-		if (!country) {
+		if (!trimmedCountry) {
 			paymentFieldErrors.country = requiredPaymentFieldErrorMessages.country;
 		}
 		if (!trimmedPostalCode) {
@@ -479,6 +480,12 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			setRequiredPaymentFieldErrors(paymentFieldErrors);
 			throw new PaymentValidationError("Required payment fields are missing.");
 		}
+
+		const paymentProvinceCode = provinceCodeFromValue(
+			trimmedProvince,
+			trimmedCountry,
+		);
+		console.log('paymentProvinceCode', paymentProvinceCode);
 
 		setRequiredPaymentFieldErrors({});
 		submitInFlightRef.current = true;
@@ -517,9 +524,9 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					address1: trimmedAddress1,
 					address2: trimmedAddress2,
 					city: trimmedCity,
-					country: selectedCountryName,
+					country: trimmedCountry,
 					postalCode: trimmedPostalCode,
-					province: trimmedProvince,
+					province: paymentProvinceCode,
 					paymentToken,
 					order: finalOrder,
 					items: finalItems,
@@ -591,7 +598,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		country,
 		postalCode,
 		province,
-		selectedCountry,
 		onPaymentFailed,
 	]);
 
