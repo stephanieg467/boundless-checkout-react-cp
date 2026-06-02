@@ -13,7 +13,7 @@ declare module "merrco-payfirma-simple-pay-module" {
   }
 
   export interface PayfirmaOptions {
-    environment: string;
+    environment?: string;
     style?: {
       input?: PayfirmaInputStyle;
     };

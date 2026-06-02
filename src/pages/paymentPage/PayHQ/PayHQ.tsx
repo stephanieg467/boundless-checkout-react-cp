@@ -40,7 +40,7 @@ type PayfirmaPayment = {
 type PayfirmaInputStyle = Record<string, string>;
 
 type PayfirmaOptions = {
-	environment: string;
+	environment?: string;
 	style?: {
 		input: PayfirmaInputStyle;
 	};
@@ -379,7 +379,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		hasInitialized.current = true;
 		const payfirmaFieldMetrics = getActivePayfirmaFieldMetrics();
 		const paymentInstance = createPaymentInstance(apiKey, paymentContainerId, {
-			environment: PAYFIRMA_ENVIRONMENT,
+			// environment: PAYFIRMA_ENVIRONMENT,
 			style: {
 				input: createPayfirmaInputStyle(payfirmaFieldMetrics),
 			},
