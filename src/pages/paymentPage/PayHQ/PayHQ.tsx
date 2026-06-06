@@ -226,7 +226,7 @@ const payfirmaFieldContainerSelector =
 	"& #defaultCardNumber_container, & #defaultCardExpiry_container, & #defaultCardCvv_container";
 
 const payfirmaFieldIframeSelector =
-	"#defaultCardNumber_container iframe, #defaultCardExpiry_container iframe, #defaultCardCvv_container iframe";
+      '#defaultCardNumber_container iframe:not([name^="__detect_close_"]), #defaultCardExpiry_container iframe:not([name^="__detect_close_"]), #defaultCardCvv_container iframe:not([name^="__detect_close_"])';
 
 const textFieldSx = {
 	"& .MuiOutlinedInput-root": {
@@ -379,7 +379,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		hasInitialized.current = true;
 		const payfirmaFieldMetrics = getActivePayfirmaFieldMetrics();
 		const paymentInstance = createPaymentInstance(apiKey, paymentContainerId, {
-			// environment: PAYFIRMA_ENVIRONMENT,
+			environment: PAYFIRMA_ENVIRONMENT,
 			style: {
 				input: createPayfirmaInputStyle(payfirmaFieldMetrics),
 			},
