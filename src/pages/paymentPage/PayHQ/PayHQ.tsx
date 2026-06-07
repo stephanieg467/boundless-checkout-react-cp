@@ -286,7 +286,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	{
 		order: propOrder,
 		items: propItems,
-		total: propTotal,
 		tip,
 		onPaymentFailed,
 		createPaymentInstance = createDefaultPaymentInstance,
@@ -295,13 +294,12 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 ) {
 	const {payfirmaInfo} = useCheckoutConfig();
 	const apiKey = payfirmaInfo?.token ?? "";
-	const PAYFIRMA_ENVIRONMENT = payfirmaInfo?.environment ?? "LIVE";
+	const payfirmaEnvironment = payfirmaInfo?.environment;
 
 	const paymentContainerId = "easypay-container";
 	const appState = useAppSelector((state) => state.app);
 	const order = propOrder || appState.order;
 	const items = propItems || appState.items;
-	const total = propTotal || appState.total;
 
 	const hasInitialized = useRef(false);
 	const prevIsPaid = useRef<boolean>(false);
@@ -372,14 +370,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	}, [order?.paid_at]);
 
 	useEffect(() => {
-		if (order?.paid_at || !apiKey || hasInitialized.current) {
+		if (order?.paid_at || !apiKey || !payfirmaEnvironment || hasInitialized.current) {
 			return;
 		}
 
 		hasInitialized.current = true;
 		const payfirmaFieldMetrics = getActivePayfirmaFieldMetrics();
 		const paymentInstance = createPaymentInstance(apiKey, paymentContainerId, {
-			environment: PAYFIRMA_ENVIRONMENT,
+			environment: payfirmaEnvironment,
 			style: {
 				input: createPayfirmaInputStyle(payfirmaFieldMetrics),
 			},
@@ -402,7 +400,13 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		return () => {
 			observer.disconnect();
 		};
-	}, [createPaymentInstance, apiKey, PAYFIRMA_ENVIRONMENT, paymentContainerId]);
+	}, [
+		createPaymentInstance,
+		apiKey,
+		payfirmaEnvironment,
+		paymentContainerId,
+		order?.paid_at,
+	]);
 
 	const setRequiredPaymentFieldRef = useCallback(
 		(field: RequiredPaymentField) =>
@@ -467,10 +471,11 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		try {
 			checkoutData = getCheckoutData();
 		} catch (error) {
+			console.error("[PayHQ] Failed to read checkout session data", error);
 			const message =
 				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
 			onPaymentFailed(message);
-			throw new Error(message);
+			throw new Error(message, {cause: error});
 		}
 
 		if (!checkoutData?.order || !checkoutData.total) {
@@ -630,7 +635,6 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		isSubmitting,
 		order,
 		items,
-		total,
 		tip,
 		firstName,
 		lastName,
@@ -653,7 +657,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		[submitPayment],
 	);
 
-	if (!apiKey) {
+	if (!apiKey || !payfirmaEnvironment) {
 		return (
 			<Alert severity="error">
 				<Typography>

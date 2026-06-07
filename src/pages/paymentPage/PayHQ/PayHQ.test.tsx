@@ -7,6 +7,11 @@ import PayHQ, {CreatePaymentInstance, PayHQHandle} from "./PayHQ";
 
 let mockState: any = {};
 let mockCheckoutData: any = {};
+let mockPayfirmaInfo: {token?: string; environment?: string; endpoint?: string} = {
+	token: "payfirma-api-key",
+	environment: "TEST",
+	endpoint: "",
+};
 
 jest.mock("../../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
@@ -17,13 +22,7 @@ jest.mock("../../../hooks/checkoutData", () => ({
 }));
 
 jest.mock("../../../contexts/CheckoutConfigContext", () => ({
-	useCheckoutConfig: () => ({
-		payfirmaInfo: {
-			token: "payfirma-api-key",
-			environment: "TEST",
-			endpoint: "",
-		},
-	}),
+	useCheckoutConfig: () => ({payfirmaInfo: mockPayfirmaInfo}),
 }));
 
 jest.mock("merrco-payfirma-simple-pay-module", () => jest.fn());
@@ -115,7 +114,7 @@ function PayHQSubmitHarness({
 						if (paymentResult?.paidAt) {
 							setResult(paymentResult.paidAt);
 						}
-					} catch (e) {
+					} catch {
 						// ignore
 					}
 				}}
@@ -130,6 +129,11 @@ function PayHQSubmitHarness({
 describe("PayHQ", () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
+		mockPayfirmaInfo = {
+			token: "payfirma-api-key",
+			environment: "TEST",
+			endpoint: "",
+		};
 		mockCheckoutData = {order, items, total};
 		mockState = {
 			app: {
@@ -145,6 +149,25 @@ describe("PayHQ", () => {
 				paidAt: "2026-05-23T12:00:00.000Z",
 			}),
 		}) as jest.Mock;
+	});
+
+	it("fails closed when the Payfirma environment is missing", async () => {
+		mockPayfirmaInfo = {token: "payfirma-api-key", endpoint: ""};
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken: jest.fn(),
+		}));
+
+		render(
+			<PayHQ
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		expect(
+			screen.getByText(/An error occurred while initializing the payment module/i),
+		).toBeInTheDocument();
+		await waitFor(() => expect(createPaymentInstance).not.toHaveBeenCalled());
 	});
 
 	it("shows required field errors, focuses the first invalid field, and does not request payment when contact details are empty", async () => {
