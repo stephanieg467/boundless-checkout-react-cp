@@ -9,7 +9,7 @@ import {
 	CREDIT_CARD_PAYMENT_METHOD,
 	PAY_IN_STORE_PAYMENT_METHOD,
 } from "../constants";
-import {cartHasTickets} from "../lib/products";
+import {useCartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
 import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
@@ -57,7 +57,7 @@ const useInitPaymentPage = () => {
 	const checkoutData = getCheckoutData();
 	const hasCheckoutData = Boolean(checkoutData);
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
-	const cartItemHasTickets = cartHasTickets();
+	const cartItemHasTickets = useCartHasTickets();
 
 	useEffect(() => {
 		if (!checkoutData) {

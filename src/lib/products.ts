@@ -15,7 +15,7 @@ export const cartPromotionItems = (cart: Cart): CovaCartItem[] => {
   return cart.items?.filter((item) => isPromotionItem(item.product)) ?? [];
 };
 
-export const cartHasTickets = () => {
+export const useCartHasTickets = () => {
   const cartItems = useAppSelector((state) => state.app.items);
   
   return cartItems?.some(

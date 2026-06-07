@@ -45,7 +45,7 @@ import {
 } from "../../lib/checkoutGuards";
 import {ICheckoutStepper} from "../../types/common";
 import {
-	cartHasTickets,
+	useCartHasTickets,
 	ordersDropShippingItems,
 	ordersRegularItems,
 } from "../../lib/products";
@@ -195,6 +195,7 @@ export default function PaymentMethodForm({
 	const {t} = useTranslation();
 	const {recordApprovedPayment} = useCreditCardPaymentOutcome();
 	const [isPaymentApproved, setIsPaymentApproved] = useState(false);
+	const cartItemHasTickets = useCartHasTickets();
 	const payHQRef = useRef<PayHQHandle | null>(null);
 	const [isPayHQSubmitting, setIsPayHQSubmitting] = useState(false);
 
@@ -349,7 +350,7 @@ export default function PaymentMethodForm({
 						<Typography variant="h5" sx={{mb: 2}}>
 							{t("paymentMethodForm.pageHeader")}
 						</Typography>
-						{cartHasTickets() && (
+						{cartItemHasTickets && (
 							<Typography variant="body1" sx={{m: 2}}>
 								{
 									"Please note, due to limited seating, to reserve your seats, we require payment by credit card online OR you can come in store to purchase your tickets in person by credit, cash or debit. Seats must be purchased prior to event date. We look forward to hosting you!"

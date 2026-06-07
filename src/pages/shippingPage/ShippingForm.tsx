@@ -39,7 +39,7 @@ import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import {cartHasTickets} from "../../lib/products";
+import {useCartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
@@ -88,7 +88,7 @@ const validateShippingForm = (values: IShippingFormValues) => {
 	return errors;
 };
 
-const getFormInitialValues = (
+const useFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData,
 ): IShippingFormValues => {
 	const {order} = useAppSelector((state) => state.app);
@@ -402,10 +402,12 @@ export default function ShippingForm({
 }) {
 	const {onSubmit} = useSaveShippingForm({shippingPage});
 	const {t} = useTranslation();
+	const initialValues = useFormInitialValues(shippingPage);
+	const cartItemHasTickets = useCartHasTickets();
 
 	return (
 		<Formik
-			initialValues={getFormInitialValues(shippingPage)}
+			initialValues={initialValues}
 			onSubmit={onSubmit}
 			validate={validateShippingForm}
 		>
@@ -427,7 +429,7 @@ export default function ShippingForm({
 						<Typography variant="h5" sx={{m: 2}}>
 							{t("shippingForm.pageHeader")}
 						</Typography>
-						{cartHasTickets() && (
+						{cartItemHasTickets && (
 							<Typography variant="body1" sx={{m: 2}}>
 								{
 									"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."

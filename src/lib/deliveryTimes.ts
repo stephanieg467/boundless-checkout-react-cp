@@ -53,12 +53,13 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 
 	for (const part of parts) {
 		switch (part.type) {
-			case "hour":
+			case "hour": {
 				// The hour might be '24' for midnight in some locales with hourCycle h24, map to 0.
 				// For hourCycle h23 (default for en-CA numeric), it's 0-23.
 				const hr = parseInt(part.value);
 				hourVancouver = hr === 24 ? 0 : hr;
 				break;
+			}
 			case "minute":
 				minuteVancouver = parseInt(part.value);
 				break;

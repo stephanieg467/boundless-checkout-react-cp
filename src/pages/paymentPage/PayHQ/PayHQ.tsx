@@ -226,7 +226,7 @@ const payfirmaFieldContainerSelector =
 	"& #defaultCardNumber_container, & #defaultCardExpiry_container, & #defaultCardCvv_container";
 
 const payfirmaFieldIframeSelector =
-      '#defaultCardNumber_container iframe:not([name^="__detect_close_"]), #defaultCardExpiry_container iframe:not([name^="__detect_close_"]), #defaultCardCvv_container iframe:not([name^="__detect_close_"])';
+      "#defaultCardNumber_container iframe:not([name^=\"__detect_close_\"]), #defaultCardExpiry_container iframe:not([name^=\"__detect_close_\"]), #defaultCardCvv_container iframe:not([name^=\"__detect_close_\"])";
 
 const textFieldSx = {
 	"& .MuiOutlinedInput-root": {

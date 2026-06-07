@@ -11,7 +11,7 @@ import {
 	SELF_PICKUP_INFO,
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
-import {cartHasTickets} from "../lib/products";
+import {useCartHasTickets} from "../lib/products";
 import {getVancouverDateTime} from "../lib/deliveryTimes";
 import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
@@ -28,7 +28,7 @@ const useInitShippingPage = () => {
 	const cartItems = useAppSelector((state) => state.app.items);
 	const dispatch = useAppDispatch();
 
-	const cartItemHasTickets = cartHasTickets();
+	const cartItemHasTickets = useCartHasTickets();
 	const clonesInCart = cartItems?.some(
 		(item) => item.product.ClassificationName === "Clones"
 	);
