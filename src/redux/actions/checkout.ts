@@ -11,6 +11,11 @@ import {TCheckoutStep} from "../../types/common";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {getOrderTaxes} from "../../lib/taxes";
 import {ordersDropShippingItems} from "../../lib/products";
+import {
+	canNavigateToCheckoutStep,
+	getCheckoutStepWarning,
+	getFirstIncompleteCheckoutStep,
+} from "../../lib/checkoutGuards";
 
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
@@ -116,6 +121,41 @@ export const initCheckoutByCart =
 				},
 			};
 
+			const requestedStepper = {
+				filledSteps: stepper?.filledSteps ?? [],
+				currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
+				steps,
+			};
+			const firstIncompleteStep = getFirstIncompleteCheckoutStep(
+				initialOrder,
+				requestedStepper,
+			);
+			const requestedStepIsAllowed = canNavigateToCheckoutStep(
+				requestedStepper.currentStep,
+				initialOrder,
+				requestedStepper,
+			);
+			const requestedStepExists = requestedStepper.steps.includes(
+				requestedStepper.currentStep,
+			);
+			const fallbackStep = requestedStepper.steps.includes(TCheckoutStep.paymentMethod)
+				? TCheckoutStep.paymentMethod
+				: requestedStepper.steps[0] ?? TCheckoutStep.contactInfo;
+			let normalizedCurrentStep = requestedStepExists
+				? requestedStepper.currentStep
+				: fallbackStep;
+			let stepWarning = null;
+
+			if (firstIncompleteStep && !requestedStepIsAllowed) {
+				normalizedCurrentStep = firstIncompleteStep;
+				stepWarning = getCheckoutStepWarning(normalizedCurrentStep);
+			}
+
+			const normalizedStepper = {
+				...requestedStepper,
+				currentStep: normalizedCurrentStep,
+			};
+
 			const data = {
 				items: items,
 				order: {...initialOrder},
@@ -133,11 +173,8 @@ export const initCheckoutByCart =
 						symbol: "$",
 					},
 				},
-				stepper: {
-					filledSteps: stepper?.filledSteps ?? [],
-					currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
-					steps,
-				},
+				stepper: normalizedStepper,
+				stepWarning,
 				total: checkoutData?.total
 					? checkoutData.total
 					: ({
