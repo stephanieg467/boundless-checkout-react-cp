@@ -41,6 +41,7 @@ import {
 } from "../../hooks/checkoutData";
 import {cartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
+import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -419,6 +420,7 @@ export default function ShippingForm({
 								errors={formikProps.errors}
 							/>
 						)}
+						<CheckoutStepWarning step={TCheckoutStep.shippingAddress} />
 						<Typography variant="h5" sx={{m: 2}}>
 							{t("shippingForm.pageHeader")}
 						</Typography>

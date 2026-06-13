@@ -28,6 +28,7 @@ import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 import {ICheckoutStepper, TCheckoutStep} from "../types/common";
+import CheckoutStepWarning from "./CheckoutStepWarning";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -120,6 +121,7 @@ function ContactFormView() {
 							errors={formikProps.errors}
 						/>
 					)}
+					<CheckoutStepWarning step={TCheckoutStep.contactInfo} />
 					<Typography variant="h5" sx={{mb: 2}}>
 						{t("contactForm.pageHeader")}
 					</Typography>

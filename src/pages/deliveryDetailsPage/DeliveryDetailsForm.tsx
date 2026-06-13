@@ -26,6 +26,7 @@ import {hasDeliveryId} from "../../lib/shipping";
 import {DELIVERY_ID, SELF_PICKUP_ID} from "../../constants";
 import {DeliveryTimeSelector} from "./helpers";
 import ExtraErrors from "../../components/ExtraErrors";
+import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 
 const hasDropShipTimes = (data: unknown): data is DeliveryTimesWithDropShip =>
 	!!data && typeof data === "object" && "dropShipTimes" in data;
@@ -178,6 +179,7 @@ export default function DeliveryDetailsForm() {
 							errors={formikProps.errors}
 						/>
 					)}
+					<CheckoutStepWarning step={TCheckoutStep.deliveryDetails} />
 					<Typography variant="h5" sx={{mb: 2}}>
 						{"Delivery details"}
 					</Typography>
