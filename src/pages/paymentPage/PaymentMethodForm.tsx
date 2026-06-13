@@ -32,8 +32,18 @@ import {
 } from "../../hooks/checkoutData";
 import {fieldAttrs} from "../../lib/formUtils";
 import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID} from "../../constants";
-import {setOrder, setTotal} from "../../redux/reducers/app";
+import {
+	setCurrentStep,
+	setOrder,
+	setStepWarning,
+	setTotal,
+} from "../../redux/reducers/app";
 import {IOrderWithCustmAttr} from "../../types/Order";
+import {
+	getCheckoutStepWarning,
+	getFirstIncompleteCheckoutStep,
+} from "../../lib/checkoutGuards";
+import {ICheckoutStepper} from "../../types/common";
 import {
 	cartHasTickets,
 	ordersDropShippingItems,
@@ -94,6 +104,14 @@ const ScrollToFirstPaymentFormError = ({
 	return null;
 };
 
+const DELIVERY_TIME_REQUIRED_ERROR = "Delivery time is required";
+
+const hasPaymentFormValue = (value: unknown): boolean => {
+	if (typeof value === "string") return value.trim().length > 0;
+
+	return value !== null && value !== undefined;
+};
+
 const makeValidatePaymentForm =
 	(requireDeliveryTime: boolean) => (values: IPaymentMethodFormValues) => {
 		const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
@@ -107,19 +125,58 @@ const makeValidatePaymentForm =
 		}
 
 		if (requireDeliveryTime && !values.delivery_time) {
-			errors.delivery_time = "Delivery time is required";
+			errors.delivery_time = DELIVERY_TIME_REQUIRED_ERROR;
 		}
 
 		return errors;
 	};
 
-const usePaymentDeliveryContext = () => {
-	const {order, items} = useAppSelector((state) => state.app);
+type PaymentDeliveryItems = Parameters<typeof ordersDropShippingItems>[0];
+
+const getPaymentDeliveryContext = (
+	order: IOrderWithCustmAttr | undefined,
+	items: PaymentDeliveryItems = [],
+) => {
 	const isDelivery = order ? hasDeliveryId(order, DELIVERY_ID) : false;
 	const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
 	const regularItems = ordersRegularItems(items ?? []);
 	const requireDeliveryTime = isDelivery && !hasDropShipItems;
 	return {isDelivery, requireDeliveryTime, regularItems};
+};
+
+const getLatestDeliveryTimeError = (
+	order: IOrderWithCustmAttr | undefined,
+	items: PaymentDeliveryItems | undefined,
+	submittedDeliveryTime: string | undefined,
+): string | null => {
+	const {requireDeliveryTime} = getPaymentDeliveryContext(order, items ?? []);
+
+	if (!requireDeliveryTime) return null;
+	if (hasPaymentFormValue(order?.delivery_time) || hasPaymentFormValue(submittedDeliveryTime)) {
+		return null;
+	}
+
+	return DELIVERY_TIME_REQUIRED_ERROR;
+};
+
+const usePaymentDeliveryContext = () => {
+	const {order, items} = useAppSelector((state) => state.app);
+	return getPaymentDeliveryContext(order, items ?? []);
+};
+
+const redirectToIncompleteStep = (
+	dispatch: ReturnType<typeof useAppDispatch>,
+	stepper: ICheckoutStepper | null | undefined,
+	order: IOrderWithCustmAttr | undefined,
+): boolean => {
+	if (!stepper) return false;
+
+	const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+	if (!firstIncompleteStep) return false;
+
+	dispatch(setCurrentStep(firstIncompleteStep));
+	dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));
+	return true;
 };
 
 export default function PaymentMethodForm({
@@ -131,7 +188,9 @@ export default function PaymentMethodForm({
 	const order = checkoutData?.order;
 	const items = checkoutData?.items;
 	const total = checkoutData?.total;
-	const {onSubmit} = useSavePaymentMethod(paymentPage);
+	const stepper = useAppSelector((state) => state.app.stepper);
+	const dispatch = useAppDispatch();
+	const {onSubmit} = useSavePaymentMethod(paymentPage, stepper);
 	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
 	const {recordApprovedPayment} = useCreditCardPaymentOutcome();
@@ -191,7 +250,25 @@ export default function PaymentMethodForm({
 						return;
 					}
 
-					if (order?.paid_at || isPaymentApproved) {
+					const latestCheckoutData = getCheckoutData();
+					const latestOrder = latestCheckoutData?.order;
+					if (redirectToIncompleteStep(dispatch, stepper, latestOrder)) {
+						return;
+					}
+
+					const latestDeliveryTimeError = getLatestDeliveryTimeError(
+						latestOrder,
+						latestCheckoutData?.items,
+						values.delivery_time,
+					);
+					if (latestDeliveryTimeError) {
+						formikProps.setFieldError("delivery_time", latestDeliveryTimeError);
+						formikProps.setStatus({serverError: latestDeliveryTimeError});
+						scrollToFirstPaymentFormError({delivery_time: latestDeliveryTimeError});
+						return;
+					}
+
+					if (latestOrder?.paid_at || isPaymentApproved) {
 						await formikProps.submitForm();
 						return;
 					}
@@ -468,27 +545,47 @@ const PaymentMethods = ({
 	);
 };
 
-const useSavePaymentMethod = (paymentPage: IPaymentPageData) => {
+const useSavePaymentMethod = (
+	paymentPage: IPaymentPageData,
+	stepper: ICheckoutStepper | null | undefined,
+) => {
 	const {order} = useAppSelector((state) => state.app);
 	const {onThankYouPage} = useCheckoutConfig();
 	const dispatch = useAppDispatch();
 
 	const onSubmit = async (
 		values: IPaymentMethodFormValues,
-		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
+		{setErrors, setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
 	) => {
 		const checkoutData = getCheckoutData();
 		const checkoutDataOrder = checkoutData?.order;
 		const checkoutDataTotal = checkoutData?.total;
 		const items = checkoutData?.items;
 
-		if (!order || !checkoutDataOrder || !checkoutDataTotal) {
+		if (!checkoutDataOrder || !checkoutDataTotal) {
 			console.error("[useSavePaymentMethod] Missing checkout session data at submission", {
 				hasOrder: Boolean(order),
 				hasCheckoutDataOrder: Boolean(checkoutDataOrder),
 				hasTotal: Boolean(checkoutDataTotal),
 			});
 			setStatus({serverError: "Unable to complete your order. Please refresh and try again."});
+			setSubmitting(false);
+			return;
+		}
+
+		if (redirectToIncompleteStep(dispatch, stepper, checkoutDataOrder)) {
+			setSubmitting(false);
+			return;
+		}
+
+		const latestDeliveryTimeError = getLatestDeliveryTimeError(
+			checkoutDataOrder,
+			items,
+			values.delivery_time,
+		);
+		if (latestDeliveryTimeError) {
+			setErrors({delivery_time: latestDeliveryTimeError});
+			setStatus({serverError: latestDeliveryTimeError});
 			setSubmitting(false);
 			return;
 		}
