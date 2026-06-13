@@ -13,6 +13,8 @@ import {
 	addFilledStep,
 	setOrdersCustomer,
 	setCurrentStep,
+	setOrder,
+	setTotal,
 } from "../redux/reducers/app";
 import Typography from "@mui/material/Typography";
 import clsx from "clsx";
@@ -29,6 +31,7 @@ import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 import {ICheckoutStepper, TCheckoutStep} from "../types/common";
 import CheckoutStepWarning from "./CheckoutStepWarning";
+import {clearProgressAfterContact} from "../lib/checkoutProgressReset";
 
 export interface IContactInformationFormValues {
 	email: string;
@@ -294,19 +297,25 @@ const useSaveContactInfo = () => {
 			phone: phone ?? null,
 			dob: dob ?? "",
 			custom_attrs: null,
-			addresses: order?.customer?.addresses ?? [],
+			addresses: [],
 		};
 
-		setLocalStorageCheckoutData({
-			order: order
-				? {
-						...order,
-						customer: customer,
-					}
-				: undefined,
-			total: total,
-		});
-		dispatch(setOrdersCustomer(customer));
+		const baseOrder = order
+			? {
+					...order,
+					customer: customer,
+				}
+			: undefined;
+		const resetCheckout = baseOrder
+			? clearProgressAfterContact(baseOrder, total)
+			: {order: undefined, total};
+
+		setLocalStorageCheckoutData(resetCheckout);
+		if (resetCheckout.order?.customer) {
+			dispatch(setOrdersCustomer(resetCheckout.order.customer));
+		}
+		if (resetCheckout.order) dispatch(setOrder(resetCheckout.order));
+		if (resetCheckout.total) dispatch(setTotal(resetCheckout.total));
 		dispatch(addFilledStep({step: TCheckoutStep.contactInfo}));
 
 		setSubmitting(false);

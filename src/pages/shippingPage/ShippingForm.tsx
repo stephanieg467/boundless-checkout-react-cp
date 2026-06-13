@@ -42,6 +42,7 @@ import {
 import {cartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
+import {clearProgressAfterShipping} from "../../lib/checkoutProgressReset";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -348,6 +349,8 @@ const useSaveShippingForm = ({
 					},
 				} as unknown as IOrderWithCustmAttr;
 
+				const checkoutOrder = clearProgressAfterShipping(updatedOrder);
+
 				if (total) {
 					const updatedTotal = {
 						...total,
@@ -367,11 +370,11 @@ const useSaveShippingForm = ({
 					};
 
 					setLocalStorageCheckoutData({
-						order: updatedOrder,
+						order: checkoutOrder,
 						total: updatedTotal,
 					});
 
-					dispatch(setOrder(updatedOrder));
+					dispatch(setOrder(checkoutOrder));
 					dispatch(setTotal(updatedTotal));
 					dispatch(addFilledStep({step: TCheckoutStep.shippingAddress}));
 				}
