@@ -1,13 +1,21 @@
 import {Step, StepButton, Stepper} from "@mui/material";
 import React, {useMemo} from "react";
 import {useAppDispatch, useAppSelector} from "../hooks/redux";
-import {setCurrentStep} from "../redux/reducers/app";
+import {
+	canNavigateToCheckoutStep,
+	getCheckoutStepWarning,
+	getFirstIncompleteCheckoutStep,
+} from "../lib/checkoutGuards";
+import {ordersDropShippingItems} from "../lib/products";
+import {
+	setCurrentStep,
+	setStepWarning,
+} from "../redux/reducers/app";
 import {useTranslation} from "react-i18next";
 import {TCheckoutStep} from "../types/common";
-import {ordersDropShippingItems} from "../lib/products";
 
 export default function CheckoutProgress() {
-	const {stepper, items} = useAppSelector((state) => state.app);
+	const {stepper, items, order} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const {t} = useTranslation();
 	const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
@@ -17,7 +25,18 @@ export default function CheckoutProgress() {
 		: 0;
 
 	const handleStepChange = (step: TCheckoutStep) => {
-		dispatch(setCurrentStep(step));
+		if (!stepper) return;
+
+		if (canNavigateToCheckoutStep(step, order, stepper)) {
+			dispatch(setCurrentStep(step));
+			return;
+		}
+
+		const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+		if (firstIncompleteStep) {
+			dispatch(setCurrentStep(firstIncompleteStep));
+			dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));
+		}
 	};
 
 	const checkoutStepTitles = useMemo(
