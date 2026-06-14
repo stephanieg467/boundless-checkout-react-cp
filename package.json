@@ -22,8 +22,8 @@
   "scripts": {
     "build": "rm -rf ./dist && npx rollup --config rollup.prod.js --bundleConfigAsCjs",
     "verify": "tsc --noemit",
-    "type-check": "tsc --noemit",
-    "lint:styles": "npx stylelint ./styles",
+    "lint:styles": "stylelint ./styles",
+    "lint:styles:fix": "stylelint ./styles --fix",
     "lint": "eslint ./src/",
     "lint:fix": "eslint ./src/ --fix",
     "test": "jest",
