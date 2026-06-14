@@ -20,9 +20,19 @@ const removeKeys = <T extends object>(
 	return next;
 };
 
-const numeric = (value: string | number | null | undefined): number => {
-	const parsed = Number(value ?? 0);
-	return Number.isFinite(parsed) ? parsed : 0;
+const numeric = (value: string | number | null | undefined, context?: string): number => {
+	if (value === null || value === undefined) return 0;
+
+	const parsed = Number(value);
+	if (!Number.isFinite(parsed)) {
+		console.error(
+			`[checkoutProgressReset] Non-numeric value encountered${context ? ` for ${context}` : ""}`,
+			value,
+		);
+		return 0;
+	}
+
+	return parsed;
 };
 
 const clearPaymentAndDeliveryProgress = (
@@ -74,13 +84,13 @@ export const clearProgressAfterContact = (
 	order: IOrderWithCustmAttr,
 	total: ITotal | undefined,
 ): {order: IOrderWithCustmAttr; total: ITotal | undefined} => {
-	const shippingTax = numeric(order.custom_attrs?.shippingTax);
-	const shippingRate = numeric(order.custom_attrs?.shippingRate);
-	const tip = numeric(order.tip);
-	const taxAmount = Math.max(0, numeric(order.tax_amount) - shippingTax).toString();
+	const shippingTax = numeric(order.custom_attrs?.shippingTax, "custom_attrs.shippingTax");
+	const shippingRate = numeric(order.custom_attrs?.shippingRate, "custom_attrs.shippingRate");
+	const tip = numeric(order.tip, "order.tip");
+	const taxAmount = Math.max(0, numeric(order.tax_amount, "order.tax_amount") - shippingTax).toString();
 	const totalPrice = Math.max(
 		0,
-		numeric(order.total_price ?? total?.price) - shippingTax - shippingRate - tip,
+		numeric(order.total_price ?? total?.price, "order.total_price") - shippingTax - shippingRate - tip,
 	).toFixed(2);
 
 	const nextOrder: IOrderWithCustmAttr = {

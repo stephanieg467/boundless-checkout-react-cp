@@ -207,4 +207,19 @@ describe("checkout progress reset", () => {
     expect(order.total_price).toBe("100.00");
     expect(total?.price).toBe("100.00");
   });
+
+  it("clears contact progress when no total is available yet", () => {
+    const {order, total} = clearProgressAfterContact(
+      makeOrder({
+        total_price: "119.20",
+        tax_amount: "1.20",
+        tip: "6.00",
+      }),
+      undefined,
+    );
+
+    expect(order.services).toEqual([]);
+    expect(order.total_price).toBe("100.00");
+    expect(total).toBeUndefined();
+  });
 });

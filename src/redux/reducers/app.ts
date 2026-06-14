@@ -154,6 +154,9 @@ const appSlice = createSlice({
 			if (state.stepper) {
 				state.stepper.currentStep = action.payload;
 			}
+			if (state.stepWarning && state.stepWarning.step !== action.payload) {
+				state.stepWarning = null;
+			}
 		},
 		setStepperSteps(state, action: PayloadAction<TCheckoutStep[]>) {
 			if (state.stepper) {
