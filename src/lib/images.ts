@@ -1,4 +1,4 @@
-export function getProductImg(image: IImagePartial, maxSize: number): IImageData {
+export function getProductImg(image: IImagePartial): IImageData {
 	const {width, height, path} = image;
 	
 	return {

@@ -1,5 +1,4 @@
 import React from "react";
-import {useAppSelector} from "../../hooks/redux";
 import {TClickedElement} from "../../lib/elementEvents";
 import {Logo} from "../Header";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";

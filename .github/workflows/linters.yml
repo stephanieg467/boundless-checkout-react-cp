@@ -1,5 +1,4 @@
-#name: Linters
-#on: push
+name: Linters
 
 on:
   push:
@@ -8,20 +7,31 @@ on:
     branches: [master]
 
 jobs:
-  super-lint:
-    name: Lint code base
+  validate:
+    name: Validate code base
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Run Super-Linter
-        uses: github/super-linter@v4
-        env:
-          DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#         validate only typescript:
-          VALIDATE_TYPESCRIPT_ES: true
-          VALIDATE_CSS: true
-          CSS_FILE_NAME: .stylelintrc.json
-          LINTER_RULES_PATH: /
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run style lint
+        run: npm run lint:styles
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run type verification
+        run: npm run verify
+
+      - name: Run tests
+        run: npm test
