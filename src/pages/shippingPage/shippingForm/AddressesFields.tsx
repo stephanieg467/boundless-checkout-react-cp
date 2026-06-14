@@ -50,7 +50,6 @@ export default function AddressesFields({
 				<Box className="bdl-shipping-form__address-form" sx={{mb: 2}}>
 					<Typography variant="h6">{t("addresses.billingAddress")}</Typography>
 					<AddressFieldset
-						countries={shippingPage.options.country}
 						keyPrefix={"billing_address"}
 					/>
 				</Box>
