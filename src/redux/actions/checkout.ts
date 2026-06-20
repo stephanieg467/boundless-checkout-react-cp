@@ -22,7 +22,6 @@ export const initCheckoutByCart =
 	async (dispatch, getState) => {
 		const {cartId, order, stepper} = getState().app;
 		const {onCheckoutInited} = config;
-		console.log("Initializing checkout with cart ID:", cartId);
 
 		const cart = getCartOrRetrieve();
 
