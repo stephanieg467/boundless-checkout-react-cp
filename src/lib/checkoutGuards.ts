@@ -1,4 +1,4 @@
-import {TShippingAlias} from "boundless-api-client";
+import {IOrderService, TShippingAlias} from "boundless-api-client";
 import {
 	DELIVERY_ID,
 	SELF_PICKUP_ID,
@@ -41,7 +41,7 @@ const hasRequiredAddressFields = (address: any): boolean => {
 const getSelectedService = (order: IOrderWithCustmAttr | undefined) =>
 	order?.services?.find(Boolean) ?? null;
 
-const isPickupService = (service: any): boolean => {
+const isPickupService = (service: IOrderService | null): boolean => {
 	if (!service) return false;
 
 	return (
@@ -52,7 +52,7 @@ const isPickupService = (service: any): boolean => {
 	);
 };
 
-const isAddressRequiredService = (service: any): boolean => {
+const isAddressRequiredService = (service: IOrderService | null): boolean => {
 	if (!service) return false;
 	if (isPickupService(service)) return false;
 

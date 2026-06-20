@@ -42,7 +42,7 @@ import {
 import {cartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
-import {clearProgressAfterShipping} from "../../lib/checkoutProgressReset";
+import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -349,7 +349,7 @@ const useSaveShippingForm = ({
 					},
 				} as unknown as IOrderWithCustmAttr;
 
-				const checkoutOrder = clearProgressAfterShipping(updatedOrder);
+				const checkoutOrder = clearPaymentAndDeliveryProgress(updatedOrder);
 
 				if (total) {
 					const updatedTotal = {

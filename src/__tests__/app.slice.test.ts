@@ -1,6 +1,5 @@
 import appReducer, {
 	addFilledStep,
-	clearStepWarning,
 	setCheckoutData,
 	setCurrentStep,
 	setStepWarning,
@@ -54,9 +53,6 @@ describe("app slice – warning state", () => {
 
 		const warned = appReducer(undefined, setStepWarning(warning));
 		expect((warned as any).stepWarning).toEqual(warning);
-
-		const cleared = appReducer(warned as any, clearStepWarning());
-		expect((cleared as any).stepWarning).toBeNull();
 	});
 });
 

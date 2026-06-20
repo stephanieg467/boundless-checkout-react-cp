@@ -1,7 +1,7 @@
 import {IAddress, IOrderService, ITotal, TAddressType, TPublishingStatus} from "boundless-api-client";
 import {
   clearCheckoutProgressAfterContactSave,
-  clearCheckoutProgressAfterShippingSave,
+  clearPaymentAndDeliveryProgress,
   clearProgressAfterContact,
 } from "./checkoutProgressReset";
 import {IOrderWithCustmAttr} from "../types/Order";
@@ -152,7 +152,7 @@ describe("checkout progress reset", () => {
       order_service_id: "submitted-service-1" as unknown as number,
       total_price: "0.00",
     });
-    const result = clearCheckoutProgressAfterShippingSave(
+    const result = clearPaymentAndDeliveryProgress(
       makeOrder({
         customer: {
           ...savedContact,

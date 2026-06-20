@@ -35,7 +35,7 @@ const numeric = (value: string | number | null | undefined, context?: string): n
 	return parsed;
 };
 
-const clearPaymentAndDeliveryProgress = (
+export const clearPaymentAndDeliveryProgress = (
 	order: IOrderWithCustmAttr,
 ): IOrderWithCustmAttr => {
 	const orderWithoutTip = removeKeys(order, ["tip"]);
@@ -75,10 +75,6 @@ export const clearCheckoutProgressAfterContactSave = (
 		]),
 	};
 };
-
-export const clearCheckoutProgressAfterShippingSave = (
-	order: IOrderWithCustmAttr,
-): IOrderWithCustmAttr => clearPaymentAndDeliveryProgress(order);
 
 export const clearProgressAfterContact = (
 	order: IOrderWithCustmAttr,
@@ -121,7 +117,3 @@ export const clearProgressAfterContact = (
 
 	return {order: nextOrder, total: nextTotal};
 };
-
-export const clearProgressAfterShipping = (
-	order: IOrderWithCustmAttr,
-): IOrderWithCustmAttr => clearCheckoutProgressAfterShippingSave(order);

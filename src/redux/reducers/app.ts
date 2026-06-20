@@ -131,9 +131,6 @@ const appSlice = createSlice({
 		setStepWarning(state, action: PayloadAction<ICheckoutStepWarning>) {
 			state.stepWarning = action.payload;
 		},
-		clearStepWarning(state) {
-			state.stepWarning = null;
-		},
 		resetAppState() {
 			const {order} = getCheckoutData() || {};
 			if (order && order.custom_attrs.originalCart) setCart(order.custom_attrs.originalCart);
@@ -175,7 +172,6 @@ export const {
 	setOrdersCustomer,
 	setGlobalError,
 	setStepWarning,
-	clearStepWarning,
 	setOrder,
 	setCheckoutInited,
 	resetAppState,
