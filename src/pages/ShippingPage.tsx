@@ -13,8 +13,12 @@ import {
 } from "../constants";
 import {cartHasTickets} from "../lib/products";
 import {getVancouverDateTime} from "../lib/deliveryTimes";
-import {setCurrentStep} from "../redux/reducers/app";
+import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
+import {
+	getCheckoutStepWarning,
+	isContactStepComplete,
+} from "../lib/checkoutGuards";
 
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();
@@ -22,7 +26,6 @@ const useInitShippingPage = () => {
 		useState<null | ICheckoutShippingPageData>(null);
 	const {order} = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state) => state.app.items);
-	const {stepper} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 
 	const cartItemHasTickets = cartHasTickets();
@@ -46,10 +49,11 @@ const useInitShippingPage = () => {
 	}
 
 	useEffect(() => {
-		if (stepper && !stepper.filledSteps.includes(TCheckoutStep.contactInfo)) {
+		if (isInited && order && !isContactStepComplete(order)) {
 			dispatch(setCurrentStep(TCheckoutStep.contactInfo));
+			dispatch(setStepWarning(getCheckoutStepWarning(TCheckoutStep.contactInfo)));
 		}
-	}, [stepper, dispatch]);
+	}, [isInited, order, dispatch]);
 
 	useEffect(() => {
 		if (order && !shippingPage) {

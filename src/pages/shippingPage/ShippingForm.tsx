@@ -41,6 +41,8 @@ import {
 } from "../../hooks/checkoutData";
 import {cartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
+import CheckoutStepWarning from "../../components/CheckoutStepWarning";
+import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -247,8 +249,8 @@ const useSaveShippingForm = ({
 						id: v4(),
 						type: "shipping",
 						is_default: true,
-						first_name: order.customer?.first_name,
-						last_name: order.customer?.last_name,
+						first_name: shipping_address?.first_name,
+						last_name: shipping_address?.last_name,
 						company: null,
 						address_line_1: shipping_address?.address_line_1,
 						address_line_2: shipping_address?.address_line_2,
@@ -347,6 +349,8 @@ const useSaveShippingForm = ({
 					},
 				} as unknown as IOrderWithCustmAttr;
 
+				const checkoutOrder = clearPaymentAndDeliveryProgress(updatedOrder);
+
 				if (total) {
 					const updatedTotal = {
 						...total,
@@ -366,11 +370,11 @@ const useSaveShippingForm = ({
 					};
 
 					setLocalStorageCheckoutData({
-						order: updatedOrder,
+						order: checkoutOrder,
 						total: updatedTotal,
 					});
 
-					dispatch(setOrder(updatedOrder));
+					dispatch(setOrder(checkoutOrder));
 					dispatch(setTotal(updatedTotal));
 					dispatch(addFilledStep({step: TCheckoutStep.shippingAddress}));
 				}
@@ -419,6 +423,7 @@ export default function ShippingForm({
 								errors={formikProps.errors}
 							/>
 						)}
+						<CheckoutStepWarning step={TCheckoutStep.shippingAddress} />
 						<Typography variant="h5" sx={{m: 2}}>
 							{t("shippingForm.pageHeader")}
 						</Typography>

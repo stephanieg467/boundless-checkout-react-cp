@@ -5,8 +5,11 @@ import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {TPublishingStatus} from "boundless-api-client";
 import PaymentMethodForm from "./PaymentMethodForm";
-import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD} from "../../constants";
+import {CREDIT_CARD_PAYMENT_METHOD, DELIVERY_ID, PAY_IN_STORE_PAYMENT_METHOD, SELF_PICKUP_ID} from "../../constants";
 import {PaymentValidationError, PaymentOutcomeError, completeCreditCardPaymentOutcome} from "../../lib/paymentOutcome";
+import {getCheckoutStepWarning} from "../../lib/checkoutGuards";
+import {setCurrentStep, setStepWarning} from "../../redux/reducers/app";
+import {TCheckoutStep} from "../../types/common";
 
 const mockDispatch = jest.fn();
 let mockState: any = {};
@@ -86,6 +89,65 @@ const payInStoreMethod = {
   title: "Pay in store",
 } as any;
 
+const completeShippingAddress = (overrides: any = {}) => ({
+  type: "shipping",
+  first_name: "Ada",
+  last_name: "Lovelace",
+  address_line_1: "123 Main St",
+  city: "Penticton",
+  state: "BC",
+  zip: "V2A 1A1",
+  phone: "2505551234",
+  ...overrides,
+});
+
+const completeCustomer = (overrides: any = {}) => ({
+  id: "customer-1",
+  first_name: "Ada",
+  last_name: "Lovelace",
+  email: "ada@example.com",
+  phone: "2505551234",
+  dob: "1990-01-01",
+  addresses: [completeShippingAddress()],
+  ...overrides,
+});
+
+const pickupService = (overrides: any = {}) => ({
+  service_id: SELF_PICKUP_ID,
+  serviceDelivery: {
+    title: "Self Pickup",
+    delivery: {
+      alias: "selfPickup",
+      title: "Self Pickup",
+    },
+  },
+  ...overrides,
+});
+
+const deliveryService = (overrides: any = {}) => ({
+  service_id: DELIVERY_ID,
+  serviceDelivery: {
+    title: "Delivery",
+    delivery: {
+      alias: "delivery",
+      title: "Delivery",
+    },
+  },
+  ...overrides,
+});
+
+const checkoutSteps = [
+  TCheckoutStep.contactInfo,
+  TCheckoutStep.shippingAddress,
+  TCheckoutStep.paymentMethod,
+];
+
+const completeStepper = {
+  currentStep: TCheckoutStep.paymentMethod,
+  steps: checkoutSteps,
+  filledSteps: [TCheckoutStep.contactInfo, TCheckoutStep.shippingAddress],
+};
+
 function makeOrder(overrides: any = {}) {
   return {
     id: "order-1",
@@ -102,12 +164,8 @@ function makeOrder(overrides: any = {}) {
     tax_calculations: null,
     custom_attrs: {},
     tip: "0.00",
-    services: [],
-    customer: {
-      first_name: "Ada",
-      last_name: "Lovelace",
-      email: "ada@example.com",
-    },
+    services: [pickupService()],
+    customer: completeCustomer(),
     ...overrides,
   };
 }
@@ -129,13 +187,23 @@ function setup({
   order?: any;
   paymentMethods?: any[];
 } = {}) {
-  mockState = {app: {order, total, items}};
-  mockCheckoutData = {order, total, items};
+  const stepper = {...completeStepper};
+  mockState = {app: {order, total, items, stepper}};
+  mockCheckoutData = {order, total, items, stepper};
 
   return render(
     <PaymentMethodForm
       paymentPage={{paymentMethods} as any}
     />,
+  );
+}
+
+async function expectRedirectedToCheckoutStep(step: TCheckoutStep) {
+  await waitFor(() => {
+    expect(mockDispatch).toHaveBeenCalledWith(setCurrentStep(step));
+  });
+  expect(mockDispatch).toHaveBeenCalledWith(
+    setStepWarning(getCheckoutStepWarning(step)),
   );
 }
 
@@ -260,6 +328,93 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockOnThankYouPage).not.toHaveBeenCalled();
   });
 
+  it("validates delivery time against the latest persisted order before submitting PayHQ payment", async () => {
+    const user = userEvent.setup();
+
+    setup({order: makeOrder({services: [pickupService()]})});
+
+    // Simulate persisted checkout data changing from pickup to delivery after render.
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({
+        delivery_time: "",
+        services: [deliveryService()],
+      }),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    expect(mockCheckoutData.order.custom_attrs.checkoutCompleted).toBeUndefined();
+  });
+
+  it("does not recharge when the latest persisted credit-card order is already paid", async () => {
+    const user = userEvent.setup();
+    const paidAt = "2026-05-23T11:30:00.000Z";
+
+    setup({order: makeOrder({paid_at: null})});
+
+    // Simulate another completion path recording payment after render but before click.
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({paid_at: paidAt}),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    expect(checkoutArg.order.paid_at).toBe(paidAt);
+    expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
+  });
+
+  it("blocks credit-card payment when the latest persisted customer is incomplete", async () => {
+    const user = userEvent.setup();
+
+    setup();
+
+    // Simulate persisted checkout data becoming stale after render but before payment submission.
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({customer: completeCustomer({phone: ""})}),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await expectRedirectedToCheckoutStep(TCheckoutStep.contactInfo);
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
+  it("blocks credit-card payment when latest persisted contact is complete but shipping is incomplete", async () => {
+    const user = userEvent.setup();
+
+    setup();
+
+    // Simulate persisted checkout data changing after render; the submit guard must read this order.
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({
+        customer: completeCustomer({addresses: []}),
+        services: [deliveryService()],
+      }),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await expectRedirectedToCheckoutStep(TCheckoutStep.shippingAddress);
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
   it("keeps the shared button busy after thank-you callback resolves", async () => {
     const user = userEvent.setup();
     let resolveThankYou!: () => void;
@@ -307,6 +462,37 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
   });
 
+  it("blocks card-approved checkout completion retry when latest persisted prerequisites are incomplete", async () => {
+    const user = userEvent.setup();
+    mockOnThankYouPage
+      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockResolvedValueOnce(undefined);
+
+    setup();
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+    expect(mockOnThankYouPage).toHaveBeenCalledTimes(1);
+
+    mockOnThankYouPage.mockClear();
+    mockDispatch.mockClear();
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({
+        paid_at: "2026-05-23T12:00:00.000Z",
+        customer: completeCustomer({phone: ""}),
+      }),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await expectRedirectedToCheckoutStep(TCheckoutStep.contactInfo);
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+  });
+
   it("keeps non-credit-card methods on the normal Formik submit path", async () => {
     const user = userEvent.setup();
     const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
@@ -320,6 +506,57 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockSubmitPayment).not.toHaveBeenCalled();
     expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
+  });
+
+  it("completes checkout from the latest persisted order when render-time Redux order is stale", async () => {
+    const user = userEvent.setup();
+    const latestOrder = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
+
+    setup({order: null, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    // Simulate checkout data being restored after render but before submit.
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: latestOrder,
+      total,
+      items,
+    };
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalledWith(setCurrentStep(TCheckoutStep.contactInfo));
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
+    expect(checkoutArg.order.id).toBe(latestOrder.id);
+    expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
+  });
+
+  it("blocks non-credit-card completion when latest persisted prerequisites are incomplete without completing checkout", async () => {
+    const user = userEvent.setup();
+    const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    mockCheckoutData = {
+      ...mockCheckoutData,
+      order: makeOrder({
+        payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
+        customer: completeCustomer({addresses: []}),
+        services: [deliveryService()],
+      }),
+    };
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await expectRedirectedToCheckoutStep(TCheckoutStep.shippingAddress);
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    expect(mockCheckoutData.order.custom_attrs.checkoutCompleted).toBeUndefined();
   });
 
   it("updates non-credit-card checkout completion data with a tip", async () => {

@@ -13,12 +13,14 @@ import {
 } from "../../hooks/checkoutData";
 import {setCart} from "../../hooks/getCartOrRetrieve";
 import {ICheckoutStepper, TCheckoutStep} from "../../types/common";
+import {ICheckoutStepWarning} from "../../lib/checkoutGuards";
 
 const initialState: IAppState = {
 	isInited: false,
 	show: false,
 	globalError: null,
 	stepper: null,
+	stepWarning: null,
 };
 
 const appSlice = createSlice({
@@ -62,7 +64,9 @@ const appSlice = createSlice({
 						| "stepper"
 						| "total"
 					>
-				>
+				> & {
+					stepWarning?: ICheckoutStepWarning | null;
+				}
 			>
 		) {
 			setLocalStorageCheckoutData(action.payload);
@@ -73,6 +77,7 @@ const appSlice = createSlice({
 				currency,
 				stepper,
 				total,
+				stepWarning,
 			} = action.payload;
 
 			return {
@@ -83,6 +88,7 @@ const appSlice = createSlice({
 				stepper,
 				isInited: true,
 				total,
+				stepWarning: stepWarning ?? null,
 			};
 		},
 		setCheckoutInited(state, action: PayloadAction<{ isInited: boolean }>) {
@@ -91,9 +97,21 @@ const appSlice = createSlice({
 		addFilledStep(state, action: PayloadAction<{ step: TCheckoutStep }>) {
 			const {step} = action.payload;
 			const stepper = state.stepper!;
+			const completedStepIndex = stepper.steps.indexOf(step);
+
+			if (completedStepIndex === -1) return;
+
+			stepper.filledSteps = stepper.filledSteps.filter((filledStep) => {
+				const filledStepIndex = stepper.steps.indexOf(filledStep);
+				return filledStepIndex !== -1 && filledStepIndex <= completedStepIndex;
+			});
 
 			if (!stepper.filledSteps.includes(step)) {
 				stepper.filledSteps.push(step);
+			}
+
+			if (state.stepWarning?.step === step) {
+				state.stepWarning = null;
 			}
 		},
 		setOrder(state, action: PayloadAction<IOrderWithCustmAttr>) {
@@ -109,6 +127,9 @@ const appSlice = createSlice({
 		},
 		setGlobalError(state, action: PayloadAction<string | null>) {
 			state.globalError = action.payload;
+		},
+		setStepWarning(state, action: PayloadAction<ICheckoutStepWarning>) {
+			state.stepWarning = action.payload;
 		},
 		resetAppState() {
 			const {order} = getCheckoutData() || {};
@@ -130,6 +151,9 @@ const appSlice = createSlice({
 			if (state.stepper) {
 				state.stepper.currentStep = action.payload;
 			}
+			if (state.stepWarning && state.stepWarning.step !== action.payload) {
+				state.stepWarning = null;
+			}
 		},
 		setStepperSteps(state, action: PayloadAction<TCheckoutStep[]>) {
 			if (state.stepper) {
@@ -147,6 +171,7 @@ export const {
 	addFilledStep,
 	setOrdersCustomer,
 	setGlobalError,
+	setStepWarning,
 	setOrder,
 	setCheckoutInited,
 	resetAppState,
@@ -177,5 +202,6 @@ export interface IAppState {
 	localeSettings?: ILocaleSettings;
 	taxSettings?: ISystemTax;
 	stepper?: ICheckoutStepper | null;
+	stepWarning: ICheckoutStepWarning | null;
 	total?: ITotal;
 }

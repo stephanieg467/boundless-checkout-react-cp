@@ -11,8 +11,12 @@ import {
 } from "../constants";
 import {cartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
-import {setCurrentStep} from "../redux/reducers/app";
+import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
+import {
+	getCheckoutStepWarning,
+	getFirstIncompleteCheckoutStep,
+} from "../lib/checkoutGuards";
 
 export default function PaymentPage() {
 	const {isInited, paymentPage} = useInitPaymentPage();
@@ -51,12 +55,14 @@ const useInitPaymentPage = () => {
 	const {order, stepper} = useAppSelector((state) => state.app);
 	const dispatch = useAppDispatch();
 	const checkoutData = getCheckoutData();
+	const hasCheckoutData = Boolean(checkoutData);
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
 	const cartItemHasTickets = cartHasTickets();
 
 	useEffect(() => {
 		if (!checkoutData) {
 			dispatch(setCurrentStep(TCheckoutStep.contactInfo));
+			dispatch(setStepWarning(getCheckoutStepWarning(TCheckoutStep.contactInfo)));
 		}
 	}, [checkoutData, dispatch]);
 
@@ -87,15 +93,14 @@ const useInitPaymentPage = () => {
 	}, [isInited, order, dispatch]); //eslint-disable-line
 
 	useEffect(() => {
-		if (!stepper) return;
-		const deliveryDetailsIsInSteps = stepper.steps.includes(TCheckoutStep.deliveryDetails);
-		if (
-			deliveryDetailsIsInSteps &&
-			!stepper.filledSteps.includes(TCheckoutStep.deliveryDetails)
-		) {
-			dispatch(setCurrentStep(TCheckoutStep.deliveryDetails));
+		if (!isInited || !stepper || !hasCheckoutData) return;
+
+		const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+		if (firstIncompleteStep) {
+			dispatch(setCurrentStep(firstIncompleteStep));
+			dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));
 		}
-	}, [stepper, dispatch]);
+	}, [isInited, order, stepper, hasCheckoutData, dispatch]);
 
 	return {
 		isInited,
