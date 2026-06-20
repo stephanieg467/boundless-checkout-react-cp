@@ -1,6 +1,7 @@
 import React from "react";
 import {useFormikContext} from "formik";
 import {
+	Box,
 	FormControl,
 	FormControlLabel,
 	FormHelperText,
@@ -13,7 +14,6 @@ import {IShippingFormValues} from "../../../types/shippingForm";
 import StoreMallDirectoryIcon from "@mui/icons-material/StoreMallDirectory";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import {Box} from "@mui/system";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
 import {SHIPPING_COST} from "../../../constants";

@@ -6,9 +6,8 @@ import {
 } from "boundless-api-client";
 import {Form, Formik, FormikHelpers} from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
-import {Button, Typography} from "@mui/material";
+import {Box, Button, Typography} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {Box} from "@mui/system";
 import {IShippingFormValues} from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
