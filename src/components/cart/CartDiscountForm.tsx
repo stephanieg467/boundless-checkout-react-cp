@@ -333,6 +333,6 @@ export default function CartDiscountForm() {
 	);
 }
 
-export interface IDiscountFormValues {
+interface IDiscountFormValues {
 	code: string;
 }

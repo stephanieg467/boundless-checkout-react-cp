@@ -13,14 +13,11 @@ const xhrSlice = createSlice({
 		},
 		cleanPromises(state) {
 			state.promises = [];
-		},
-		resetXhrState() {
-			return {...initialState};
 		}
 	}
 });
 
-export const {pushPromise, cleanPromises, resetXhrState} = xhrSlice.actions;
+export const {pushPromise, cleanPromises} = xhrSlice.actions;
 
 export default xhrSlice.reducer;
 

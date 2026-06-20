@@ -4,7 +4,7 @@ import {
 	ITotal,
 	ICartTotal,
 } from "boundless-api-client";
-import {IOrderWithCustmAttr} from "./Order";
+import type {IOrderWithCustmAttr} from "./Order";
 import {ICheckoutStepper} from "./common";
 
 export interface CovaProduct {

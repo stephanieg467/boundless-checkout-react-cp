@@ -1,0 +1,32 @@
+{
+  "ignoreDependencies": ["@emotion/react"],
+  "audit": {
+    "gate": "new-only"
+  },
+  "health": {
+    "maxCrap": 50
+  },
+  "duplicates": {
+    "threshold": 5,
+    "ignore": [
+      "src/**/__tests__/**",
+      "src/**/*.test.{ts,tsx,js,jsx}",
+      "src/**/*.spec.{ts,tsx,js,jsx}"
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/**/__tests__/**",
+        "src/**/__mocks__/**",
+        "src/**/*.test.{ts,tsx,js,jsx}",
+        "src/**/*.spec.{ts,tsx,js,jsx}",
+        "src/setupTests.ts"
+      ],
+      "rules": {
+        "unused-files": "off",
+        "unused-exports": "off"
+      }
+    }
+  ]
+}

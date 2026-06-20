@@ -28,7 +28,7 @@ export const useCartHasTickets = () => {
  * @param productSpecifications Array of product specifications
  * @returns Spec value if found, null otherwise
  */
-export const extractSpec = (
+const extractSpec = (
 	productSpecifications: Array<{
 		Unit: string;
 		Value: string;

@@ -58,7 +58,7 @@ export const renderDeliveryTimeOptions = (
 	</>
 );
 
-export interface IDeliveryDetailsFormValues {
+interface IDeliveryDetailsFormValues {
 	delivery_time: string;
 	drop_ship_delivery_time?: string;
 }

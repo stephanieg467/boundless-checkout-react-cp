@@ -7,7 +7,7 @@ import {
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
 import {ICheckoutStepper, TCheckoutStep} from "../types/common";
-import {ICovaCustomer, IOrderWithCustmAttr} from "../types/Order";
+import {ICustomCustomer, IOrderWithCustmAttr} from "../types/Order";
 import {IAddress, IDelivery, IOrderService, TAddressType} from "boundless-api-client";
 import {
 	canNavigateToCheckoutStep,
@@ -21,7 +21,7 @@ const requiredContactFields = ["id", "first_name", "last_name", "email", "phone"
 const requiredAddressFields = ["first_name", "last_name", "address_line_1", "city", "state", "zip", "phone"] as const;
 const invalidStringValues = [null, "", "   "] as const;
 
-const completeCustomer = (overrides: Partial<ICovaCustomer> = {}): ICovaCustomer => ({
+const completeCustomer = (overrides: Partial<ICustomCustomer> = {}): ICustomCustomer => ({
 	id: "customer-1",
 	email: "jane@example.com",
 	created_at: "2026-01-01T00:00:00.000Z",
@@ -130,7 +130,7 @@ describe("checkout guards", () => {
 							orderWith({
 								customer: completeCustomer({
 									[field]: invalidValue,
-								} as unknown as Partial<ICovaCustomer>),
+								} as unknown as Partial<ICustomCustomer>),
 							}),
 						),
 					).toBe(false);

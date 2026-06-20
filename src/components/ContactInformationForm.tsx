@@ -33,7 +33,7 @@ import {ICheckoutStepper, TCheckoutStep} from "../types/common";
 import CheckoutStepWarning from "./CheckoutStepWarning";
 import {clearProgressAfterContact} from "../lib/checkoutProgressReset";
 
-export interface IContactInformationFormValues {
+interface IContactInformationFormValues {
 	email: string;
 	phone: string;
 	first_name: string;

@@ -4,6 +4,7 @@ import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import PaymentMethodForm from "./paymentPage/PaymentMethodForm";
+import type {IPaymentMethod, IPaymentPageData} from "./paymentPage/types";
 import {useTranslation} from "react-i18next";
 import {
 	CREDIT_CARD_PAYMENT_METHOD,
@@ -39,15 +40,6 @@ export default function PaymentPage() {
 			)}
 		</CheckoutLayout>
 	);
-}
-
-export interface IPaymentMethod {
-	payment_method_id: string;
-	title: string;
-}
-
-export interface IPaymentPageData {
-	paymentMethods: IPaymentMethod[];
 }
 
 const useInitPaymentPage = () => {

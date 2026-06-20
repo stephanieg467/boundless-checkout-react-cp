@@ -6,12 +6,8 @@ import {
 	ITotal,
 } from "boundless-api-client";
 import {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
-import {ICovaCustomer, IOrderWithCustmAttr} from "../../types/Order";
-import {
-	getCheckoutData,
-	setLocalStorageCheckoutData,
-} from "../../hooks/checkoutData";
-import {setCart} from "../../hooks/getCartOrRetrieve";
+import {ICustomCustomer, IOrderWithCustmAttr} from "../../types/Order";
+import {setLocalStorageCheckoutData} from "../../hooks/checkoutData";
 import {ICheckoutStepper, TCheckoutStep} from "../../types/common";
 import {ICheckoutStepWarning} from "../../lib/checkoutGuards";
 
@@ -121,7 +117,7 @@ const appSlice = createSlice({
 			}
 			state.order = order;
 		},
-		setOrdersCustomer(state, action: PayloadAction<ICovaCustomer>) {
+		setOrdersCustomer(state, action: PayloadAction<ICustomCustomer>) {
 			const customer = action.payload;
 			state.order!.customer = customer;
 		},
@@ -130,12 +126,6 @@ const appSlice = createSlice({
 		},
 		setStepWarning(state, action: PayloadAction<ICheckoutStepWarning>) {
 			state.stepWarning = action.payload;
-		},
-		resetAppState() {
-			const {order} = getCheckoutData() || {};
-			if (order && order.custom_attrs.originalCart) setCart(order.custom_attrs.originalCart);
-			localStorage.removeItem("cc_checkout_data");
-			return {...initialState};
 		},
 		setTotal(state, action: PayloadAction<ITotal>) {
 			const total = action.payload;
@@ -166,7 +156,6 @@ const appSlice = createSlice({
 export const {
 	setBasicProps,
 	showCheckout,
-	hideCheckout,
 	setCheckoutData,
 	addFilledStep,
 	setOrdersCustomer,
@@ -174,12 +163,8 @@ export const {
 	setStepWarning,
 	setOrder,
 	setCheckoutInited,
-	resetAppState,
 	setTotal,
-	setIsInited,
-	setLocaleSettings,
 	setCurrentStep,
-	setStepperSteps,
 } = appSlice.actions;
 
 export default appSlice.reducer;

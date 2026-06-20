@@ -1,5 +1,4 @@
-import {getDynamicDeliveryTimes, addBusinessDays, DeliveryTimesWithDropShip} from "../lib/deliveryTimes";
-import {DeliveryTimeSlot} from "../hooks/useDeliveryTimes";
+import {addBusinessDays, getDynamicDeliveryTimes, type DeliveryTimeSlot, type DeliveryTimesWithDropShip} from "../lib/deliveryTimes";
 
 describe("addBusinessDays", () => {
   it("adds 2 business days from a Monday (Monday + 2 = Wednesday)", () => {

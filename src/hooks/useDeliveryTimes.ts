@@ -1,13 +1,7 @@
 import {useQuery} from "@tanstack/react-query";
 import to from "await-to-js";
 import {useMemo} from "react";
-import {getDynamicDeliveryTimes} from "../lib/deliveryTimes";
-
-export interface DeliveryTimeSlot {
-	days: string[];
-	timeStart: string;
-	timeEnd: string;
-}
+import {getDynamicDeliveryTimes, type DeliveryTimeSlot} from "../lib/deliveryTimes";
 
 interface UseDeliveryTimesOptions {
 	returnTimeForTodayAndTwoDaysFromNow?: boolean;

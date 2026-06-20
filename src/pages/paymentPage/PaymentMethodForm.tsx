@@ -25,7 +25,7 @@ import DoneIcon from "@mui/icons-material/Done";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
 import ExtraErrors from "../../components/ExtraErrors";
 import {useTranslation} from "react-i18next";
-import {IPaymentMethod, IPaymentPageData} from "../PaymentPage";
+import type {IPaymentMethod, IPaymentPageData} from "./types";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
@@ -679,7 +679,7 @@ const useSavePaymentMethod = (
 	};
 };
 
-export interface IPaymentMethodFormValues {
+interface IPaymentMethodFormValues {
 	payment_method_id?: string;
 	tip?: string;
 	delivery_time?: string;

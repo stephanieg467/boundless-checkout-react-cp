@@ -30,7 +30,7 @@ jest.mock("../../components/CheckoutStepWarning", () => () => null);
 
 jest.mock("../../components/ExtraErrors", () => () => null);
 
-jest.mock("../../lib/products", () => ({cartHasTickets: () => false}));
+jest.mock("../../lib/products", () => ({useCartHasTickets: () => false}));
 
 jest.mock("./shippingForm/DeliverySelector", () => () => (
 	<div data-testid="delivery-selector" />
