@@ -35,10 +35,15 @@ jobs:
       - name: Run type verification
         run: npm run verify
 
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+
       - name: Run Fallow quality gate
         env:
           FALLOW_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/master' }}
-        run: npm run fallow:audit:ci -- --base "$FALLOW_BASE"
-
-      - name: Run tests
-        run: npm test
+        run: |
+          git diff --unified=0 "$FALLOW_BASE"...HEAD > /tmp/fallow.diff
+          npm run fallow:audit:ci -- \
+            --base "$FALLOW_BASE" \
+            --diff-file /tmp/fallow.diff \
+            --coverage coverage/coverage-final.json

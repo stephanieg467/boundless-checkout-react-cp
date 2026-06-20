@@ -4,6 +4,8 @@
     "gate": "new-only"
   },
   "health": {
+    "maxCyclomatic": 40,
+    "maxCognitive": 40,
     "maxCrap": 50
   },
   "duplicates": {
