@@ -17,6 +17,17 @@ import {
 	getFirstIncompleteCheckoutStep,
 } from "../../lib/checkoutGuards";
 
+const buildCheckoutSteps = (items: Parameters<typeof ordersDropShippingItems>[0]): TCheckoutStep[] => {
+	const hasDropShipItems = ordersDropShippingItems(items).length > 0;
+
+	return [
+		TCheckoutStep.contactInfo,
+		TCheckoutStep.shippingAddress,
+		...(hasDropShipItems ? [TCheckoutStep.deliveryDetails] : []),
+		TCheckoutStep.paymentMethod,
+	];
+};
+
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
 	async (dispatch, getState) => {
@@ -36,13 +47,7 @@ export const initCheckoutByCart =
 			}
 
 			const {items, total: cartTotal} = cart;
-			const hasDropShipItems = ordersDropShippingItems(items).length > 0;
-			const steps: TCheckoutStep[] = [
-				TCheckoutStep.contactInfo,
-				TCheckoutStep.shippingAddress,
-				...(hasDropShipItems ? [TCheckoutStep.deliveryDetails] : []),
-				TCheckoutStep.paymentMethod,
-			];
+			const steps = buildCheckoutSteps(items);
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 
