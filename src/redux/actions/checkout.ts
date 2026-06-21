@@ -19,6 +19,22 @@ import {
 	getFirstIncompleteCheckoutStep,
 } from "../../lib/checkoutGuards";
 
+const DEFAULT_CURRENCY = {
+	currency_id: 0,
+	alias: "CAD",
+	code: 4217,
+};
+
+const DEFAULT_LOCALE_SETTINGS = {
+	money: {
+		decimal: ".",
+		thousand: ",",
+		precision: 2,
+		format: "%s%v",
+		symbol: "$",
+	},
+};
+
 const buildCheckoutSteps = (items: Parameters<typeof ordersDropShippingItems>[0]): TCheckoutStep[] => {
 	const hasDropShipItems = ordersDropShippingItems(items).length > 0;
 
@@ -195,6 +211,46 @@ const normalizeStepper = (
 	};
 };
 
+const buildCheckoutInitData = ({
+	items,
+	initialOrder,
+	normalizedStepper,
+	stepWarning,
+	checkoutDataTotal,
+	checkoutDataOrder,
+	cartTotal,
+	checkoutDataOrderService,
+	tax,
+}: {
+	items: CovaCartItem[];
+	initialOrder: IOrderWithCustmAttr;
+	normalizedStepper: ICheckoutStepper;
+	stepWarning: ReturnType<typeof getCheckoutStepWarning> | null;
+	checkoutDataTotal: ITotal | undefined;
+	checkoutDataOrder: CheckoutDataOrder;
+	cartTotal: ICartTotal;
+	checkoutDataOrderService: CheckoutDataOrderService;
+	tax: TaxSummary;
+}): CovaCheckoutInitData & {stepWarning: ReturnType<typeof getCheckoutStepWarning> | null} => ({
+	items,
+	order: {...initialOrder},
+	currency: DEFAULT_CURRENCY,
+	localeSettings: DEFAULT_LOCALE_SETTINGS,
+	stepper: normalizedStepper,
+	stepWarning,
+	total: checkoutDataTotal
+		? checkoutDataTotal
+		: buildCheckoutTotal({
+				price: checkoutDataOrder?.total_price
+					? checkoutDataOrder?.total_price
+					: initialOrder.total_price,
+				cartTotal,
+				checkoutDataOrder,
+				checkoutDataOrderService,
+				tax,
+			}),
+});
+
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
 	async (dispatch, getState) => {
@@ -231,45 +287,23 @@ export const initCheckoutByCart =
 				totalOrderTaxes,
 				tax,
 			});
-			const orderTotal = initialOrder.total_price;
-
 			const {stepper: normalizedStepper, stepWarning} = normalizeStepper(
 				initialOrder,
 				stepper,
 				steps,
 			);
 
-			const data = {
-				items: items,
-				order: {...initialOrder},
-				currency: {
-					currency_id: 0,
-					alias: "CAD",
-					code: 4217,
-				},
-				localeSettings: {
-					money: {
-						decimal: ".",
-						thousand: ",",
-						precision: 2,
-						format: "%s%v",
-						symbol: "$",
-					},
-				},
-				stepper: normalizedStepper,
+			const data = buildCheckoutInitData({
+				items,
+				initialOrder,
+				normalizedStepper,
 				stepWarning,
-				total: checkoutData?.total
-					? checkoutData.total
-					: buildCheckoutTotal({
-							price: checkoutDataOrder?.total_price
-								? checkoutDataOrder?.total_price
-								: orderTotal,
-							cartTotal,
-							checkoutDataOrder,
-							checkoutDataOrderService,
-							tax,
-						}),
-			};
+				checkoutDataTotal: checkoutData?.total,
+				checkoutDataOrder,
+				cartTotal,
+				checkoutDataOrderService,
+				tax,
+			});
 			dispatch(setCheckoutData(data));
 
 			dispatch(setCheckoutInited({isInited: true}));
