@@ -88,6 +88,69 @@ const buildCheckoutTotal = ({
 	},
 } as unknown as ITotal);
 
+const buildInitialOrder = ({
+	cartId,
+	stateOrder,
+	cartTotal,
+	checkoutDataOrder,
+	checkoutDataOrderService,
+	totalOrderTaxes,
+	tax,
+}: {
+	cartId?: string;
+	stateOrder: IOrderWithCustmAttr | undefined;
+	cartTotal: ICartTotal;
+	checkoutDataOrder: CheckoutDataOrder;
+	checkoutDataOrderService: CheckoutDataOrderService;
+	totalOrderTaxes: string | null;
+	tax: TaxSummary;
+}): IOrderWithCustmAttr => {
+	const orderTotal = checkoutDataOrder?.total_price
+		? checkoutDataOrder?.total_price
+		: (Number(cartTotal.total) + Number(totalOrderTaxes)).toFixed(2);
+
+	return {
+		id: cartId ?? "",
+		status_id: null,
+		payment_method_id: checkoutDataOrder?.payment_method_id ?? null,
+		paid_at: checkoutDataOrder?.paid_at ?? null,
+		service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
+		payment_mark_up: null,
+		total_price: orderTotal,
+		tip: checkoutDataOrder?.tip ?? "0.00",
+		...(checkoutDataOrder?.delivery_time && {
+			delivery_time: checkoutDataOrder.delivery_time,
+		}),
+		...(checkoutDataOrder?.drop_ship_delivery_time && {
+			drop_ship_delivery_time: checkoutDataOrder.drop_ship_delivery_time,
+		}),
+		discount_for_order: checkoutDataOrder?.discount_for_order
+			? checkoutDataOrder?.discount_for_order
+			: null,
+		discounts: checkoutDataOrder?.discounts ? checkoutDataOrder?.discounts : [],
+		tax_amount: totalOrderTaxes,
+		publishing_status: TPublishingStatus.published,
+		created_at: stateOrder?.created_at ?? new Date().toISOString(),
+		customer: checkoutDataOrder?.customer ?? undefined,
+		services: checkoutDataOrder?.services ?? [],
+		tax_calculations: checkoutDataOrder?.tax_calculations
+			? checkoutDataOrder.tax_calculations
+			: buildCheckoutTotal({
+					price: totalOrderTaxes,
+					cartTotal,
+					checkoutDataOrder,
+					checkoutDataOrderService,
+					tax,
+				}),
+		custom_attrs: {
+			...checkoutDataOrder?.custom_attrs,
+			shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
+			serviceRate: checkoutDataOrder?.custom_attrs?.serviceRate ?? "0.00",
+			checkoutInited: true,
+		},
+	};
+};
+
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
 	async (dispatch, getState) => {
@@ -114,54 +177,17 @@ export const initCheckoutByCart =
 			const totalOrderTaxes = await resolveOrderTaxes(items, checkoutDataOrder);
 			const tax = buildTaxSummary(items, totalOrderTaxes, checkoutDataOrder);
 
-			const orderTotal = checkoutDataOrder?.total_price
-				? checkoutDataOrder?.total_price
-				: (Number(cartTotal.total) + Number(totalOrderTaxes)).toFixed(2);
-
 			const checkoutDataOrderService = checkoutDataOrder?.services?.[0] ?? null;
-
-			const initialOrder = {
-				id: cartId ?? "",
-				status_id: null,
-				payment_method_id: checkoutDataOrder?.payment_method_id ?? null,
-				paid_at: checkoutDataOrder?.paid_at ?? null,
-				service_total_price: checkoutDataOrder?.service_total_price ?? "0.00",
-				payment_mark_up: null,
-				total_price: orderTotal,
-				tip: checkoutDataOrder?.tip ?? "0.00",
-				...(checkoutDataOrder?.delivery_time && {
-					delivery_time: checkoutDataOrder.delivery_time,
-				}),
-				...(checkoutDataOrder?.drop_ship_delivery_time && {
-					drop_ship_delivery_time: checkoutDataOrder.drop_ship_delivery_time,
-				}),
-				discount_for_order: checkoutDataOrder?.discount_for_order
-					? checkoutDataOrder?.discount_for_order
-					: null,
-				discounts: checkoutDataOrder?.discounts
-					? checkoutDataOrder?.discounts
-					: [],
-				tax_amount: totalOrderTaxes,
-				publishing_status: TPublishingStatus.published,
-				created_at: order?.created_at ?? new Date().toISOString(),
-				customer: checkoutDataOrder?.customer ?? undefined,
-				services: checkoutDataOrder?.services ?? [],
-				tax_calculations: checkoutDataOrder?.tax_calculations
-					? checkoutDataOrder.tax_calculations
-					: buildCheckoutTotal({
-							price: totalOrderTaxes,
-							cartTotal,
-							checkoutDataOrder,
-							checkoutDataOrderService,
-							tax,
-						}),
-				custom_attrs: {
-					...checkoutDataOrder?.custom_attrs,
-					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
-					serviceRate: checkoutDataOrder?.custom_attrs?.serviceRate ?? "0.00",
-					checkoutInited: true,
-				},
-			};
+			const initialOrder = buildInitialOrder({
+				cartId,
+				stateOrder: order,
+				cartTotal,
+				checkoutDataOrder,
+				checkoutDataOrderService,
+				totalOrderTaxes,
+				tax,
+			});
+			const orderTotal = initialOrder.total_price;
 
 			const requestedStepper = {
 				filledSteps: stepper?.filledSteps ?? [],
