@@ -598,6 +598,7 @@ describe("PayHQ", () => {
 	});
 
 	it("rejects and reports failure if the sale fails", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -615,21 +616,29 @@ describe("PayHQ", () => {
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Card declined by issuer");
-		});
-		expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Card declined by issuer");
+			});
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Card declined by issuer",
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("logs parse errors from non-OK Payfirma responses and reports the generic failure", async () => {
@@ -716,6 +725,7 @@ describe("PayHQ", () => {
 	});
 
 	it("does not tokenize or submit a sale when persisted checkout session data is unreadable", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -724,33 +734,42 @@ describe("PayHQ", () => {
 		}));
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
+		const checkoutReadError = new Error("Unexpected token u in JSON at position 0");
 
 		(getCheckoutData as jest.Mock).mockImplementationOnce(() => {
-			throw new Error("Unexpected token u in JSON at position 0");
+			throw checkoutReadError;
 		});
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow(
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow(
+					"Unable to start payment because checkout session data is missing. Please refresh and try again.",
+				);
+			});
+
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Failed to read checkout session data",
+				checkoutReadError,
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith(
 				"Unable to start payment because checkout session data is missing. Please refresh and try again.",
 			);
-		});
-
-		expect(onPaymentFailed).toHaveBeenCalledWith(
-			"Unable to start payment because checkout session data is missing. Please refresh and try again.",
-		);
-		expect(getPaymentToken).not.toHaveBeenCalled();
-		expect(global.fetch).not.toHaveBeenCalled();
+			expect(getPaymentToken).not.toHaveBeenCalled();
+			expect(global.fetch).not.toHaveBeenCalled();
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("shows processing guidance when the order is already paid", () => {
@@ -813,6 +832,7 @@ describe("PayHQ", () => {
 	});
 
 	it("rejects when the API response has success: false", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -831,25 +851,34 @@ describe("PayHQ", () => {
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Declined by bank");
-		});
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Declined by bank");
+			});
 
-		expect(onPaymentFailed).toHaveBeenCalledWith("Declined by bank");
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Declined by bank",
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith("Declined by bank");
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("rejects when getPaymentToken resolves with no token", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue(null);
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
@@ -857,22 +886,30 @@ describe("PayHQ", () => {
 
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={jest.fn()}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={jest.fn()}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Missing payment token");
-		});
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Missing payment token");
+			});
 
-		expect(global.fetch).not.toHaveBeenCalled();
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Missing payment token",
+			);
+			expect(global.fetch).not.toHaveBeenCalled();
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("warns and uses a client timestamp when a successful sale omits paidAt", async () => {

@@ -443,83 +443,113 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
   it("retries only checkout completion after card approval when checkout completion fails", async () => {
     const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const checkoutCompletionError = new Error("temporary checkout failure");
     mockOnThankYouPage
-      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockRejectedValueOnce(checkoutCompletionError)
       .mockResolvedValueOnce(undefined);
 
-    setup();
+    try {
+      setup();
 
-    const button = screen.getByRole("button", {name: /^pay and complete order$/i});
-    await user.click(button);
+      const button = screen.getByRole("button", {name: /^pay and complete order$/i});
+      await user.click(button);
 
-    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[useSavePaymentMethod] Checkout completion failed",
+        checkoutCompletionError
+      );
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^complete order$/i}));
 
-    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
-    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("locks payment method after card approval and retries completion without recharging", async () => {
     const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const checkoutCompletionError = new Error("temporary checkout failure");
     mockOnThankYouPage
-      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockRejectedValueOnce(checkoutCompletionError)
       .mockResolvedValueOnce(undefined);
 
-    setup({paymentMethods: [creditCardMethod, payInStoreMethod]});
+    try {
+      setup({paymentMethods: [creditCardMethod, payInStoreMethod]});
 
-    expect(screen.getByRole("radio", {name: /pay in store/i})).toBeEnabled();
+      expect(screen.getByRole("radio", {name: /pay in store/i})).toBeEnabled();
 
-    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
-    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+      expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[useSavePaymentMethod] Checkout completion failed",
+        checkoutCompletionError
+      );
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
 
-    const payInStoreRadio = screen.getByRole("radio", {name: /pay in store/i});
-    expect(payInStoreRadio).toBeDisabled();
+      const payInStoreRadio = screen.getByRole("radio", {name: /pay in store/i});
+      expect(payInStoreRadio).toBeDisabled();
 
-    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^complete order$/i}));
 
-    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
 
-    const [checkoutArg] = mockOnThankYouPage.mock.calls[1];
-    expect(checkoutArg.order.payment_method_id).toBe(CREDIT_CARD_PAYMENT_METHOD);
-    expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
+      const [checkoutArg] = mockOnThankYouPage.mock.calls[1];
+      expect(checkoutArg.order.payment_method_id).toBe(CREDIT_CARD_PAYMENT_METHOD);
+      expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("blocks card-approved checkout completion retry when latest persisted prerequisites are incomplete", async () => {
     const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const checkoutCompletionError = new Error("temporary checkout failure");
     mockOnThankYouPage
-      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockRejectedValueOnce(checkoutCompletionError)
       .mockResolvedValueOnce(undefined);
 
-    setup();
+    try {
+      setup();
 
-    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
-    expect(mockOnThankYouPage).toHaveBeenCalledTimes(1);
+      expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[useSavePaymentMethod] Checkout completion failed",
+        checkoutCompletionError
+      );
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      expect(mockOnThankYouPage).toHaveBeenCalledTimes(1);
 
-    mockOnThankYouPage.mockClear();
-    mockDispatch.mockClear();
-    mockCheckoutData = {
-      ...mockCheckoutData,
-      order: makeOrder({
-        paid_at: "2026-05-23T12:00:00.000Z",
-        customer: completeCustomer({phone: ""}),
-      }),
-    };
+      mockOnThankYouPage.mockClear();
+      mockDispatch.mockClear();
+      mockCheckoutData = {
+        ...mockCheckoutData,
+        order: makeOrder({
+          paid_at: "2026-05-23T12:00:00.000Z",
+          customer: completeCustomer({phone: ""}),
+        }),
+      };
 
-    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^complete order$/i}));
 
-    await expectRedirectedToCheckoutStep(TCheckoutStep.contactInfo);
-    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
-    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+      await expectRedirectedToCheckoutStep(TCheckoutStep.contactInfo);
+      expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+      expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("keeps non-credit-card methods on the normal Formik submit path", async () => {
@@ -636,39 +666,59 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
   it("renders server error alert for unhandled PayHQ submit errors", async () => {
     const user = userEvent.setup();
-    mockSubmitPayment.mockRejectedValue(new Error("Card declined"));
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const submitError = new Error("Card declined");
+    mockSubmitPayment.mockRejectedValue(submitError);
 
-    setup();
+    try {
+      setup();
 
-    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+      await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Card declined");
+      await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[PaymentMethodForm] submitCreditCardCheckout failed",
+        submitError
+      );
+      expect(await screen.findByRole("alert")).toHaveTextContent("Card declined");
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("handles failure to record approved payment gracefully", async () => {
     const user = userEvent.setup();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const recordError = new Error("Local storage full");
     mockRecordApprovedPayment.mockImplementation(() => {
-      throw new Error("Local storage full");
+      throw recordError;
     });
 
-    setup();
+    try {
+      setup();
 
-    const button = screen.getByRole("button", {name: /^pay and complete order$/i});
-    await user.click(button);
+      const button = screen.getByRole("button", {name: /^pay and complete order$/i});
+      await user.click(button);
 
-    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Your payment was approved but we could not update your order. Please contact support."
-    );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[PaymentMethodForm] Failed to record approved payment",
+        recordError
+      );
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Your payment was approved but we could not update your order. Please contact support."
+      );
 
-    // Form submission (onThankYouPage) should not have been called
-    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+      // Form submission (onThankYouPage) should not have been called
+      expect(mockOnThankYouPage).not.toHaveBeenCalled();
 
-    // Button should be re-enabled
-    expect(button).not.toBeDisabled();
-    expect(screen.queryByLabelText("Loading…")).not.toBeInTheDocument();
+      // Button should be re-enabled
+      expect(button).not.toBeDisabled();
+      expect(screen.queryByLabelText("Loading…")).not.toBeInTheDocument();
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 
   it("renders error banner when session data is missing on submit", async () => {
