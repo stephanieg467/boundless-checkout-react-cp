@@ -151,6 +151,50 @@ const buildInitialOrder = ({
 	};
 };
 
+const normalizeStepper = (
+	initialOrder: IOrderWithCustmAttr,
+	stateStepper: ICheckoutStepper | null | undefined,
+	steps: TCheckoutStep[],
+) => {
+	const requestedStepper = {
+		filledSteps: stateStepper?.filledSteps ?? [],
+		currentStep: stateStepper?.currentStep ?? TCheckoutStep.contactInfo,
+		steps,
+	};
+	const firstIncompleteStep = getFirstIncompleteCheckoutStep(
+		initialOrder,
+		requestedStepper,
+	);
+	const requestedStepIsAllowed = canNavigateToCheckoutStep(
+		requestedStepper.currentStep,
+		initialOrder,
+		requestedStepper,
+	);
+	const requestedStepExists = requestedStepper.steps.includes(
+		requestedStepper.currentStep,
+	);
+	const fallbackStep = requestedStepper.steps.includes(TCheckoutStep.paymentMethod)
+		? TCheckoutStep.paymentMethod
+		: requestedStepper.steps[0] ?? TCheckoutStep.contactInfo;
+	let normalizedCurrentStep = requestedStepExists
+		? requestedStepper.currentStep
+		: fallbackStep;
+	let stepWarning = null;
+
+	if (firstIncompleteStep && !requestedStepIsAllowed) {
+		normalizedCurrentStep = firstIncompleteStep;
+		stepWarning = getCheckoutStepWarning(normalizedCurrentStep);
+	}
+
+	return {
+		stepper: {
+			...requestedStepper,
+			currentStep: normalizedCurrentStep,
+		},
+		stepWarning,
+	};
+};
+
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
 	async (dispatch, getState) => {
@@ -189,40 +233,11 @@ export const initCheckoutByCart =
 			});
 			const orderTotal = initialOrder.total_price;
 
-			const requestedStepper = {
-				filledSteps: stepper?.filledSteps ?? [],
-				currentStep: stepper?.currentStep ?? TCheckoutStep.contactInfo,
+			const {stepper: normalizedStepper, stepWarning} = normalizeStepper(
+				initialOrder,
+				stepper,
 				steps,
-			};
-			const firstIncompleteStep = getFirstIncompleteCheckoutStep(
-				initialOrder,
-				requestedStepper,
 			);
-			const requestedStepIsAllowed = canNavigateToCheckoutStep(
-				requestedStepper.currentStep,
-				initialOrder,
-				requestedStepper,
-			);
-			const requestedStepExists = requestedStepper.steps.includes(
-				requestedStepper.currentStep,
-			);
-			const fallbackStep = requestedStepper.steps.includes(TCheckoutStep.paymentMethod)
-				? TCheckoutStep.paymentMethod
-				: requestedStepper.steps[0] ?? TCheckoutStep.contactInfo;
-			let normalizedCurrentStep = requestedStepExists
-				? requestedStepper.currentStep
-				: fallbackStep;
-			let stepWarning = null;
-
-			if (firstIncompleteStep && !requestedStepIsAllowed) {
-				normalizedCurrentStep = firstIncompleteStep;
-				stepWarning = getCheckoutStepWarning(normalizedCurrentStep);
-			}
-
-			const normalizedStepper = {
-				...requestedStepper,
-				currentStep: normalizedCurrentStep,
-			};
 
 			const data = {
 				items: items,
