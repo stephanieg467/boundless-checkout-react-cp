@@ -86,7 +86,10 @@ const makeOrder = (overrides: Record<string, unknown> = {}) => ({
 	...overrides,
 });
 
-const makeStore = (currentStep: TCheckoutStep) => configureStore({
+const makeStore = (
+	currentStep: TCheckoutStep,
+	appOverrides: Record<string, unknown> = {},
+) => configureStore({
 	reducer: {app: appReducer},
 	preloadedState: {
 		app: {
@@ -104,6 +107,7 @@ const makeStore = (currentStep: TCheckoutStep) => configureStore({
 					TCheckoutStep.paymentMethod,
 				],
 			},
+			...appOverrides,
 		},
 	},
 });
@@ -263,6 +267,62 @@ describe("initCheckoutByCart", () => {
 		expect(appState.total).toBe(persistedTotal);
 	});
 
+	it("preserves persisted order fields and merges custom attribute defaults", async () => {
+		const customer = completeCustomer();
+		const services = [pickupService()];
+		const discounts = [{id: "discount-1", title: "Loyalty discount"}];
+
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({
+				payment_method_id: "payment-method-1",
+				paid_at: "2026-01-02T00:00:00.000Z",
+				service_total_price: "4.00",
+				total_price: "14.00",
+				tip: "2.00",
+				delivery_time: "2026-01-03T10:00:00.000Z",
+				drop_ship_delivery_time: "2026-01-04T10:00:00.000Z",
+				discount_for_order: "1.00",
+				discounts,
+				tax_amount: "1.00",
+				customer,
+				services,
+				custom_attrs: {
+					shippingTax: "0.45",
+					loyaltyId: "loyalty-1",
+				},
+			}),
+			total: undefined,
+		});
+
+		const store = makeStore(TCheckoutStep.contactInfo, {
+			order: makeOrder({created_at: "2025-12-31T00:00:00.000Z"}),
+		});
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(appState.order).toMatchObject({
+			payment_method_id: "payment-method-1",
+			paid_at: "2026-01-02T00:00:00.000Z",
+			service_total_price: "4.00",
+			total_price: "14.00",
+			tip: "2.00",
+			delivery_time: "2026-01-03T10:00:00.000Z",
+			drop_ship_delivery_time: "2026-01-04T10:00:00.000Z",
+			discount_for_order: "1.00",
+			tax_amount: "1.00",
+			created_at: "2025-12-31T00:00:00.000Z",
+			custom_attrs: {
+				shippingTax: "0.45",
+				serviceRate: "0.00",
+				loyaltyId: "loyalty-1",
+				checkoutInited: true,
+			},
+		});
+		expect(appState.order.discounts).toBe(discounts);
+		expect(appState.order.customer).toBe(customer);
+		expect(appState.order.services).toBe(services);
+	});
+
 	it("adds the delivery details step for drop-ship items and blocks payment until it is complete", async () => {
 		const cart = makeCart();
 
@@ -328,6 +388,50 @@ describe("initCheckoutByCart", () => {
 			format: "%s%v",
 			symbol: "$",
 		});
+	});
+
+	it("defaults a null persisted stepper to the contact step without a warning", async () => {
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({customer: completeCustomer(), services: [pickupService()]}),
+			total: undefined,
+		});
+		const store = makeStore(TCheckoutStep.paymentMethod, {stepper: null});
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(appState.stepper).toMatchObject({
+			currentStep: TCheckoutStep.contactInfo,
+			filledSteps: [],
+			steps: [
+				TCheckoutStep.contactInfo,
+				TCheckoutStep.shippingAddress,
+				TCheckoutStep.paymentMethod,
+			],
+		});
+		expect(appState.stepWarning).toBeNull();
+	});
+
+	it("sets the checkout initialization error when checkout data assembly fails", async () => {
+		const error = new Error("checkout data failed");
+		const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
+		(getCheckoutData as jest.Mock).mockImplementation(() => {
+			throw error;
+		});
+
+		const store = makeStore(TCheckoutStep.contactInfo);
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(consoleError).toHaveBeenCalledWith(error);
+		expect(appState.globalError).toBe(
+			"Cannot initialize checkout. Please go back to the cart and try again.",
+		);
+		expect(appState.isInited).toBe(false);
+		expect(appState.order).toBeUndefined();
+		expect(getOrderTaxes).not.toHaveBeenCalled();
+
+		consoleError.mockRestore();
 	});
 
 	it("normalizes a current step ahead of incomplete contact back to contactInfo and sets the contact warning", async () => {
