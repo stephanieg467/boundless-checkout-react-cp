@@ -11,8 +11,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import {IShippingFormValues} from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
-import {addPromise} from "../../redux/actions/xhr";
-import {apiErrors2Formik} from "../../lib/formUtils";
+import {dispatchFormikSubmitPromise} from "../../lib/formikSubmit";
 import {
 	addFilledStep,
 	setOrder,
@@ -169,7 +168,7 @@ const useSaveShippingForm = ({
 
 	const onSubmit = (
 		values: IShippingFormValues,
-		{setSubmitting, setErrors}: FormikHelpers<IShippingFormValues>,
+		formikHelpers: FormikHelpers<IShippingFormValues>,
 	) => {
 		const {order, total} = getCheckoutData() || {};
 		if (!order) return;
@@ -381,12 +380,9 @@ const useSaveShippingForm = ({
 				const shippingIdx = steps.indexOf(TCheckoutStep.shippingAddress);
 				const nextStep = steps[shippingIdx + 1] ?? TCheckoutStep.paymentMethod;
 				dispatch(setCurrentStep(nextStep));
-			})
-			.catch(({response: {data}}) => {
-				setErrors(apiErrors2Formik(data));
-			})
-			.finally(() => setSubmitting(false));
-		dispatch(addPromise(promise));
+			});
+
+		dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
 	};
 
 	return {

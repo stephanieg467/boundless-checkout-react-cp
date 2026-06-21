@@ -9,9 +9,9 @@ import {
 	InputLabel,
 	Skeleton,
 } from "@mui/material";
-import {apiErrors2Formik, fieldAttrs} from "../../lib/formUtils";
+import {fieldAttrs} from "../../lib/formUtils";
+import {dispatchFormikSubmitPromise} from "../../lib/formikSubmit";
 import {useAppDispatch} from "../../hooks/redux";
-import {addPromise} from "../../redux/actions/xhr";
 import {setOrder, setTotal} from "../../redux/reducers/app";
 import {useTranslation} from "react-i18next";
 import {CleanedCovaProduct, Coupon} from "../../types/cart";
@@ -137,8 +137,9 @@ export default function CartDiscountForm() {
 
 	const onSubmit = (
 		values: IDiscountFormValues,
-		{setSubmitting, setErrors}: FormikHelpers<IDiscountFormValues>
+		formikHelpers: FormikHelpers<IDiscountFormValues>
 	) => {
+		const {setSubmitting, setErrors} = formikHelpers;
 		if (!order || !total || !cart || !cart.items) return;
 		const code = values.code.trim();
 		const coupon = coupons.find(
@@ -166,126 +167,121 @@ export default function CartDiscountForm() {
 		}
 		const discountValue = subTotalWithoutPromoItems < discount ? subTotalWithoutPromoItems : discount;
 
-		const promise = Promise.resolve()
-			.then(async () => {
-				const discountedCartItems = cart.items!.map((item) => {
-					if (isPromotionItem(item.product)) {
-						return {
-							...item,
-						};
-					}
-					const product = item.product;
-					const finalPrice = covaProductPrice(product);
-					const roundedPrice = Number.parseFloat(Number(finalPrice).toFixed(2));
-					let lineDollarAmount = roundedPrice * item.qty;
-					if (discount > 0) {
-						const originalLineDollarAmount = lineDollarAmount;
-						if (originalLineDollarAmount < discount) {
-							lineDollarAmount = 0;
-							discount = discount - originalLineDollarAmount;
-						} else {
-							lineDollarAmount -= discount;
-							discount = 0;
-						}
-					}
+		const promise = Promise.resolve().then(async () => {
+			const discountedCartItems = cart.items!.map((item) => {
+				if (isPromotionItem(item.product)) {
 					return {
 						...item,
-						product: {
-							...item.product,
-							couponPrice: (lineDollarAmount / item.qty).toFixed(2),
-						},
-						total:
-							lineDollarAmount > 0 ? Number(lineDollarAmount.toFixed(2)) : 0,
 					};
-				});
-
-				const newSubTotal = discountedCartItems.reduce(
-					(acc, item) => acc + Number(item.total || 0),
-					0
-				);
-				const shippingTaxes = total.tax.shipping?.shippingTaxes;
-				const newOrderTaxes = await getOrderTaxes(discountedCartItems);
-				const totalOrderTaxes = (
-					Number(newOrderTaxes) + Number(shippingTaxes ?? 0)
-				).toString();
-
-				setCart({
-					...cart,
-					total: {
-						...cart.total,
-						total: newSubTotal.toString(),
-					},
-					taxAmount: Number(totalOrderTaxes),
-					items: discountedCartItems,
-				});
-
-				const totalOrderPrice = (
-					Number(newSubTotal) + Number(totalOrderTaxes)
-				).toFixed(2);
-
-				const updatedOrder = {
-					...order,
-					discounts: [
-						{
-							discount_id: coupon.code,
-							title: `Coupon: ${coupon.code}`,
-							discount_type: coupon.type === "Percent" ? "percent" : "fixed",
-							value: coupon.value,
-						},
-					],
-					discount_for_order: discountValue,
-					total_price: totalOrderPrice,
-					tax_amount: totalOrderTaxes,
-					tax_calculations: {
-						...order.tax_calculations,
-						price: totalOrderTaxes,
-						itemsSubTotal: {
-							...order.tax_calculations?.itemsSubTotal,
-							price: newSubTotal,
-						},
-						discount: discountValue.toString(),
-						tax: {
-							...order.tax_calculations?.tax,
-							totalTaxAmount: totalOrderTaxes,
-						},
-					} as unknown as ITotal,
-					custom_attrs: {
-						...order.custom_attrs,
-						originalCart: cart,
-						originalSubTotalPrice: total.itemsSubTotal.price,
-					},
-				} as unknown as IOrderWithCustmAttr;
-
-				if (total) {
-					const updatedTotal = {
-						...total,
-						price: totalOrderPrice,
-						itemsSubTotal: {
-							...total.itemsSubTotal,
-							price: newSubTotal.toString(),
-						},
-						discount: discountValue.toString(),
-						tax: {
-							...total.tax,
-							totalTaxAmount: totalOrderTaxes,
-						},
-					};
-
-					setLocalStorageCheckoutData({
-						order: updatedOrder,
-						total: updatedTotal,
-					});
-
-					dispatch(setOrder(updatedOrder));
-					dispatch(setTotal(updatedTotal));
 				}
-			})
-			.catch(({response: {data}}) => {
-				setErrors(apiErrors2Formik(data));
-			})
-			.finally(() => setSubmitting(false));
+				const product = item.product;
+				const finalPrice = covaProductPrice(product);
+				const roundedPrice = Number.parseFloat(Number(finalPrice).toFixed(2));
+				let lineDollarAmount = roundedPrice * item.qty;
+				if (discount > 0) {
+					const originalLineDollarAmount = lineDollarAmount;
+					if (originalLineDollarAmount < discount) {
+						lineDollarAmount = 0;
+						discount = discount - originalLineDollarAmount;
+					} else {
+						lineDollarAmount -= discount;
+						discount = 0;
+					}
+				}
+				return {
+					...item,
+					product: {
+						...item.product,
+						couponPrice: (lineDollarAmount / item.qty).toFixed(2),
+					},
+					total:
+						lineDollarAmount > 0 ? Number(lineDollarAmount.toFixed(2)) : 0,
+				};
+			});
 
-		dispatch(addPromise(promise));
+			const newSubTotal = discountedCartItems.reduce(
+				(acc, item) => acc + Number(item.total || 0),
+				0
+			);
+			const shippingTaxes = total.tax.shipping?.shippingTaxes;
+			const newOrderTaxes = await getOrderTaxes(discountedCartItems);
+			const totalOrderTaxes = (
+				Number(newOrderTaxes) + Number(shippingTaxes ?? 0)
+			).toString();
+
+			setCart({
+				...cart,
+				total: {
+					...cart.total,
+					total: newSubTotal.toString(),
+				},
+				taxAmount: Number(totalOrderTaxes),
+				items: discountedCartItems,
+			});
+
+			const totalOrderPrice = (
+				Number(newSubTotal) + Number(totalOrderTaxes)
+			).toFixed(2);
+
+			const updatedOrder = {
+				...order,
+				discounts: [
+					{
+						discount_id: coupon.code,
+						title: `Coupon: ${coupon.code}`,
+						discount_type: coupon.type === "Percent" ? "percent" : "fixed",
+						value: coupon.value,
+					},
+				],
+				discount_for_order: discountValue,
+				total_price: totalOrderPrice,
+				tax_amount: totalOrderTaxes,
+				tax_calculations: {
+					...order.tax_calculations,
+					price: totalOrderTaxes,
+					itemsSubTotal: {
+						...order.tax_calculations?.itemsSubTotal,
+						price: newSubTotal,
+					},
+					discount: discountValue.toString(),
+					tax: {
+						...order.tax_calculations?.tax,
+						totalTaxAmount: totalOrderTaxes,
+					},
+				} as unknown as ITotal,
+				custom_attrs: {
+					...order.custom_attrs,
+					originalCart: cart,
+					originalSubTotalPrice: total.itemsSubTotal.price,
+				},
+			} as unknown as IOrderWithCustmAttr;
+
+			if (total) {
+				const updatedTotal = {
+					...total,
+					price: totalOrderPrice,
+					itemsSubTotal: {
+						...total.itemsSubTotal,
+						price: newSubTotal.toString(),
+					},
+					discount: discountValue.toString(),
+					tax: {
+						...total.tax,
+						totalTaxAmount: totalOrderTaxes,
+					},
+				};
+
+				setLocalStorageCheckoutData({
+					order: updatedOrder,
+					total: updatedTotal,
+				});
+
+				dispatch(setOrder(updatedOrder));
+				dispatch(setTotal(updatedTotal));
+			}
+		});
+
+		dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
 	};
 
 	return (
