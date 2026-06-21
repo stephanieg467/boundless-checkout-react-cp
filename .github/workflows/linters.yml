@@ -1,8 +1,6 @@
 name: Linters
 
 on:
-  push:
-    branches-ignore: [master]
   pull_request:
     branches: [master]
 
@@ -35,15 +33,14 @@ jobs:
       - name: Run type verification
         run: npm run verify
 
-      - name: Run tests with coverage
-        run: npm test -- --coverage
-
       - name: Run Fallow quality gate
-        env:
-          FALLOW_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'origin/master' }}
-        run: |
-          git diff --unified=0 "$FALLOW_BASE"...HEAD > /tmp/fallow.diff
-          npm run fallow:audit:ci -- \
-            --base "$FALLOW_BASE" \
-            --diff-file /tmp/fallow.diff \
-            --coverage coverage/coverage-final.json
+        uses: fallow-rs/fallow@v2
+        with:
+          command: audit
+          changed-since: origin/master
+          gate: new-only
+          fail-on-issues: true
+          annotations: true
+
+      - name: Run tests
+        run: npm test
