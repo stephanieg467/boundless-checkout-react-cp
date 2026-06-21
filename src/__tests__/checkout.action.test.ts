@@ -108,8 +108,11 @@ const makeStore = (currentStep: TCheckoutStep) => configureStore({
 	},
 });
 
-const dispatchInitCheckout = async (store: ReturnType<typeof makeStore>) => {
-	await store.dispatch(initCheckoutByCart({}) as any);
+const dispatchInitCheckout = async (
+	store: ReturnType<typeof makeStore>,
+	config: Parameters<typeof initCheckoutByCart>[0] = {},
+) => {
+	await store.dispatch(initCheckoutByCart(config) as any);
 	return store.getState().app as any;
 };
 
@@ -119,6 +122,212 @@ describe("initCheckoutByCart", () => {
 		(getCartOrRetrieve as jest.Mock).mockReturnValue(makeCart());
 		(getOrderTaxes as jest.Mock).mockResolvedValue("0.00");
 		(ordersDropShippingItems as jest.Mock).mockReturnValue([]);
+	});
+
+	it("sets a global error and aborts when the cart is empty", async () => {
+		const onCheckoutInited = jest.fn();
+
+		(getCartOrRetrieve as jest.Mock).mockReturnValue({
+			...makeCart(),
+			items: [],
+		});
+
+		const store = makeStore(TCheckoutStep.contactInfo);
+
+		await store.dispatch(initCheckoutByCart({onCheckoutInited}) as any);
+
+		const appState = store.getState().app as any;
+
+		expect(appState.globalError).toBe(
+			"Your cart is empty. Please go back to the site and start shopping.",
+		);
+		expect(appState.isInited).toBe(false);
+		expect(appState.order).toBeUndefined();
+		expect(getCheckoutData).not.toHaveBeenCalled();
+		expect(getOrderTaxes).not.toHaveBeenCalled();
+		expect(ordersDropShippingItems).not.toHaveBeenCalled();
+		expect(onCheckoutInited).not.toHaveBeenCalled();
+	});
+
+	it("fetches taxes and builds fallback order and total tax summaries when checkout data has no tax amount", async () => {
+		const cart = makeCart();
+
+		(getCartOrRetrieve as jest.Mock).mockReturnValue(cart);
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: undefined,
+			total: undefined,
+		});
+		(getOrderTaxes as jest.Mock).mockResolvedValue("1.23");
+
+		const store = makeStore(TCheckoutStep.contactInfo);
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(getOrderTaxes).toHaveBeenCalledTimes(1);
+		expect(getOrderTaxes).toHaveBeenCalledWith(cart.items);
+		expect(appState.order).toMatchObject({
+			id: "cart-1",
+			tax_amount: "1.23",
+			total_price: "11.23",
+			custom_attrs: {
+				shippingTax: "0.00",
+				serviceRate: "0.00",
+				checkoutInited: true,
+			},
+		});
+		expect(appState.order.tax_calculations).toMatchObject({
+			price: "1.23",
+			itemsSubTotal: {
+				price: "10.00",
+				qty: 1,
+			},
+			discount: "0",
+			tax: {
+				totalTaxAmount: "1.23",
+				itemsWithTax: cart.items,
+				shipping: {
+					shippingTaxes: undefined,
+				},
+			},
+			servicesSubTotal: {
+				price: 0,
+				qty: 0,
+			},
+		});
+		expect(appState.total).toMatchObject({
+			price: "11.23",
+			tax: {
+				totalTaxAmount: "1.23",
+				itemsWithTax: cart.items,
+			},
+		});
+	});
+
+	it("reuses persisted tax data and total without calling the tax API", async () => {
+		const taxCalculations = {
+			price: "2.34",
+			itemsSubTotal: {
+				price: "10.00",
+				qty: 1,
+			},
+			discount: "0",
+			tax: {
+				totalTaxAmount: "2.34",
+				itemsWithTax: [],
+				shipping: {
+					shippingTaxes: "0.34",
+				},
+			},
+			servicesSubTotal: {
+				price: "0.00",
+				qty: 0,
+			},
+		};
+		const persistedTotal = {
+			price: "12.34",
+			itemsSubTotal: {
+				price: "10.00",
+				qty: 1,
+			},
+			discount: "0",
+			tax: {
+				totalTaxAmount: "2.34",
+				itemsWithTax: [],
+				shipping: {
+					shippingTaxes: "0.34",
+				},
+			},
+			servicesSubTotal: {
+				price: "0.00",
+				qty: 0,
+			},
+		};
+
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({
+				tax_amount: "2.34",
+				total_price: "12.34",
+				tax_calculations: taxCalculations,
+			}),
+			total: persistedTotal,
+		});
+
+		const store = makeStore(TCheckoutStep.contactInfo);
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(getOrderTaxes).not.toHaveBeenCalled();
+		expect(appState.order.tax_amount).toBe("2.34");
+		expect(appState.order.total_price).toBe("12.34");
+		expect(appState.order.tax_calculations).toBe(taxCalculations);
+		expect(appState.total).toBe(persistedTotal);
+	});
+
+	it("adds the delivery details step for drop-ship items and blocks payment until it is complete", async () => {
+		const cart = makeCart();
+
+		(getCartOrRetrieve as jest.Mock).mockReturnValue(cart);
+		(ordersDropShippingItems as jest.Mock).mockReturnValue([cart.items[0]]);
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({
+				customer: completeCustomer(),
+				services: [pickupService()],
+			}),
+			total: undefined,
+		});
+
+		const store = makeStore(TCheckoutStep.paymentMethod);
+
+		const appState = await dispatchInitCheckout(store);
+
+		expect(appState.stepper.steps).toEqual([
+			TCheckoutStep.contactInfo,
+			TCheckoutStep.shippingAddress,
+			TCheckoutStep.deliveryDetails,
+			TCheckoutStep.paymentMethod,
+		]);
+		expect(appState.stepper.currentStep).toBe(TCheckoutStep.deliveryDetails);
+		expect(appState.stepWarning).toEqual(
+			getCheckoutStepWarning(TCheckoutStep.deliveryDetails),
+		);
+	});
+
+	it("calls onCheckoutInited with the initialized checkout data", async () => {
+		const onCheckoutInited = jest.fn();
+
+		(getCheckoutData as jest.Mock).mockReturnValue({
+			order: makeOrder({
+				customer: completeCustomer(),
+				services: [pickupService()],
+			}),
+			total: undefined,
+		});
+
+		const store = makeStore(TCheckoutStep.paymentMethod);
+
+		await dispatchInitCheckout(store, {onCheckoutInited});
+
+		const appState = store.getState().app as any;
+
+		expect(onCheckoutInited).toHaveBeenCalledTimes(1);
+
+		const callbackData = onCheckoutInited.mock.calls[0][0];
+
+		expect(callbackData).toMatchObject({
+			items: appState.items,
+			order: appState.order,
+			currency: appState.currency,
+			stepper: appState.stepper,
+			total: appState.total,
+			stepWarning: appState.stepWarning,
+		});
+		expect(callbackData.localeSettings.money).toMatchObject({
+			decimal: ".",
+			thousand: ",",
+			precision: 2,
+			format: "%s%v",
+			symbol: "$",
+		});
 	});
 
 	it("normalizes a current step ahead of incomplete contact back to contactInfo and sets the contact warning", async () => {
