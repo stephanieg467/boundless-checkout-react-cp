@@ -462,6 +462,35 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
   });
 
+  it("locks payment method after card approval and retries completion without recharging", async () => {
+    const user = userEvent.setup();
+    mockOnThankYouPage
+      .mockRejectedValueOnce(new Error("temporary checkout failure"))
+      .mockResolvedValueOnce(undefined);
+
+    setup({paymentMethods: [creditCardMethod, payInStoreMethod]});
+
+    expect(screen.getByRole("radio", {name: /pay in store/i})).toBeEnabled();
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    expect(await screen.findByText("Unable to complete your order. Please try again.")).toBeInTheDocument();
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+
+    const payInStoreRadio = screen.getByRole("radio", {name: /pay in store/i});
+    expect(payInStoreRadio).toBeDisabled();
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(2));
+    expect(mockSubmitPayment).toHaveBeenCalledTimes(1);
+
+    const [checkoutArg] = mockOnThankYouPage.mock.calls[1];
+    expect(checkoutArg.order.payment_method_id).toBe(CREDIT_CARD_PAYMENT_METHOD);
+    expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
+  });
+
   it("blocks card-approved checkout completion retry when latest persisted prerequisites are incomplete", async () => {
     const user = userEvent.setup();
     mockOnThankYouPage
