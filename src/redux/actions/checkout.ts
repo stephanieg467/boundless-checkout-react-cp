@@ -234,8 +234,8 @@ const buildCheckoutInitData = ({
 }): CovaCheckoutInitData & {stepWarning: ReturnType<typeof getCheckoutStepWarning> | null} => ({
 	items,
 	order: {...initialOrder},
-	currency: DEFAULT_CURRENCY,
-	localeSettings: DEFAULT_LOCALE_SETTINGS,
+	currency: {...DEFAULT_CURRENCY},
+	localeSettings: {money: {...DEFAULT_LOCALE_SETTINGS.money}},
 	stepper: normalizedStepper,
 	stepWarning,
 	total: checkoutDataTotal
