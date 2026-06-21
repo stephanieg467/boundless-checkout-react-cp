@@ -106,6 +106,61 @@ type PaymentAddressFields = {
 	province: string;
 };
 
+type PaymentContactFields = {
+	firstName: string;
+	lastName: string;
+	email: string;
+};
+
+type PaymentBillingFields = PaymentContactFields & PaymentAddressFields;
+
+type TrimmedPaymentFields = PaymentBillingFields;
+
+type PreparedSalePayloadData = {
+	order: ICheckoutData["order"];
+	items: ICheckoutData["items"];
+	total: ICheckoutData["total"];
+};
+
+type PayfirmaSaleResponseData = {
+	success?: boolean;
+	paidAt?: unknown;
+	message?: string;
+};
+
+type PayfirmaSaleRequestBody = TrimmedPaymentFields &
+	PreparedSalePayloadData & {
+		orderId: NonNullable<ICheckoutData["order"]>["id"] | undefined;
+		paymentToken: string;
+	};
+
+type PaymentSubmissionPreflightOptions = {
+	paymentApproved: boolean;
+	orderPaidAt?: string | null;
+	payment: PayfirmaPayment | null;
+	isProcessing: boolean;
+	onPaymentFailed: (errorMessage: string) => void;
+};
+
+type PrepareSalePayloadOptions = {
+	checkoutData: ICheckoutData;
+	fallbackItems: ICheckoutData["items"];
+	tip?: string;
+};
+
+type PayfirmaSaleRequestOptions = {
+	paymentFields: TrimmedPaymentFields;
+	paymentToken: string;
+	salePayloadData: PreparedSalePayloadData;
+};
+
+type PayfirmaSaleSubmissionOptions = {
+	paymentFields: TrimmedPaymentFields;
+	salePayloadOptions: PrepareSalePayloadOptions;
+};
+
+type PaymentFailureReporter = (errorMessage: string) => void;
+
 type CustomerAddress = NonNullable<
 	NonNullable<ICheckoutData["order"]>["customer"]
 >["addresses"][number];
@@ -220,6 +275,230 @@ function getPaymentAddressDefaults(
 		postalCode: firstAddress?.zip ?? "",
 		province: normalizeProvinceValue(rawProvince, country),
 	};
+}
+
+const missingCheckoutSessionMessage =
+	"Unable to start payment because checkout session data is missing. Please refresh and try again.";
+const genericPaymentFailureMessage =
+	"Payment could not be completed. Please try again or contact the store.";
+
+function getTrimmedPaymentFields(
+	fields: PaymentBillingFields,
+): TrimmedPaymentFields {
+	return {
+		firstName: fields.firstName.trim(),
+		lastName: fields.lastName.trim(),
+		email: fields.email.trim(),
+		address1: fields.address1.trim(),
+		address2: fields.address2.trim(),
+		city: fields.city.trim(),
+		country: fields.country.trim(),
+		postalCode: fields.postalCode.trim(),
+		province: fields.province.trim(),
+	};
+}
+
+function validateRequiredPaymentFields(
+	fields: TrimmedPaymentFields,
+): RequiredPaymentFieldErrors {
+	const paymentFieldErrors: RequiredPaymentFieldErrors = {};
+
+	requiredPaymentFieldOrder.forEach((field) => {
+		if (!fields[field]) {
+			paymentFieldErrors[field] = requiredPaymentFieldErrorMessages[field];
+		}
+	});
+
+	return paymentFieldErrors;
+}
+
+function hasRequiredPaymentFieldErrors(
+	fieldErrors: RequiredPaymentFieldErrors,
+): boolean {
+	return Object.keys(fieldErrors).length > 0;
+}
+
+function getPaymentReadyForSubmission({
+	paymentApproved,
+	orderPaidAt,
+	payment,
+	isProcessing,
+	onPaymentFailed,
+}: PaymentSubmissionPreflightOptions): PayfirmaPayment {
+	if (paymentApproved || orderPaidAt) {
+		throw new Error("Payment has already been approved.");
+	}
+
+	if (!payment) {
+		const message = "Payment module is still loading. Please try again.";
+		onPaymentFailed(message);
+		throw new Error(message);
+	}
+
+	if (isProcessing) {
+		throw new Error("Payment is already being processed.");
+	}
+
+	return payment;
+}
+
+function getRequiredCheckoutData(
+	onPaymentFailed: PaymentFailureReporter,
+): ICheckoutData {
+	let checkoutData;
+	try {
+		checkoutData = getCheckoutData();
+	} catch (error) {
+		console.error("[PayHQ] Failed to read checkout session data", error);
+		onPaymentFailed(missingCheckoutSessionMessage);
+		throw new Error(missingCheckoutSessionMessage, {cause: error});
+	}
+
+	if (!checkoutData?.order || !checkoutData.total) {
+		onPaymentFailed(missingCheckoutSessionMessage);
+		throw new Error(missingCheckoutSessionMessage);
+	}
+
+	return checkoutData;
+}
+
+async function getRequiredPaymentToken(
+	payment: PayfirmaPayment,
+): Promise<string> {
+	const tokenResponse = await payment.getPaymentToken();
+	const paymentToken = tokenResponse?.payment_token;
+
+	if (!paymentToken) {
+		throw new Error("Missing payment token");
+	}
+
+	return paymentToken;
+}
+
+function prepareSalePayloadData({
+	checkoutData,
+	fallbackItems,
+	tip,
+}: PrepareSalePayloadOptions): PreparedSalePayloadData {
+	let finalOrder = checkoutData.order;
+	let finalTotal = checkoutData.total;
+	const finalItems = checkoutData.items ?? fallbackItems;
+
+	if (finalOrder && finalTotal) {
+		const tippedSession = applyCreditCardTipToSession(
+			{order: finalOrder, total: finalTotal},
+			tip,
+		);
+		finalOrder = tippedSession.order;
+		finalTotal = tippedSession.total;
+	}
+
+	return {
+		order: finalOrder,
+		items: finalItems,
+		total: finalTotal,
+	};
+}
+
+function createPayfirmaSaleRequestBody({
+	paymentFields,
+	paymentToken,
+	salePayloadData,
+}: PayfirmaSaleRequestOptions): PayfirmaSaleRequestBody {
+	const paymentProvinceCode = provinceCodeFromValue(
+		paymentFields.province,
+		paymentFields.country,
+	);
+
+	return {
+		orderId: salePayloadData.order?.id,
+		firstName: paymentFields.firstName,
+		lastName: paymentFields.lastName,
+		email: paymentFields.email,
+		address1: paymentFields.address1,
+		address2: paymentFields.address2,
+		city: paymentFields.city,
+		country: paymentFields.country,
+		postalCode: paymentFields.postalCode,
+		province: paymentProvinceCode,
+		paymentToken,
+		order: salePayloadData.order,
+		items: salePayloadData.items,
+		total: salePayloadData.total,
+	};
+}
+
+async function requestPayfirmaSale(
+	requestBody: PayfirmaSaleRequestBody,
+): Promise<Response> {
+	return fetch("/api/payfirmaSale", {
+		method: "POST",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify(requestBody),
+	});
+}
+
+async function getNonOkPayfirmaSaleMessage(
+	response: Response,
+): Promise<string> {
+	let message = genericPaymentFailureMessage;
+	try {
+		const errorData = await response.json();
+		if (typeof errorData.message === "string") message = errorData.message;
+	} catch (parseError) {
+		console.error("[PayHQ] Failed to parse error response body", parseError);
+	}
+
+	return message;
+}
+
+async function parsePayfirmaSaleResponse(
+	response: Response,
+): Promise<PayfirmaSaleResponseData> {
+	if (!response.ok) {
+		throw new Error(await getNonOkPayfirmaSaleMessage(response));
+	}
+
+	const data = (await response.json()) as PayfirmaSaleResponseData;
+
+	if (!data.success) {
+		throw new Error(data.message || genericPaymentFailureMessage);
+	}
+
+	return data;
+}
+
+async function submitPayfirmaSale(
+	payment: PayfirmaPayment,
+	{paymentFields, salePayloadOptions}: PayfirmaSaleSubmissionOptions,
+): Promise<PayfirmaSaleResponseData> {
+	const paymentToken = await getRequiredPaymentToken(payment);
+	const salePayloadData = prepareSalePayloadData(salePayloadOptions);
+	const requestBody = createPayfirmaSaleRequestBody({
+		paymentFields,
+		paymentToken,
+		salePayloadData,
+	});
+	const response = await requestPayfirmaSale(requestBody);
+	return parsePayfirmaSaleResponse(response);
+}
+
+function reportPayfirmaPaymentError(
+	error: unknown,
+	onPaymentFailed: PaymentFailureReporter,
+): never {
+	console.error(
+		"[PayHQ] Payment failed",
+		error instanceof Error ? error.message : String(error),
+	);
+	const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "the store";
+	const finalErrorMessage =
+		error instanceof Error
+			? error.message
+			: `Payment could not be completed. Please try again or contact the store at ${adminEmail}.`;
+
+	onPaymentFailed(finalErrorMessage);
+	throw error instanceof Error ? error : new Error(finalErrorMessage);
 }
 
 const payfirmaFieldContainerSelector =
@@ -453,87 +732,32 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	);
 
 	const submitPayment = useCallback(async (): Promise<{paidAt: string}> => {
-		if (paymentApprovedRef.current || order?.paid_at) {
-			throw new Error("Payment has already been approved.");
-		}
+		const activePayment = getPaymentReadyForSubmission({
+			paymentApproved: paymentApprovedRef.current,
+			orderPaidAt: order?.paid_at,
+			payment,
+			isProcessing: submitInFlightRef.current || isSubmitting,
+			onPaymentFailed,
+		});
+		const checkoutData = getRequiredCheckoutData(onPaymentFailed);
+		const paymentFields = getTrimmedPaymentFields({
+			firstName,
+			lastName,
+			email,
+			address1,
+			address2,
+			city,
+			country,
+			postalCode,
+			province,
+		});
+		const paymentFieldErrors = validateRequiredPaymentFields(paymentFields);
 
-		if (!payment) {
-			const message = "Payment module is still loading. Please try again.";
-			onPaymentFailed(message);
-			throw new Error(message);
-		}
-
-		if (submitInFlightRef.current || isSubmitting) {
-			throw new Error("Payment is already being processed.");
-		}
-
-		let checkoutData;
-		try {
-			checkoutData = getCheckoutData();
-		} catch (error) {
-			console.error("[PayHQ] Failed to read checkout session data", error);
-			const message =
-				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
-			onPaymentFailed(message);
-			throw new Error(message, {cause: error});
-		}
-
-		if (!checkoutData?.order || !checkoutData.total) {
-			const message =
-				"Unable to start payment because checkout session data is missing. Please refresh and try again.";
-			onPaymentFailed(message);
-			throw new Error(message);
-		}
-
-		const trimmedFirstName = firstName.trim();
-		const trimmedLastName = lastName.trim();
-		const trimmedEmail = email.trim();
-		const trimmedAddress1 = address1.trim();
-		const trimmedAddress2 = address2.trim();
-		const trimmedCity = city.trim();
-		const trimmedCountry = country.trim();
-		const trimmedPostalCode = postalCode.trim();
-		const trimmedProvince = province.trim();
-		const paymentFieldErrors: RequiredPaymentFieldErrors = {};
-
-		if (!trimmedFirstName) {
-			paymentFieldErrors.firstName =
-				requiredPaymentFieldErrorMessages.firstName;
-		}
-		if (!trimmedLastName) {
-			paymentFieldErrors.lastName = requiredPaymentFieldErrorMessages.lastName;
-		}
-		if (!trimmedEmail) {
-			paymentFieldErrors.email = requiredPaymentFieldErrorMessages.email;
-		}
-		if (!trimmedAddress1) {
-			paymentFieldErrors.address1 = requiredPaymentFieldErrorMessages.address1;
-		}
-		if (!trimmedCity) {
-			paymentFieldErrors.city = requiredPaymentFieldErrorMessages.city;
-		}
-		if (!trimmedCountry) {
-			paymentFieldErrors.country = requiredPaymentFieldErrorMessages.country;
-		}
-		if (!trimmedPostalCode) {
-			paymentFieldErrors.postalCode =
-				requiredPaymentFieldErrorMessages.postalCode;
-		}
-		if (!trimmedProvince) {
-			paymentFieldErrors.province =
-				requiredPaymentFieldErrorMessages.province;
-		}
-
-		if (Object.keys(paymentFieldErrors).length > 0) {
+		if (hasRequiredPaymentFieldErrors(paymentFieldErrors)) {
 			setRequiredPaymentFieldErrors(paymentFieldErrors);
 			focusFirstRequiredPaymentFieldError(paymentFieldErrors);
 			throw new PaymentValidationError("Required payment fields are missing.");
 		}
-
-		const paymentProvinceCode = provinceCodeFromValue(
-			trimmedProvince,
-			trimmedCountry,
-		);
 
 		setRequiredPaymentFieldErrors({});
 		submitInFlightRef.current = true;
@@ -541,71 +765,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		setSuccessMessage(null);
 
 		try {
-			const tokenResponse = await payment.getPaymentToken();
-			const paymentToken = tokenResponse?.payment_token;
-
-			if (!paymentToken) {
-				throw new Error("Missing payment token");
-			}
-
-			let finalOrder = checkoutData.order;
-			let finalTotal = checkoutData.total;
-			const finalItems = checkoutData.items ?? items;
-
-			if (finalOrder && finalTotal) {
-				const tippedSession = applyCreditCardTipToSession(
-					{order: finalOrder, total: finalTotal},
+			const data = await submitPayfirmaSale(activePayment, {
+				paymentFields,
+				salePayloadOptions: {
+					checkoutData,
+					fallbackItems: items,
 					tip,
-				);
-				finalOrder = tippedSession.order;
-				finalTotal = tippedSession.total;
-			}
-
-			const response = await fetch("/api/payfirmaSale", {
-				method: "POST",
-				headers: {"Content-Type": "application/json"},
-				body: JSON.stringify({
-					orderId: finalOrder?.id,
-					firstName: trimmedFirstName,
-					lastName: trimmedLastName,
-					email: trimmedEmail,
-					address1: trimmedAddress1,
-					address2: trimmedAddress2,
-					city: trimmedCity,
-					country: trimmedCountry,
-					postalCode: trimmedPostalCode,
-					province: paymentProvinceCode,
-					paymentToken,
-					order: finalOrder,
-					items: finalItems,
-					total: finalTotal,
-				}),
+				},
 			});
-
-			if (!response.ok) {
-				let message =
-					"Payment could not be completed. Please try again or contact the store.";
-				try {
-					const errorData = await response.json();
-					if (typeof errorData.message === "string")
-						message = errorData.message;
-				} catch (parseError) {
-					console.error("[PayHQ] Failed to parse error response body", parseError);
-				}
-				throw new Error(message);
-			}
-
-			const data = (await response.json()) as {
-				success?: boolean;
-				paidAt?: unknown;
-				message?: string;
-			};
-
-			if (!data.success) {
-				throw new Error(
-					data.message || "Payment could not be completed. Please try again or contact the store.",
-				);
-			}
 
 			paymentApprovedRef.current = true;
 			setSuccessMessage("Payment approved.");
@@ -614,18 +781,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 			return {paidAt: paidAtResult};
 		} catch (error) {
-			console.error(
-				"[PayHQ] Payment failed",
-				error instanceof Error ? error.message : String(error),
-			);
-			const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "the store";
-			const finalErrorMessage =
-				error instanceof Error
-					? error.message
-					: `Payment could not be completed. Please try again or contact the store at ${adminEmail}.`;
-
-			onPaymentFailed(finalErrorMessage);
-			throw error instanceof Error ? error : new Error(finalErrorMessage);
+			reportPayfirmaPaymentError(error, onPaymentFailed);
 		} finally {
 			submitInFlightRef.current = false;
 			setIsSubmitting(false);
