@@ -6,8 +6,10 @@ import {
 	TOnCheckoutInited,
 } from "../reducers/app";
 import {getCartOrRetrieve} from "../../hooks/getCartOrRetrieve";
-import {ITotal, TPublishingStatus} from "boundless-api-client";
-import {TCheckoutStep} from "../../types/common";
+import {ICartTotal, IOrderService, ITotal, TPublishingStatus} from "boundless-api-client";
+import {ICheckoutStepper, TCheckoutStep} from "../../types/common";
+import type {CovaCartItem, CovaCheckoutInitData} from "../../types/cart";
+import type {IOrderWithCustmAttr} from "../../types/Order";
 import {getCheckoutData} from "../../hooks/checkoutData";
 import {getOrderTaxes} from "../../lib/taxes";
 import {ordersDropShippingItems} from "../../lib/products";
@@ -27,6 +29,64 @@ const buildCheckoutSteps = (items: Parameters<typeof ordersDropShippingItems>[0]
 		TCheckoutStep.paymentMethod,
 	];
 };
+
+type CheckoutDataOrder = IOrderWithCustmAttr | undefined;
+type CheckoutDataOrderService = IOrderService | null;
+
+type TaxSummary = {
+	totalTaxAmount: string | null;
+	itemsWithTax: CovaCartItem[];
+	shipping: {
+		shippingTaxes: unknown;
+	};
+};
+
+const resolveOrderTaxes = async (
+	items: CovaCartItem[],
+	checkoutDataOrder: CheckoutDataOrder,
+) => {
+	if (checkoutDataOrder?.tax_amount) return checkoutDataOrder.tax_amount;
+
+	return getOrderTaxes(items);
+};
+
+const buildTaxSummary = (
+	items: CovaCartItem[],
+	totalOrderTaxes: string | null,
+	checkoutDataOrder: CheckoutDataOrder,
+): TaxSummary => ({
+	totalTaxAmount: totalOrderTaxes,
+	itemsWithTax: items,
+	shipping: {
+		shippingTaxes: checkoutDataOrder?.tax_calculations?.tax?.shipping?.shippingTaxes,
+	},
+});
+
+const buildCheckoutTotal = ({
+	price,
+	cartTotal,
+	checkoutDataOrder,
+	checkoutDataOrderService,
+	tax,
+}: {
+	price: string | null;
+	cartTotal: ICartTotal;
+	checkoutDataOrder: CheckoutDataOrder;
+	checkoutDataOrderService: CheckoutDataOrderService;
+	tax: TaxSummary;
+}): ITotal => ({
+	price,
+	itemsSubTotal: {
+		price: checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ?? cartTotal.total,
+		qty: cartTotal.qty,
+	},
+	discount: checkoutDataOrder?.discount_for_order ?? "0",
+	tax,
+	servicesSubTotal: {
+		price: checkoutDataOrderService ? checkoutDataOrderService.total_price : 0,
+		qty: checkoutDataOrderService ? checkoutDataOrderService.qty : 0,
+	},
+} as unknown as ITotal);
 
 export const initCheckoutByCart =
 	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
@@ -51,19 +111,8 @@ export const initCheckoutByCart =
 			const checkoutData = getCheckoutData();
 			const checkoutDataOrder = checkoutData?.order;
 
-			let totalOrderTaxes = checkoutDataOrder?.tax_amount;
-			if (!totalOrderTaxes) {
-				totalOrderTaxes = await getOrderTaxes(items);
-			}
-
-			const tax = {
-				totalTaxAmount: totalOrderTaxes,
-				itemsWithTax: items,
-				shipping: {
-					shippingTaxes:
-						checkoutDataOrder?.tax_calculations?.tax?.shipping?.shippingTaxes,
-				},
-			};
+			const totalOrderTaxes = await resolveOrderTaxes(items, checkoutDataOrder);
+			const tax = buildTaxSummary(items, totalOrderTaxes, checkoutDataOrder);
 
 			const orderTotal = checkoutDataOrder?.total_price
 				? checkoutDataOrder?.total_price
@@ -99,25 +148,13 @@ export const initCheckoutByCart =
 				services: checkoutDataOrder?.services ?? [],
 				tax_calculations: checkoutDataOrder?.tax_calculations
 					? checkoutDataOrder.tax_calculations
-					: ({
+					: buildCheckoutTotal({
 							price: totalOrderTaxes,
-							itemsSubTotal: {
-								price:
-									checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
-									cartTotal.total,
-								qty: cartTotal.qty,
-							},
-							discount: checkoutDataOrder?.discount_for_order ?? "0",
-							tax: tax,
-							servicesSubTotal: {
-								price: checkoutDataOrderService
-									? checkoutDataOrderService.total_price
-									: 0,
-								qty: checkoutDataOrderService
-									? checkoutDataOrderService.qty
-									: 0,
-							},
-						} as unknown as ITotal),
+							cartTotal,
+							checkoutDataOrder,
+							checkoutDataOrderService,
+							tax,
+						}),
 				custom_attrs: {
 					...checkoutDataOrder?.custom_attrs,
 					shippingTax: checkoutDataOrder?.custom_attrs?.shippingTax ?? "0.00",
@@ -182,27 +219,15 @@ export const initCheckoutByCart =
 				stepWarning,
 				total: checkoutData?.total
 					? checkoutData.total
-					: ({
+					: buildCheckoutTotal({
 							price: checkoutDataOrder?.total_price
 								? checkoutDataOrder?.total_price
 								: orderTotal,
-							itemsSubTotal: {
-								price:
-									checkoutDataOrder?.tax_calculations?.itemsSubTotal.price ??
-									cartTotal.total,
-								qty: cartTotal.qty,
-							},
-							discount: checkoutDataOrder?.discount_for_order ?? "0",
-							tax: tax,
-							servicesSubTotal: {
-								price: checkoutDataOrderService
-									? checkoutDataOrderService.total_price
-									: 0,
-								qty: checkoutDataOrderService
-									? checkoutDataOrderService.qty
-									: 0,
-							},
-						} as unknown as ITotal),
+							cartTotal,
+							checkoutDataOrder,
+							checkoutDataOrderService,
+							tax,
+						}),
 			};
 			dispatch(setCheckoutData(data));
 
