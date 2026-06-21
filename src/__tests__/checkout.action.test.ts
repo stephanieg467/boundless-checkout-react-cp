@@ -207,6 +207,32 @@ describe("initCheckoutByCart", () => {
 		});
 	});
 
+	it("sets the checkout initialization error and aborts when tax lookup fails", async () => {
+		const taxError = new Error("tax service unavailable");
+		const onCheckoutInited = jest.fn();
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+		(getCheckoutData as jest.Mock).mockReturnValue({});
+		(getOrderTaxes as jest.Mock).mockRejectedValue(taxError);
+
+		try {
+			const store = makeStore(TCheckoutStep.contactInfo);
+			const appState = await dispatchInitCheckout(store, {onCheckoutInited});
+
+			expect(getOrderTaxes).toHaveBeenCalledWith(makeCart().items);
+			expect(consoleSpy).toHaveBeenCalledWith(taxError);
+			expect(appState.globalError).toBe(
+				"Cannot initialize checkout. Please go back to the cart and try again.",
+			);
+			expect(appState.isInited).toBe(false);
+			expect(appState.order).toBeUndefined();
+			expect(appState.total).toBeUndefined();
+			expect(onCheckoutInited).not.toHaveBeenCalled();
+		} finally {
+			consoleSpy.mockRestore();
+		}
+	});
+
 	it("reuses persisted tax data and total without calling the tax API", async () => {
 		const taxCalculations = {
 			price: "2.34",
