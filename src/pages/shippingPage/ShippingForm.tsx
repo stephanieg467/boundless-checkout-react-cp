@@ -6,14 +6,12 @@ import {
 } from "boundless-api-client";
 import {Form, Formik, FormikHelpers} from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
-import {Button, Typography} from "@mui/material";
+import {Box, Button, Typography} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {Box} from "@mui/system";
 import {IShippingFormValues} from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
-import {addPromise} from "../../redux/actions/xhr";
-import {apiErrors2Formik} from "../../lib/formUtils";
+import {dispatchFormikSubmitPromise} from "../../lib/formikSubmit";
 import {
 	addFilledStep,
 	setOrder,
@@ -39,7 +37,7 @@ import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import {cartHasTickets} from "../../lib/products";
+import {useCartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
@@ -88,7 +86,7 @@ const validateShippingForm = (values: IShippingFormValues) => {
 	return errors;
 };
 
-const getFormInitialValues = (
+const useFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData,
 ): IShippingFormValues => {
 	const {order} = useAppSelector((state) => state.app);
@@ -170,7 +168,7 @@ const useSaveShippingForm = ({
 
 	const onSubmit = (
 		values: IShippingFormValues,
-		{setSubmitting, setErrors}: FormikHelpers<IShippingFormValues>,
+		formikHelpers: FormikHelpers<IShippingFormValues>,
 	) => {
 		const {order, total} = getCheckoutData() || {};
 		if (!order) return;
@@ -382,12 +380,9 @@ const useSaveShippingForm = ({
 				const shippingIdx = steps.indexOf(TCheckoutStep.shippingAddress);
 				const nextStep = steps[shippingIdx + 1] ?? TCheckoutStep.paymentMethod;
 				dispatch(setCurrentStep(nextStep));
-			})
-			.catch(({response: {data}}) => {
-				setErrors(apiErrors2Formik(data));
-			})
-			.finally(() => setSubmitting(false));
-		dispatch(addPromise(promise));
+			});
+
+		dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
 	};
 
 	return {
@@ -402,10 +397,12 @@ export default function ShippingForm({
 }) {
 	const {onSubmit} = useSaveShippingForm({shippingPage});
 	const {t} = useTranslation();
+	const initialValues = useFormInitialValues(shippingPage);
+	const cartItemHasTickets = useCartHasTickets();
 
 	return (
 		<Formik
-			initialValues={getFormInitialValues(shippingPage)}
+			initialValues={initialValues}
 			onSubmit={onSubmit}
 			validate={validateShippingForm}
 		>
@@ -427,7 +424,7 @@ export default function ShippingForm({
 						<Typography variant="h5" sx={{m: 2}}>
 							{t("shippingForm.pageHeader")}
 						</Typography>
-						{cartHasTickets() && (
+						{cartItemHasTickets && (
 							<Typography variant="body1" sx={{m: 2}}>
 								{
 									"Your seats will be Reserved by Name, Birth Date and Number of Seats. Please ensure you bring an ID that matches your First and Last Name at time of event."

@@ -1,5 +1,5 @@
 import {ICustomer, IOrderDiscount, IOrderService, IPaymentMethod, ITotal, TPublishingStatus} from "boundless-api-client";
-import {CovaCartItem} from "./cart";
+import type {CovaCartItem} from "./cart";
 
 
 export interface IOrderWithCustmAttr {
@@ -13,7 +13,7 @@ export interface IOrderWithCustmAttr {
 	tax_amount: null | string;
 	publishing_status: TPublishingStatus;
 	created_at: string;
-	customer?: ICovaCustomer;
+	customer?: ICustomCustomer;
 	discounts?: IOrderDiscount[];
 	paymentMethod?: IPaymentMethod;
 	services?: IOrderService[];
@@ -27,14 +27,14 @@ export interface IOrderWithCustmAttr {
 	paid_at: string | null;
 }
 
-export interface ICovaCustomer extends Omit<ICustomer, "receive_marketing_info"> {
+export interface ICustomCustomer extends Omit<ICustomer, "receive_marketing_info"> {
 	dob?: string;
 }
 
 export interface ICheckoutData {
 	order: IOrderWithCustmAttr | undefined;
 	total: ITotal | undefined;
-	items?: CovaCartItem[]
+	items?: CovaCartItem[];
 }
 
 export interface IPayfirmaInfo {

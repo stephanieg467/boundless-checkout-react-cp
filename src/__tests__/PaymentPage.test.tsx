@@ -37,7 +37,7 @@ jest.mock("../pages/paymentPage/PaymentMethodForm", () => ({paymentPage}: any) =
 	</div>
 ));
 
-jest.mock("../lib/products", () => ({cartHasTickets: () => false}));
+jest.mock("../lib/products", () => ({useCartHasTickets: () => false}));
 
 jest.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),

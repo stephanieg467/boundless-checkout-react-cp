@@ -4,12 +4,13 @@ import {useAppDispatch, useAppSelector} from "../hooks/redux";
 import useInitCheckoutByCart from "../hooks/initCheckout";
 import Loading from "../components/Loading";
 import PaymentMethodForm from "./paymentPage/PaymentMethodForm";
+import type {IPaymentMethod, IPaymentPageData} from "./paymentPage/types";
 import {useTranslation} from "react-i18next";
 import {
 	CREDIT_CARD_PAYMENT_METHOD,
 	PAY_IN_STORE_PAYMENT_METHOD,
 } from "../constants";
-import {cartHasTickets} from "../lib/products";
+import {useCartHasTickets} from "../lib/products";
 import {getCheckoutData} from "../hooks/checkoutData";
 import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
@@ -41,15 +42,6 @@ export default function PaymentPage() {
 	);
 }
 
-export interface IPaymentMethod {
-	payment_method_id: string;
-	title: string;
-}
-
-export interface IPaymentPageData {
-	paymentMethods: IPaymentMethod[];
-}
-
 const useInitPaymentPage = () => {
 	const {isInited} = useInitCheckoutByCart();
 	const {order, stepper} = useAppSelector((state) => state.app);
@@ -57,7 +49,7 @@ const useInitPaymentPage = () => {
 	const checkoutData = getCheckoutData();
 	const hasCheckoutData = Boolean(checkoutData);
 	const [paymentPage, setPaymentPage] = useState<IPaymentPageData | null>(null);
-	const cartItemHasTickets = cartHasTickets();
+	const cartItemHasTickets = useCartHasTickets();
 
 	useEffect(() => {
 		if (!checkoutData) {

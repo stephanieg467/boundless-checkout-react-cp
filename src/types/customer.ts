@@ -63,14 +63,3 @@ export interface ICovaCustomer {
 	LastModifiedDateUtc: string;
 }
 
-export interface ISearchCriteria {
-	Field: string;
-	Operation: string;
-	Criteria: string;
-}
-
-export interface ICovaCustomerSearchResponse {
-	Id: number;
-	Criteria: ISearchCriteria[];
-	Results: ICovaCustomer[];
-}

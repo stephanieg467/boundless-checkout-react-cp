@@ -1,4 +1,5 @@
 import React from "react";
+import dayjs from "dayjs";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import ContactInformationForm from "../components/ContactInformationForm";
 import {
@@ -40,11 +41,17 @@ jest.mock("@mui/x-date-pickers/DatePicker", () => {
 
 	return {
 		DatePicker: (props: any) => (
-			<input
-				aria-label="contactForm.dob"
-				name="dob"
-				onChange={(e) => props.onChange(dayjsLib(e.target.value))}
-			/>
+			<div>
+				<input
+					aria-label="contactForm.dob"
+					name="dob"
+					onChange={(e) => props.onChange(dayjsLib(e.target.value))}
+					onBlur={() => props.onClose?.()}
+				/>
+				{props.slotProps?.textField?.helperText ? (
+					<div>{props.slotProps.textField.helperText}</div>
+				) : null}
+			</div>
 		),
 	};
 });
@@ -146,5 +153,43 @@ describe("ContactInformationForm - progress invalidation on save", () => {
 		expect(mockDispatch).toHaveBeenCalledWith(
 			setCurrentStep(TCheckoutStep.shippingAddress),
 		);
+	});
+
+	it("does not persist or dispatch checkout progress updates when contact validation fails", async () => {
+		render(<ContactInformationForm />);
+
+		fireEvent.change(screen.getByLabelText(/contactForm.email/), {
+			target: {value: "not-an-email"},
+		});
+		fireEvent.change(screen.getByLabelText("contactForm.dob"), {
+			target: {value: dayjs().subtract(18, "year").format("YYYY-MM-DD")},
+		});
+		fireEvent.blur(screen.getByLabelText("contactForm.dob"));
+
+		fireEvent.submit(
+			screen
+				.getByRole("button", {name: "contactForm.continueToShipping"})
+				.closest("form") as HTMLFormElement,
+		);
+
+		expect(await screen.findByText("Invalid email address")).toBeInTheDocument();
+		expect(
+			await screen.findByText("You must be at least 19 years old"),
+		).toBeInTheDocument();
+
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+
+		const dispatchedActionTypes = mockDispatch.mock.calls.map(
+			([action]) => action?.type,
+		);
+		[
+			setOrdersCustomer.type,
+			setOrder.type,
+			setTotal.type,
+			addFilledStep.type,
+			setCurrentStep.type,
+		].forEach((actionType) => {
+			expect(dispatchedActionTypes).not.toContain(actionType);
+		});
 	});
 });

@@ -15,7 +15,7 @@ export const cartPromotionItems = (cart: Cart): CovaCartItem[] => {
   return cart.items?.filter((item) => isPromotionItem(item.product)) ?? [];
 };
 
-export const cartHasTickets = () => {
+export const useCartHasTickets = () => {
   const cartItems = useAppSelector((state) => state.app.items);
   
   return cartItems?.some(
@@ -28,7 +28,7 @@ export const cartHasTickets = () => {
  * @param productSpecifications Array of product specifications
  * @returns Spec value if found, null otherwise
  */
-export const extractSpec = (
+const extractSpec = (
 	productSpecifications: Array<{
 		Unit: string;
 		Value: string;

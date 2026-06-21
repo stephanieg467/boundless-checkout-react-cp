@@ -10,28 +10,46 @@ Or via NPM:
 
 ## Getting Started
 
-1. Add component to the checkout page:
+Add the checkout component to your React checkout page:
 
 ```jsx
-import {startCheckout, StarterWrapper} from 'boundless-checkout-react-cp';
+import {BoundlessCheckout} from 'boundless-checkout-react-cp';
 
-const starter = startCheckout(document.querySelector('.some-el'), {
-	api: apiClient,
-	onHide: () => console.log('on hide'),
-	onThankYouPage: (data) =>  console.log('on thank you page', data),
-	basename: '/shop/checkout',
-	cartId: 'uid',
-	logoSrc: 'https://domain/logo.png',
-	logoText: 'My Logo'
-});
+export default function CheckoutPage() {
+	return (
+		<BoundlessCheckout
+			cartId="uid"
+			logoSrc="https://domain/logo.png"
+			onHide={(element) => console.log('on hide', element)}
+			onThankYouPage={async (data) => console.log('on thank you page', data)}
+			payfirmaInfo={{
+				token: 'payfirma-token',
+				environment: 'sandbox',
+				endpoint: 'https://payfirma-endpoint.example'
+			}}
+		/>
+	);
+}
 ```
 
-Props `onHide`, `onThankYouPage` - are required, others are optional.
+Props `onHide`, `onThankYouPage`, and `payfirmaInfo` are required. Other props are optional.
 
-`basename` - Start url for the checkout. If checkout located at `/checkout`, then `basename: '/checkout'`.
-
-2. Need more example? Look at: [Checkout page at Next.js](https://github.com/kirill-zhirnov/boundless-nextjs-sample/blob/master/pages/checkout/%5B%5B...slug%5D%5D.tsx)
+Need more example? Look at: [Checkout page at Next.js](https://github.com/kirill-zhirnov/boundless-nextjs-sample/blob/master/pages/checkout/%5B%5B...slug%5D%5D.tsx)
 
 ---
 
 [NextJS eCommerce templates](https://boundless-commerce.com/templates) - Free. Ready to use. Just clone & deploy!
+
+## Fallow commands
+fallow                       # Full codebase analysis: cleanup + duplication + health
+fallow audit                 # Audit changed files (verdict: pass/warn/fail)
+fallow health                # Complexity + refactor targets
+fallow health --css          # + structural CSS analytics (specificity, !important, nesting)
+fallow dupes                 # Repeated logic
+fallow dead-code             # Cleanup candidates
+fallow security              # Security candidates, hardcoded-secret needs explicit category include
+fallow security survivors    # Render verifier-filtered survivor candidates
+fallow security blind-spots  # Group unresolved security callees
+fallow explain unused-export # Explain a rule without analyzing
+fallow watch                 # Re-analyze on file changes
+fallow fix --dry-run         # Preview automatic cleanup

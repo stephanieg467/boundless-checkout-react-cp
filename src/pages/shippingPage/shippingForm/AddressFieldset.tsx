@@ -1,5 +1,4 @@
 import React from "react";
-import {IVWCountry} from "boundless-api-client";
 import Grid from "@mui/material/Grid";
 import {FormikProps, useFormikContext} from "formik";
 import TextField from "@mui/material/TextField";
@@ -12,7 +11,6 @@ import {useTranslation} from "react-i18next";
 import {PhoneInput} from "../../../components/PhoneInput";
 
 export default function AddressFieldset({
-	countries,
 	showPhone,
 	keyPrefix,
 }: IProps) {
@@ -86,28 +84,6 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
-			{/* // @todo: Currently only supporting Canada. */}
-			{/* <Grid item xs={6}>
-				<TextField
-					label={t("addresses.country")}
-					variant={"outlined"}
-					fullWidth
-					select
-					disabled
-					SelectProps={{ native: true }}
-					{...addressFieldAttrs(keyPrefix, "country_id", formikProps)}
-					// @todo: hard code Canada country code.
-					value={40}
-					helperText="Currently only shipping within Canada"
-				>
-					<option>Select country</option>
-					{countries.map(({ country_id, title }) => (
-						<option key={country_id} value={country_id}>
-							{title}
-						</option>
-					))}
-				</TextField>
-			</Grid> */}
 			{showPhone && (
 				<Grid size={6}>
 					<TextField
@@ -140,25 +116,11 @@ export default function AddressFieldset({
 }
 
 interface IProps {
-	countries: IVWCountry[];
 	showPhone?: boolean;
 	keyPrefix: "shipping_address" | "billing_address";
 }
 
-export interface IAddressFields {
-	first_name?: string;
-	last_name?: string;
-	company?: string;
-	address_line_1?: string;
-	address_line_2?: string;
-	city?: string;
-	state?: string;
-	country_id?: number | string;
-	zip?: string;
-	phone?: string;
-}
-
-export function addressFieldAttrs(
+function addressFieldAttrs(
 	keyPrefix: "shipping_address" | "billing_address",
 	field: string,
 	formikProps: FormikProps<IShippingFormValues>,

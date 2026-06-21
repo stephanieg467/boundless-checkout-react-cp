@@ -1,6 +1,6 @@
 {
   "name": "boundless-checkout-react-cp",
-  "version": "9.0.5",
+  "version": "9.0.6",
   "description": "The official checkout React component for CC.",
   "keywords": [
     "cms",
@@ -22,8 +22,19 @@
   "scripts": {
     "build": "rm -rf ./dist && npx rollup --config rollup.prod.js --bundleConfigAsCjs",
     "verify": "tsc --noemit",
-    "lint": "eslint ./src/ --fix && npx stylelint ./styles",
-    "test": "jest"
+    "lint:styles": "stylelint ./styles",
+    "lint:styles:fix": "stylelint ./styles --fix",
+    "lint": "eslint ./src/",
+    "lint:fix": "eslint ./src/ --fix",
+    "test": "jest",
+    "fallow": "fallow",
+    "fallow:audit": "fallow audit",
+    "fallow:audit:ci": "fallow audit --gate new-only --ci --fail-on-issues --format json --quiet --explain",
+    "fallow:audit:json": "fallow audit --format json --quiet",
+    "fallow:health": "fallow health --score --hotspots --targets",
+    "fallow:dead-code": "fallow dead-code",
+    "fallow:dupes": "fallow dupes",
+    "fallow:fix:dry-run": "fallow fix --dry-run"
   },
   "private": false,
   "main": "./dist/index.js",
@@ -39,8 +50,6 @@
     "@babel/preset-react": "^7.22.5",
     "@babel/preset-typescript": "^7.28.5",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@eslint/compat": "^2.0.0",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.1",
     "@rollup/plugin-babel": "^6.0.3",
@@ -65,6 +74,7 @@
     "boundless-api-client": "^1.0.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "fallow": "^2.85.0",
     "globals": "^16.5.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
@@ -90,10 +100,8 @@
     "ios >= 10"
   ],
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
-    "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mui/icons-material": "^7.0.0",
@@ -105,7 +113,6 @@
     "clsx": "^1.1.1",
     "country-state-city": "^3.2.1",
     "currency.js": "^2.0.4",
-    "date-holidays": "^3.26.12",
     "dayjs": "^1.11.18",
     "formik": "^2.2.9",
     "i18next": "^23.4.4",

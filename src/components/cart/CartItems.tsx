@@ -34,8 +34,7 @@ export default function CartItems() {
 							<div className="bdl-cart-item__img">
 								<img
 									{...getProductImg(
-										{path: product.HeroShotUri, width: 60, height: 60},
-										200
+										{path: product.HeroShotUri, width: 60, height: 60}
 									)}
 								/>
 							</div>

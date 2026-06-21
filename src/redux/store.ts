@@ -1,8 +1,13 @@
 import {configureStore, ThunkAction, Action} from "@reduxjs/toolkit";
-import appReducers from "./reducers/app";
-import xhrReducers from "./reducers/xhr";
+import appReducers, {type IAppState} from "./reducers/app";
+import xhrReducers, {type IXHRState} from "./reducers/xhr";
 
-export const store = configureStore({
+export interface RootState {
+	app: IAppState;
+	xhr: IXHRState;
+}
+
+export const store = configureStore<RootState>({
 	reducer: {
 		app: appReducers,
 		xhr: xhrReducers,
@@ -17,7 +22,6 @@ export const store = configureStore({
 });
 
 export type AppDispatch = typeof store.dispatch;
-export type RootState = ReturnType<typeof store.getState>;
 export type AppThunk<ReturnType = void> = ThunkAction<
 	ReturnType,
 	RootState,

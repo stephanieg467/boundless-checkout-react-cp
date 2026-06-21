@@ -1,5 +1,8 @@
-import Holidays from "date-holidays";
-import {DeliveryTimeSlot} from "../hooks/useDeliveryTimes";
+export interface DeliveryTimeSlot {
+	days: string[];
+	timeStart: string;
+	timeEnd: string;
+}
 
 // Helper functions for dynamic delivery times
 
@@ -53,12 +56,13 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 
 	for (const part of parts) {
 		switch (part.type) {
-			case "hour":
+			case "hour": {
 				// The hour might be '24' for midnight in some locales with hourCycle h24, map to 0.
 				// For hourCycle h23 (default for en-CA numeric), it's 0-23.
 				const hr = parseInt(part.value);
 				hourVancouver = hr === 24 ? 0 : hr;
 				break;
+			}
 			case "minute":
 				minuteVancouver = parseInt(part.value);
 				break;
@@ -238,22 +242,6 @@ const calculateSlotsForDate = (
 	});
 
 	return deliveryTimes;
-};
-
-export const isBCStatHoliday = (date: Date): boolean => {
-  // Initialize the library for Canada (CA) and British Columbia (BC)
-  const hd = new Holidays("CA", "BC");
-  
-  // hd.isHoliday returns an array of holiday objects if it is a holiday, or false
-  const holiday = hd.isHoliday(date);
-  
-  // The library includes some observances that aren't strict statutory holidays.
-  // Statutory holidays usually have a type of 'public'.
-  if (holiday && holiday.length > 0) {
-      return holiday.some(h => h.type === "public");
-  }
-  
-  return false;
 };
 
 export const getNextTwoBusinessDaysFormatted = (): string => {

@@ -7,6 +7,11 @@ import PayHQ, {CreatePaymentInstance, PayHQHandle} from "./PayHQ";
 
 let mockState: any = {};
 let mockCheckoutData: any = {};
+let mockPayfirmaInfo: {token?: string; environment?: string; endpoint?: string} = {
+	token: "payfirma-api-key",
+	environment: "TEST",
+	endpoint: "",
+};
 
 jest.mock("../../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
@@ -17,13 +22,7 @@ jest.mock("../../../hooks/checkoutData", () => ({
 }));
 
 jest.mock("../../../contexts/CheckoutConfigContext", () => ({
-	useCheckoutConfig: () => ({
-		payfirmaInfo: {
-			token: "payfirma-api-key",
-			environment: "TEST",
-			endpoint: "",
-		},
-	}),
+	useCheckoutConfig: () => ({payfirmaInfo: mockPayfirmaInfo}),
 }));
 
 jest.mock("merrco-payfirma-simple-pay-module", () => jest.fn());
@@ -115,7 +114,7 @@ function PayHQSubmitHarness({
 						if (paymentResult?.paidAt) {
 							setResult(paymentResult.paidAt);
 						}
-					} catch (e) {
+					} catch {
 						// ignore
 					}
 				}}
@@ -130,6 +129,11 @@ function PayHQSubmitHarness({
 describe("PayHQ", () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
+		mockPayfirmaInfo = {
+			token: "payfirma-api-key",
+			environment: "TEST",
+			endpoint: "",
+		};
 		mockCheckoutData = {order, items, total};
 		mockState = {
 			app: {
@@ -145,6 +149,25 @@ describe("PayHQ", () => {
 				paidAt: "2026-05-23T12:00:00.000Z",
 			}),
 		}) as jest.Mock;
+	});
+
+	it("fails closed when the Payfirma environment is missing", async () => {
+		mockPayfirmaInfo = {token: "payfirma-api-key", endpoint: ""};
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken: jest.fn(),
+		}));
+
+		render(
+			<PayHQ
+				onPaymentFailed={jest.fn()}
+				createPaymentInstance={createPaymentInstance}
+			/>,
+		);
+
+		expect(
+			screen.getByText(/An error occurred while initializing the payment module/i),
+		).toBeInTheDocument();
+		await waitFor(() => expect(createPaymentInstance).not.toHaveBeenCalled());
 	});
 
 	it("shows required field errors, focuses the first invalid field, and does not request payment when contact details are empty", async () => {
@@ -375,6 +398,123 @@ describe("PayHQ", () => {
 		);
 	});
 
+	it("refreshes billing fields and sale payload when the checkout order changes", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-2",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		const {rerender} = render(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		const updatedOrder = {
+			...order,
+			id: "order-2",
+			customer: {
+				...order.customer,
+				first_name: "Updated",
+				last_name: "Buyer",
+				email: "updated@example.com",
+				addresses: [
+					{
+						...order.customer.addresses[0],
+						address_line_1: "999 Fresh St",
+						address_line_2: "Suite 9",
+						city: "Kelowna",
+						state: "British Columbia",
+						zip: "V1Y 1A1",
+					},
+				],
+			},
+		} as any;
+
+		mockState = {app: {order: updatedOrder, items, total}};
+		mockCheckoutData = {order: updatedOrder, items, total};
+
+		rerender(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() =>
+			expect(screen.getByRole("textbox", {name: /first name/i})).toHaveValue(
+				"Updated",
+			),
+		);
+		expect(screen.getByRole("textbox", {name: /last name/i})).toHaveValue(
+			"Buyer",
+		);
+		expect(screen.getByRole("textbox", {name: /email/i})).toHaveValue(
+			"updated@example.com",
+		);
+		expect(screen.getByRole("textbox", {name: /address 1/i})).toHaveValue(
+			"999 Fresh St",
+		);
+		expect(screen.getByRole("textbox", {name: /address 2/i})).toHaveValue(
+			"Suite 9",
+		);
+		expect(screen.getByRole("textbox", {name: /city/i})).toHaveValue(
+			"Kelowna",
+		);
+		expect(screen.getByRole("textbox", {name: /postal code/i})).toHaveValue(
+			"V1Y 1A1",
+		);
+		expect(screen.getByRole("combobox", {name: /select country/i})).toHaveValue(
+			"CA",
+		);
+		expect(
+			screen.getByRole("combobox", {name: /province\/state/i}),
+		).toHaveValue("British Columbia");
+
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
+
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+		const [requestUrl, requestInit] = (global.fetch as jest.Mock).mock.calls[0];
+		expect(requestUrl).toBe("/api/payfirmaSale");
+		expect(requestInit.method).toBe("POST");
+		const requestBody = JSON.parse(requestInit.body);
+
+		expect(requestBody).toEqual(
+			expect.objectContaining({
+				orderId: "order-2",
+				firstName: "Updated",
+				lastName: "Buyer",
+				email: "updated@example.com",
+				address1: "999 Fresh St",
+				address2: "Suite 9",
+				city: "Kelowna",
+				country: "CA",
+				postalCode: "V1Y 1A1",
+				province: "BC",
+			}),
+		);
+		expect(requestBody.order).toEqual(
+			expect.objectContaining({
+				id: "order-2",
+				customer: expect.objectContaining({
+					first_name: "Updated",
+					last_name: "Buyer",
+					email: "updated@example.com",
+					addresses: [
+						expect.objectContaining({
+							address_line_1: "999 Fresh St",
+							address_line_2: "Suite 9",
+							city: "Kelowna",
+							state: "British Columbia",
+							zip: "V1Y 1A1",
+							vwCountry: expect.objectContaining({code: "CA", title: "Canada"}),
+						}),
+					],
+				}),
+			}),
+		);
+	});
+
 	it("prevents duplicate sale attempts if submitPayment is called again while in flight", async () => {
 		let resolveToken: (val: any) => void = () => {};
 		const getPaymentToken = jest.fn().mockReturnValue(
@@ -458,6 +598,7 @@ describe("PayHQ", () => {
 	});
 
 	it("rejects and reports failure if the sale fails", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -475,21 +616,29 @@ describe("PayHQ", () => {
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Card declined by issuer");
-		});
-		expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Card declined by issuer");
+			});
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Card declined by issuer",
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith("Card declined by issuer");
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("logs parse errors from non-OK Payfirma responses and reports the generic failure", async () => {
@@ -576,6 +725,7 @@ describe("PayHQ", () => {
 	});
 
 	it("does not tokenize or submit a sale when persisted checkout session data is unreadable", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -584,33 +734,42 @@ describe("PayHQ", () => {
 		}));
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
+		const checkoutReadError = new Error("Unexpected token u in JSON at position 0");
 
 		(getCheckoutData as jest.Mock).mockImplementationOnce(() => {
-			throw new Error("Unexpected token u in JSON at position 0");
+			throw checkoutReadError;
 		});
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow(
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow(
+					"Unable to start payment because checkout session data is missing. Please refresh and try again.",
+				);
+			});
+
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Failed to read checkout session data",
+				checkoutReadError,
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith(
 				"Unable to start payment because checkout session data is missing. Please refresh and try again.",
 			);
-		});
-
-		expect(onPaymentFailed).toHaveBeenCalledWith(
-			"Unable to start payment because checkout session data is missing. Please refresh and try again.",
-		);
-		expect(getPaymentToken).not.toHaveBeenCalled();
-		expect(global.fetch).not.toHaveBeenCalled();
+			expect(getPaymentToken).not.toHaveBeenCalled();
+			expect(global.fetch).not.toHaveBeenCalled();
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("shows processing guidance when the order is already paid", () => {
@@ -673,6 +832,7 @@ describe("PayHQ", () => {
 	});
 
 	it("rejects when the API response has success: false", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
@@ -691,25 +851,34 @@ describe("PayHQ", () => {
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={onPaymentFailed}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={onPaymentFailed}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Declined by bank");
-		});
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Declined by bank");
+			});
 
-		expect(onPaymentFailed).toHaveBeenCalledWith("Declined by bank");
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Declined by bank",
+			);
+			expect(onPaymentFailed).toHaveBeenCalledWith("Declined by bank");
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("rejects when getPaymentToken resolves with no token", async () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue(null);
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
@@ -717,22 +886,30 @@ describe("PayHQ", () => {
 
 		const payHQRef = React.createRef<PayHQHandle>();
 
-		render(
-			<PayHQSubmitHarness
-				payHQRef={payHQRef}
-				onPaymentFailed={jest.fn()}
-				createPaymentInstance={createPaymentInstance}
-			/>,
-		);
+		try {
+			render(
+				<PayHQSubmitHarness
+					payHQRef={payHQRef}
+					onPaymentFailed={jest.fn()}
+					createPaymentInstance={createPaymentInstance}
+				/>,
+			);
 
-		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+			await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
 
-		await act(async () => {
-			const submitResult = payHQRef.current!.submitPayment();
-			await expect(submitResult).rejects.toThrow("Missing payment token");
-		});
+			await act(async () => {
+				const submitResult = payHQRef.current!.submitPayment();
+				await expect(submitResult).rejects.toThrow("Missing payment token");
+			});
 
-		expect(global.fetch).not.toHaveBeenCalled();
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"[PayHQ] Payment failed",
+				"Missing payment token",
+			);
+			expect(global.fetch).not.toHaveBeenCalled();
+		} finally {
+			consoleSpy.mockRestore();
+		}
 	});
 
 	it("warns and uses a client timestamp when a successful sale omits paidAt", async () => {

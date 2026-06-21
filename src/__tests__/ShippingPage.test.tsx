@@ -27,7 +27,7 @@ jest.mock("../pages/shippingPage/ShippingForm", () => () => (
 	<div data-testid="shipping-form" />
 ));
 
-jest.mock("../lib/products", () => ({cartHasTickets: () => false}));
+jest.mock("../lib/products", () => ({useCartHasTickets: () => false}));
 
 jest.mock("../lib/deliveryTimes", () => ({
 	getVancouverDateTime: () => ({month: 1, day: 1}),

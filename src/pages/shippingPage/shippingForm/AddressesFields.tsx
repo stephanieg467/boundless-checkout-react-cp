@@ -2,8 +2,7 @@ import React from "react";
 import {useFormikContext} from "formik";
 import {IShippingFormValues} from "../../../types/shippingForm";
 import {ICheckoutShippingPageData} from "boundless-api-client";
-import {Box} from "@mui/system";
-import {Typography} from "@mui/material";
+import {Box, Typography} from "@mui/material";
 import AddressFieldset from "./AddressFieldset";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
@@ -28,7 +27,6 @@ export default function AddressesFields({
 			<Box className="bdl-shipping-form__address-form" sx={{mb: 2}}>
 				<Typography variant="h6" sx={{mb: 2}}>{deliveryMethodSelected ? t("addresses.deliveryAddress") : t("addresses.shippingAddress")}</Typography>
 				<AddressFieldset
-					countries={shippingPage.options.country}
 					keyPrefix={"shipping_address"}
 					showPhone
 				/>
@@ -51,7 +49,6 @@ export default function AddressesFields({
 				<Box className="bdl-shipping-form__address-form" sx={{mb: 2}}>
 					<Typography variant="h6">{t("addresses.billingAddress")}</Typography>
 					<AddressFieldset
-						countries={shippingPage.options.country}
 						keyPrefix={"billing_address"}
 					/>
 				</Box>

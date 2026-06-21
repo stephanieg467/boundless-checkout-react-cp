@@ -43,6 +43,7 @@ module.exports = defineConfig([
 		},
 
 		rules: {
+			"no-unused-vars": "off",
 			semi: ["error", "always"],
 			quotes: ["error", "double"],
 			"no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
