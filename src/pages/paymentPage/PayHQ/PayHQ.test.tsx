@@ -398,6 +398,123 @@ describe("PayHQ", () => {
 		);
 	});
 
+	it("refreshes billing fields and sale payload when the checkout order changes", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-2",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		const {rerender} = render(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		const updatedOrder = {
+			...order,
+			id: "order-2",
+			customer: {
+				...order.customer,
+				first_name: "Updated",
+				last_name: "Buyer",
+				email: "updated@example.com",
+				addresses: [
+					{
+						...order.customer.addresses[0],
+						address_line_1: "999 Fresh St",
+						address_line_2: "Suite 9",
+						city: "Kelowna",
+						state: "British Columbia",
+						zip: "V1Y 1A1",
+					},
+				],
+			},
+		} as any;
+
+		mockState = {app: {order: updatedOrder, items, total}};
+		mockCheckoutData = {order: updatedOrder, items, total};
+
+		rerender(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() =>
+			expect(screen.getByRole("textbox", {name: /first name/i})).toHaveValue(
+				"Updated",
+			),
+		);
+		expect(screen.getByRole("textbox", {name: /last name/i})).toHaveValue(
+			"Buyer",
+		);
+		expect(screen.getByRole("textbox", {name: /email/i})).toHaveValue(
+			"updated@example.com",
+		);
+		expect(screen.getByRole("textbox", {name: /address 1/i})).toHaveValue(
+			"999 Fresh St",
+		);
+		expect(screen.getByRole("textbox", {name: /address 2/i})).toHaveValue(
+			"Suite 9",
+		);
+		expect(screen.getByRole("textbox", {name: /city/i})).toHaveValue(
+			"Kelowna",
+		);
+		expect(screen.getByRole("textbox", {name: /postal code/i})).toHaveValue(
+			"V1Y 1A1",
+		);
+		expect(screen.getByRole("combobox", {name: /select country/i})).toHaveValue(
+			"CA",
+		);
+		expect(
+			screen.getByRole("combobox", {name: /province\/state/i}),
+		).toHaveValue("British Columbia");
+
+		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
+
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+		const [requestUrl, requestInit] = (global.fetch as jest.Mock).mock.calls[0];
+		expect(requestUrl).toBe("/api/payfirmaSale");
+		expect(requestInit.method).toBe("POST");
+		const requestBody = JSON.parse(requestInit.body);
+
+		expect(requestBody).toEqual(
+			expect.objectContaining({
+				orderId: "order-2",
+				firstName: "Updated",
+				lastName: "Buyer",
+				email: "updated@example.com",
+				address1: "999 Fresh St",
+				address2: "Suite 9",
+				city: "Kelowna",
+				country: "CA",
+				postalCode: "V1Y 1A1",
+				province: "BC",
+			}),
+		);
+		expect(requestBody.order).toEqual(
+			expect.objectContaining({
+				id: "order-2",
+				customer: expect.objectContaining({
+					first_name: "Updated",
+					last_name: "Buyer",
+					email: "updated@example.com",
+					addresses: [
+						expect.objectContaining({
+							address_line_1: "999 Fresh St",
+							address_line_2: "Suite 9",
+							city: "Kelowna",
+							state: "British Columbia",
+							zip: "V1Y 1A1",
+							vwCountry: expect.objectContaining({code: "CA", title: "Canada"}),
+						}),
+					],
+				}),
+			}),
+		);
+	});
+
 	it("prevents duplicate sale attempts if submitPayment is called again while in flight", async () => {
 		let resolveToken: (val: any) => void = () => {};
 		const getPaymentToken = jest.fn().mockReturnValue(
