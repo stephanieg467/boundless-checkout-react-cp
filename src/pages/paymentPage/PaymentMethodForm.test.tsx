@@ -209,6 +209,7 @@ async function expectRedirectedToCheckoutStep(step: TCheckoutStep) {
 
 describe("PaymentMethodForm shared PayHQ submit button", () => {
   const originalScrollIntoView = Element.prototype.scrollIntoView;
+  let checkoutEl: HTMLDivElement | null = null;
 
   beforeAll(() => {
     Element.prototype.scrollIntoView = jest.fn();
@@ -219,6 +220,13 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
       delete (Element.prototype as any).scrollIntoView;
     } else {
       Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
+  afterEach(() => {
+    if (checkoutEl) {
+      document.body.removeChild(checkoutEl);
+      checkoutEl = null;
     }
   });
 
@@ -575,7 +583,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
 
     const scrollToMock = jest.fn();
-    const checkoutEl = document.createElement("div");
+    checkoutEl = document.createElement("div");
     checkoutEl.className = "bdl-checkout";
     checkoutEl.scrollTo = scrollToMock;
     document.body.appendChild(checkoutEl);
@@ -586,8 +594,6 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
     expect(scrollToMock).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
-
-    document.body.removeChild(checkoutEl);
   });
 
   it("completes checkout from the latest persisted order when render-time Redux order is stale", async () => {
