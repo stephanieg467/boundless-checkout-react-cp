@@ -13,6 +13,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
 import {TClickedElement} from "./lib/elementEvents";
+import {scrollCheckoutToTop} from "./lib/scrollCheckout";
 import {useTranslation} from "react-i18next";
 import {useCheckoutConfig} from "./contexts/CheckoutConfigContext";
 
@@ -54,7 +55,7 @@ export default function StepRenderer() {
   const {t} = useTranslation();
 
   useEffect(() => {
-    document.querySelector<HTMLElement>(".bdl-checkout")?.scrollTo({top: 0, behavior: "smooth"});
+    scrollCheckoutToTop();
   }, [currentStep]);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function StepRenderer() {
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => onHide && onHide(TClickedElement.backToCart)}
+                onClick={() => onHide?.(TClickedElement.backToCart)}
                 color="error"
               >
                 {t("errorPage.backToSite")}

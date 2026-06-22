@@ -209,6 +209,7 @@ async function expectRedirectedToCheckoutStep(step: TCheckoutStep) {
 
 describe("PaymentMethodForm shared PayHQ submit button", () => {
   const originalScrollIntoView = Element.prototype.scrollIntoView;
+  let checkoutEl: HTMLDivElement | null = null;
 
   beforeAll(() => {
     Element.prototype.scrollIntoView = jest.fn();
@@ -219,6 +220,13 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
       delete (Element.prototype as any).scrollIntoView;
     } else {
       Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
+  afterEach(() => {
+    if (checkoutEl) {
+      document.body.removeChild(checkoutEl);
+      checkoutEl = null;
     }
   });
 
@@ -568,6 +576,24 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     const [checkoutArg] = mockOnThankYouPage.mock.calls[0];
     expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
+  });
+
+  it("scrolls the checkout container to the top when checkout completes", async () => {
+    const user = userEvent.setup();
+    const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
+
+    const scrollToMock = jest.fn();
+    checkoutEl = document.createElement("div");
+    checkoutEl.className = "bdl-checkout";
+    checkoutEl.scrollTo = scrollToMock;
+    document.body.appendChild(checkoutEl);
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+    expect(scrollToMock).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
   });
 
   it("completes checkout from the latest persisted order when render-time Redux order is stale", async () => {
