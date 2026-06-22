@@ -570,6 +570,26 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(checkoutArg.order.custom_attrs.checkoutCompleted).toBe(true);
   });
 
+  it("scrolls the checkout container to the top when checkout completes", async () => {
+    const user = userEvent.setup();
+    const order = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});
+
+    const scrollToMock = jest.fn();
+    const checkoutEl = document.createElement("div");
+    checkoutEl.className = "bdl-checkout";
+    checkoutEl.scrollTo = scrollToMock;
+    document.body.appendChild(checkoutEl);
+
+    setup({order, paymentMethods: [payInStoreMethod, creditCardMethod]});
+
+    await user.click(screen.getByRole("button", {name: /^complete order$/i}));
+
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+    expect(scrollToMock).toHaveBeenCalledWith({top: 0, behavior: "smooth"});
+
+    document.body.removeChild(checkoutEl);
+  });
+
   it("completes checkout from the latest persisted order when render-time Redux order is stale", async () => {
     const user = userEvent.setup();
     const latestOrder = makeOrder({payment_method_id: PAY_IN_STORE_PAYMENT_METHOD});

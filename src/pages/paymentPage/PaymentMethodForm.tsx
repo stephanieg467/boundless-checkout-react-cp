@@ -50,6 +50,7 @@ import {
 	ordersRegularItems,
 } from "../../lib/products";
 import {hasDeliveryId, hasShipping} from "../../lib/shipping";
+import {scrollCheckoutToTop} from "../../lib/scrollCheckout";
 import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
 import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
@@ -651,6 +652,7 @@ const useSavePaymentMethod = (
 			dispatch(setOrder(updatedOrder));
 			dispatch(setTotal(updatedTotal));
 			setStatus({checkoutCompletionInProgress: true});
+			scrollCheckoutToTop();
 
 			await onThankYouPage({
 				order: updatedOrder,
