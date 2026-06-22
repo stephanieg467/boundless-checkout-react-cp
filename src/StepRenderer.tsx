@@ -77,7 +77,7 @@ export default function StepRenderer() {
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => onHide && onHide(TClickedElement.backToCart)}
+                onClick={() => onHide?.(TClickedElement.backToCart)}
                 color="error"
               >
                 {t("errorPage.backToSite")}

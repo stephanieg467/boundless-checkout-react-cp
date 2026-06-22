@@ -110,7 +110,7 @@ const DELIVERY_TIME_REQUIRED_ERROR = "Delivery time is required";
 const hasPaymentFormValue = (value: unknown): boolean => {
 	if (typeof value === "string") return value.trim().length > 0;
 
-	return value !== null && value !== undefined;
+	return value != null;
 };
 
 const makeValidatePaymentForm =
@@ -235,9 +235,7 @@ export default function PaymentMethodForm({
 				const selectedPaymentMethodId = values.payment_method_id;
 				const isCreditCard =
 					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD;
-				const showPayHQ =
-					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD ||
-					onlyPaymentMethodIsCreditCard;
+				const showPayHQ = isCreditCard || onlyPaymentMethodIsCreditCard;
 
 				const submitCreditCardCheckout = async () => {
 					if (formikProps.isSubmitting || isPayHQSubmitting) {
@@ -460,7 +458,7 @@ const PaymentMethods = ({
 			<FormControl
 				required
 				variant="outlined"
-				error={Boolean("payment_method_id" in formikProps.errors)}
+				error={"payment_method_id" in formikProps.errors}
 			>
 				{!orderHasShipping && (
 					<FormLabel
@@ -487,26 +485,24 @@ const PaymentMethods = ({
 						}
 					}}
 				>
-					{paymentMethods.map(({payment_method_id, title}) => {
-						return (
-							<FormControlLabel
-								value={payment_method_id}
-								control={
-									<Radio
-										sx={{
-											color: "#133e20",
-											"&.Mui-checked": {
-												color: "#4a7c4d",
-											},
-										}}
-									/>
-								}
-								disabled={orderPaid}
-								label={title}
-								key={payment_method_id}
-							/>
-						);
-					})}
+					{paymentMethods.map(({payment_method_id, title}) => (
+						<FormControlLabel
+							value={payment_method_id}
+							control={
+								<Radio
+									sx={{
+										color: "#133e20",
+										"&.Mui-checked": {
+											color: "#4a7c4d",
+										},
+									}}
+								/>
+							}
+							disabled={orderPaid}
+							label={title}
+							key={payment_method_id}
+						/>
+					))}
 				</RadioGroup>
 				{"payment_method_id" in formikProps.errors && (
 					<FormHelperText>
@@ -643,9 +639,7 @@ const useSavePaymentMethod = (
 			}
 
 			setLocalStorageCheckoutData({
-				order: {
-					...updatedOrder,
-				} as IOrderWithCustmAttr,
+				order: updatedOrder,
 				total: updatedTotal,
 			});
 
