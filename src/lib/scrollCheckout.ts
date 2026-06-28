@@ -1,3 +1,3 @@
-export const scrollCheckoutToTop = (): void => {
-	document.querySelector<HTMLElement>(".bdl-checkout")?.scrollTo({top: 0, behavior: "smooth"});
+export const scrollCheckoutToTop = (selector = ".bdl-checkout"): void => {
+	document.querySelector<HTMLElement>(selector)?.scrollTo?.({top: 0, behavior: "smooth"});
 };

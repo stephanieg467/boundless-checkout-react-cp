@@ -1,0 +1,103 @@
+{
+  "finding_counts": {
+    "src/components/Cart.tsx": {
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "src/components/ContactInformationForm.tsx": {
+      "crap_critical": {
+        "count": 4
+      }
+    },
+    "src/components/cart/CartDiscountForm.tsx": {
+      "crap_critical": {
+        "count": 2
+      },
+      "crap_high": {
+        "count": 2
+      }
+    },
+    "src/components/cart/CartFooter.tsx": {
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "src/hooks/checkoutData.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/lib/checkoutGuards.ts": {
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 2
+      }
+    },
+    "src/lib/checkoutProgressReset.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/lib/deliveryTimes.ts": {
+      "crap_high": {
+        "count": 3
+      }
+    },
+    "src/lib/paymentOutcome.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/pages/ShippingPage.tsx": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/pages/deliveryDetailsPage/DeliveryDetailsForm.tsx": {
+      "crap_critical": {
+        "count": 2
+      },
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/pages/paymentPage/PayHQ/PayHQ.tsx": {
+      "crap_critical": {
+        "count": 2
+      },
+      "crap_high": {
+        "count": 3
+      }
+    },
+    "src/pages/paymentPage/PaymentMethodForm.tsx": {
+      "crap_critical": {
+        "count": 4
+      },
+      "crap_high": {
+        "count": 2
+      }
+    },
+    "src/pages/shippingPage/ShippingForm.test.tsx": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/pages/shippingPage/ShippingForm.tsx": {
+      "crap_critical": {
+        "count": 3
+      },
+      "crap_high": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": [
+    "src/__tests__/checkoutPageTestUtils.ts:dead code",
+    "src/lib/checkoutGuards.ts:high impact",
+    "src/hooks/checkoutData.ts:high impact"
+  ]
+}

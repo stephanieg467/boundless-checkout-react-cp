@@ -64,7 +64,7 @@ const paymentFormFieldOrder: Array<keyof IPaymentMethodFormValues> = [
 	"delivery_time",
 ];
 
-const scrollToFirstPaymentFormError = (
+const scrollPaymentFormToFirstErrorField = (
 	errors: FormikErrors<IPaymentMethodFormValues>,
 ) => {
 	if (typeof document === "undefined") return;
@@ -80,7 +80,7 @@ const scrollToFirstPaymentFormError = (
 	fieldElement?.scrollIntoView({behavior: "smooth", block: "center"});
 };
 
-const ScrollToFirstPaymentFormError = ({
+const ScrollToFirstFormikSubmitError = ({
 	errors,
 	submitCount,
 }: {
@@ -99,7 +99,7 @@ const ScrollToFirstPaymentFormError = ({
 		}
 
 		lastHandledSubmitCount.current = submitCount;
-		scrollToFirstPaymentFormError(errors);
+		scrollPaymentFormToFirstErrorField(errors);
 	}, [errors, submitCount]);
 
 	return null;
@@ -246,7 +246,7 @@ export default function PaymentMethodForm({
 
 					const validationErrors = await formikProps.validateForm();
 					if (Object.keys(validationErrors).length > 0) {
-						scrollToFirstPaymentFormError(validationErrors);
+						scrollPaymentFormToFirstErrorField(validationErrors);
 						return;
 					}
 
@@ -264,7 +264,7 @@ export default function PaymentMethodForm({
 					if (latestDeliveryTimeError) {
 						formikProps.setFieldError("delivery_time", latestDeliveryTimeError);
 						formikProps.setStatus({serverError: latestDeliveryTimeError});
-						scrollToFirstPaymentFormError({delivery_time: latestDeliveryTimeError});
+						scrollPaymentFormToFirstErrorField({delivery_time: latestDeliveryTimeError});
 						return;
 					}
 
@@ -336,7 +336,7 @@ export default function PaymentMethodForm({
 
 				return (
 					<Form className={"bdl-payment-form"}>
-						<ScrollToFirstPaymentFormError
+						<ScrollToFirstFormikSubmitError
 							errors={formikProps.errors}
 							submitCount={formikProps.submitCount}
 						/>
@@ -646,7 +646,7 @@ const useSavePaymentMethod = (
 			dispatch(setOrder(updatedOrder));
 			dispatch(setTotal(updatedTotal));
 			setStatus({checkoutCompletionInProgress: true});
-			scrollCheckoutToTop();
+			scrollCheckoutToTop(".bdl-payment-success-message");
 
 			await onThankYouPage({
 				order: updatedOrder,
