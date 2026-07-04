@@ -97,7 +97,6 @@ const completeShippingAddress = (overrides: any = {}) => ({
   city: "Penticton",
   state: "BC",
   zip: "V2A 1A1",
-  phone: "2505551234",
   ...overrides,
 });
 

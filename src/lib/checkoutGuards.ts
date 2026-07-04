@@ -34,7 +34,6 @@ const hasRequiredAddressFields = (address: any): boolean => {
 		address.city,
 		address.state,
 		address.zip,
-		address.phone,
 	].every(hasValue);
 };
 

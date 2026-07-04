@@ -1,10 +1,13 @@
 import {IAddressFields} from "boundless-api-client";
+
+export type IAddressFormFields = Omit<IAddressFields, "phone">;
+
 export interface IShippingFormValues {
 	delivery_id: number;
   deliveryInstructions?: string;
-	shipping_address?: IAddressFields;
+	shipping_address?: IAddressFormFields;
 	billing_address_the_same?: boolean;
-	billing_address?: IAddressFields;
+	billing_address?: IAddressFormFields;
 }
 
 export interface IAddressSubForm {
@@ -17,5 +20,4 @@ export interface IAddressSubForm {
 	state?: string;
 	country_id: number|string;
 	zip: string;
-	phone?: string;
 }

@@ -26,10 +26,7 @@ export default function AddressesFields({
 		<>
 			<Box className="bdl-shipping-form__address-form" sx={{mb: 2}}>
 				<Typography variant="h6" sx={{mb: 2}}>{deliveryMethodSelected ? t("addresses.deliveryAddress") : t("addresses.shippingAddress")}</Typography>
-				<AddressFieldset
-					keyPrefix={"shipping_address"}
-					showPhone
-				/>
+				<AddressFieldset keyPrefix={"shipping_address"} />
 			</Box>
 			{!deliveryMethodSelected && (
 				<Box sx={{mb: 2}}>

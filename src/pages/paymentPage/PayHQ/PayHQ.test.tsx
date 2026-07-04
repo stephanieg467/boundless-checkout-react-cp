@@ -59,7 +59,6 @@ const order = {
 				state: "British Columbia",
 				country_id: 0,
 				zip: "V5K 0A1",
-				phone: null,
 				created_at: "2026-05-23T00:00:00.000Z",
 				vwCountry: {
 					country_id: 0,

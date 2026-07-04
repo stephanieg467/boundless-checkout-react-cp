@@ -54,8 +54,7 @@
 		"zip": "Postal code",
 		"city": "City",
 		"state": "Province",
-		"country": "Country",
-		"phone": "Phone"
+		"country": "Country"
 	},
 	"paymentMethodForm": {
 		"pageTitle": "Checkout: Payment",

@@ -299,5 +299,7 @@ describe("ShippingForm checkout address persistence", () => {
 				last_name: "Recipient",
 			}),
 		);
+		expect(shippingAddress).not.toHaveProperty("phone");
+		expect(billingAddress).not.toHaveProperty("phone");
 	});
 });

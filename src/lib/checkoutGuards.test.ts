@@ -18,7 +18,7 @@ import {
 } from "./checkoutGuards";
 
 const requiredContactFields = ["id", "first_name", "last_name", "email", "phone", "dob"] as const;
-const requiredAddressFields = ["first_name", "last_name", "address_line_1", "city", "state", "zip", "phone"] as const;
+const requiredAddressFields = ["first_name", "last_name", "address_line_1", "city", "state", "zip"] as const;
 const invalidStringValues = [null, "", "   "] as const;
 
 const completeCustomer = (overrides: Partial<ICustomCustomer> = {}): ICustomCustomer => ({
@@ -50,7 +50,7 @@ const completeAddress = (
 	state: "BC",
 	country_id: 40,
 	zip: "V2A 1A1",
-	phone: "2505551234",
+	phone: null,
 	created_at: "2026-01-01T00:00:00.000Z",
 	vwCountry: null,
 	...overrides,
@@ -229,7 +229,7 @@ describe("checkout guards", () => {
 						customer: completeCustomer({
 							addresses: [
 								completeAddress(TAddressType.shipping),
-								completeAddress(TAddressType.billing, {phone: "   "}),
+								completeAddress(TAddressType.billing, {city: "   "}),
 							],
 						}),
 					}),
@@ -244,6 +244,22 @@ describe("checkout guards", () => {
 							addresses: [
 								completeAddress(TAddressType.shipping),
 								completeAddress(TAddressType.billing),
+							],
+						}),
+					}),
+				),
+			).toBe(true);
+		});
+
+		it("does not require a phone on addresses since phone is collected on the contact form", () => {
+			expect(
+				isShippingStepComplete(
+					orderWith({
+						services: [shippingService()],
+						customer: completeCustomer({
+							addresses: [
+								completeAddress(TAddressType.shipping, {phone: null}),
+								completeAddress(TAddressType.billing, {phone: ""}),
 							],
 						}),
 					}),

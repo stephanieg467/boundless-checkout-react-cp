@@ -1,6 +1,6 @@
 "use client";
 
-import { PaymentValidationError } from "../../../lib/paymentOutcome";
+import {PaymentValidationError} from "../../../lib/paymentOutcome";
 import React, {
 	forwardRef,
 	useCallback,
@@ -20,14 +20,14 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import { Country, State, type ICountry, type IState } from "country-state-city";
+import {Theme} from "@mui/material/styles";
+import {Country, State, type ICountry, type IState} from "country-state-city";
 import PayfirmaIframeTransaction from "merrco-payfirma-simple-pay-module";
-import { ICheckoutData } from "../../../types/Order";
-import { getCheckoutData } from "../../../hooks/checkoutData";
-import { useAppSelector } from "../../../hooks/redux";
-import { useCheckoutConfig } from "../../../contexts/CheckoutConfigContext";
-import { applyCreditCardTipToSession } from "../../../lib/paymentOutcome";
+import {ICheckoutData} from "../../../types/Order";
+import {getCheckoutData} from "../../../hooks/checkoutData";
+import {useAppSelector} from "../../../hooks/redux";
+import {useCheckoutConfig} from "../../../contexts/CheckoutConfigContext";
+import {applyCreditCardTipToSession} from "../../../lib/paymentOutcome";
 
 type PaymentTokenResponse = {
 	payment_token: string;
@@ -195,7 +195,7 @@ const COUNTRY_IDS_BY_ISO_CODE: Record<string, number[]> = {
 };
 
 function getActivePayfirmaFieldMetrics(): PayfirmaFieldMetrics {
-	return { height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE };
+	return {height: PAYFIRMA_FIELD_HEIGHT, fontSize: PAYFIRMA_FIELD_FONT_SIZE};
 }
 
 function createPayfirmaInputStyle({
@@ -352,7 +352,7 @@ function getRequiredCheckoutData(
 	} catch (error) {
 		console.error("[PayHQ] Failed to read checkout session data", error);
 		onPaymentFailed(missingCheckoutSessionMessage);
-		throw new Error(missingCheckoutSessionMessage, { cause: error });
+		throw new Error(missingCheckoutSessionMessage, {cause: error});
 	}
 
 	if (!checkoutData?.order || !checkoutData.total) {
@@ -387,7 +387,7 @@ function prepareSalePayloadData({
 
 	if (finalOrder && finalTotal) {
 		const tippedSession = applyCreditCardTipToSession(
-			{ order: finalOrder, total: finalTotal },
+			{order: finalOrder, total: finalTotal},
 			tip,
 		);
 		finalOrder = tippedSession.order;
@@ -434,7 +434,7 @@ async function requestPayfirmaSale(
 ): Promise<Response> {
 	return fetch("/api/payfirmaSale", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(requestBody),
 	});
 }
@@ -471,7 +471,7 @@ async function parsePayfirmaSaleResponse(
 
 async function submitPayfirmaSale(
 	payment: PayfirmaPayment,
-	{ paymentFields, salePayloadOptions }: PayfirmaSaleSubmissionOptions,
+	{paymentFields, salePayloadOptions}: PayfirmaSaleSubmissionOptions,
 ): Promise<PayfirmaSaleResponseData> {
 	const paymentToken = await getRequiredPaymentToken(payment);
 	const salePayloadData = prepareSalePayloadData(salePayloadOptions);
@@ -506,7 +506,7 @@ const payfirmaFieldContainerSelector =
 	"& #defaultCardNumber_container, & #defaultCardExpiry_container, & #defaultCardCvv_container";
 
 const payfirmaFieldIframeSelector =
-	'#defaultCardNumber_container iframe:not([name^="__detect_close_"]), #defaultCardExpiry_container iframe:not([name^="__detect_close_"]), #defaultCardCvv_container iframe:not([name^="__detect_close_"])';
+	"#defaultCardNumber_container iframe:not([name^=\"__detect_close_\"]), #defaultCardExpiry_container iframe:not([name^=\"__detect_close_\"]), #defaultCardCvv_container iframe:not([name^=\"__detect_close_\"])";
 
 const textFieldSx = {
 	"& .MuiOutlinedInput-root": {
@@ -518,7 +518,7 @@ const textFieldSx = {
 
 const payfirmaContainerSx = (theme: Theme) => ({
 	display: "grid",
-	gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+	gridTemplateColumns: {xs: "1fr", sm: "1fr 1fr"},
 	gap: 2,
 	"& #defaultCardNumber_container": {
 		gridColumn: "1 / -1",
@@ -572,7 +572,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	},
 	ref,
 ) {
-	const { payfirmaInfo } = useCheckoutConfig();
+	const {payfirmaInfo} = useCheckoutConfig();
 	const apiKey = payfirmaInfo?.token ?? "";
 	const payfirmaEnvironment = payfirmaInfo?.environment;
 
@@ -666,7 +666,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			suppressPayfirmaIframeScrollbars(paymentContainer);
 		});
 
-		observer.observe(paymentContainer, { childList: true, subtree: true });
+		observer.observe(paymentContainer, {childList: true, subtree: true});
 
 		return () => {
 			observer.disconnect();
@@ -698,7 +698,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			}
 
 			const fieldElement = requiredPaymentFieldRefs.current[firstErrorField];
-			fieldElement?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+			fieldElement?.scrollIntoView?.({behavior: "smooth", block: "center"});
 			fieldElement?.focus();
 		},
 		[],
@@ -715,7 +715,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					return currentErrors;
 				}
 
-				const remainingErrors = { ...currentErrors };
+				const remainingErrors = {...currentErrors};
 				delete remainingErrors[field];
 				return remainingErrors;
 			});
@@ -769,7 +769,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 			const paidAtResult = resolvePaidAt(data.paidAt);
 
-			return { paidAt: paidAtResult };
+			return {paidAt: paidAtResult};
 		} catch (error) {
 			reportPayfirmaPaymentError(error, onPaymentFailed);
 		} finally {
@@ -832,7 +832,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				sx={{
 					width: "100%",
 					maxWidth: 800,
-					p: { xs: 2.5, sm: 4 },
+					p: {xs: 2.5, sm: 4},
 					borderRadius: 3,
 					border: "1px solid",
 					borderColor: "divider",
@@ -841,7 +841,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			>
 				<Stack spacing={3}>
 					<Box>
-						<Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
+						<Typography component="h2" variant="h6" sx={{fontWeight: 700}}>
 							Payment details
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
@@ -851,7 +851,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					</Box>
 
 					<Grid container spacing={2}>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								required
 								fullWidth
@@ -861,17 +861,17 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("firstName")}
 								value={firstName}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setFirstName(value);
 									clearRequiredPaymentFieldError("firstName", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.firstName)}
 								helperText={requiredPaymentFieldErrors.firstName ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								fullWidth
 								required
@@ -881,14 +881,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("lastName")}
 								value={lastName}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setLastName(value);
 									clearRequiredPaymentFieldError("lastName", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.lastName)}
 								helperText={requiredPaymentFieldErrors.lastName ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
 						<Grid size={12}>
@@ -902,14 +902,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("email")}
 								value={email}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setEmail(value);
 									clearRequiredPaymentFieldError("email", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.email)}
 								helperText={requiredPaymentFieldErrors.email ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
 						<Grid size={12}>
@@ -922,14 +922,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("address1")}
 								value={address1}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setAddress1(value);
 									clearRequiredPaymentFieldError("address1", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.address1)}
 								helperText={requiredPaymentFieldErrors.address1 ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
 						<Grid size={12}>
@@ -941,10 +941,10 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								value={address2}
 								onChange={(event) => setAddress2(event.target.value)}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								fullWidth
 								required
@@ -954,17 +954,17 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("city")}
 								value={city}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setCity(value);
 									clearRequiredPaymentFieldError("city", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.city)}
 								helperText={requiredPaymentFieldErrors.city ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								fullWidth
 								required
@@ -973,7 +973,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("country")}
 								value={country}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									const nextProvinceOptions = State.getStatesOfCountry(value);
 									setCountry(value);
 									setProvince((currentProvince) =>
@@ -988,7 +988,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								error={Boolean(requiredPaymentFieldErrors.country)}
 								helperText={requiredPaymentFieldErrors.country ?? ""}
 								sx={textFieldSx}
-								SelectProps={{ native: true }}
+								SelectProps={{native: true}}
 							>
 								<option value="">Select Country</option>
 								{countryOptions.map((countryOption: ICountry) => (
@@ -1001,7 +1001,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								))}
 							</TextField>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								fullWidth
 								required
@@ -1011,17 +1011,17 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("postalCode")}
 								value={postalCode}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setPostalCode(value);
 									clearRequiredPaymentFieldError("postalCode", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.postalCode)}
 								helperText={requiredPaymentFieldErrors.postalCode ?? ""}
 								sx={textFieldSx}
-								slotProps={{ htmlInput: { className: "input-field" } }}
+								slotProps={{htmlInput: {className: "input-field"}}}
 							/>
 						</Grid>
-						<Grid size={{ xs: 12, sm: 6 }}>
+						<Grid size={{xs: 12, sm: 6}}>
 							<TextField
 								fullWidth
 								required
@@ -1030,14 +1030,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 								inputRef={setRequiredPaymentFieldRef("province")}
 								value={province}
 								onChange={(event) => {
-									const { value } = event.target;
+									const {value} = event.target;
 									setProvince(value);
 									clearRequiredPaymentFieldError("province", value);
 								}}
 								error={Boolean(requiredPaymentFieldErrors.province)}
 								helperText={requiredPaymentFieldErrors.province ?? ""}
 								sx={textFieldSx}
-								SelectProps={{ native: true }}
+								SelectProps={{native: true}}
 							>
 								<option value="">Province/State</option>
 								{provinceOptions.map((provinceOption: IState) => (
@@ -1056,13 +1056,13 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 					</Grid>
 
 					{isSubmitting && (
-						<Box sx={{ textAlign: "center" }} aria-live="polite">
+						<Box sx={{textAlign: "center"}} aria-live="polite">
 							<CircularProgress size={32} />
 						</Box>
 					)}
 				</Stack>
 				{order?.paid_at && (
-					<Alert sx={{ mt: 2 }} severity="info">
+					<Alert sx={{mt: 2}} severity="info">
 						<Typography>
 							Your payment was approved. Please wait while we process your order.
 						</Typography>

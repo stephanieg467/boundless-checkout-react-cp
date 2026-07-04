@@ -8,12 +8,8 @@ import {
 	IShippingFormValues,
 } from "../../../types/shippingForm";
 import {useTranslation} from "react-i18next";
-import {PhoneInput} from "../../../components/PhoneInput";
 
-export default function AddressFieldset({
-	showPhone,
-	keyPrefix,
-}: IProps) {
+export default function AddressFieldset({keyPrefix}: IProps) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 	const {values, handleChange} = formikProps;
 
@@ -84,19 +80,6 @@ export default function AddressFieldset({
 					{...addressFieldAttrs(keyPrefix, "state", formikProps)}
 				/>
 			</Grid>
-			{showPhone && (
-				<Grid size={6}>
-					<TextField
-						label={t("addresses.phone")}
-						variant={"outlined"}
-						fullWidth
-						{...addressFieldAttrs(keyPrefix, "phone", formikProps)}
-						InputProps={{
-							inputComponent: PhoneInput as any,
-						}}
-					/>
-				</Grid>
-			)}
 			{keyPrefix === "shipping_address" && (
 				<Grid size={12}>
 					<TextField
@@ -116,7 +99,6 @@ export default function AddressFieldset({
 }
 
 interface IProps {
-	showPhone?: boolean;
 	keyPrefix: "shipping_address" | "billing_address";
 }
 

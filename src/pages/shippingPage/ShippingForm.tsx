@@ -1,14 +1,13 @@
 import React from "react";
-import {
-	IAddress,
-	IAddressFields,
-	ICheckoutShippingPageData,
-} from "boundless-api-client";
+import {IAddress, ICheckoutShippingPageData} from "boundless-api-client";
 import {Form, Formik, FormikHelpers} from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
 import {Box, Button, Typography} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
-import {IShippingFormValues} from "../../types/shippingForm";
+import {
+	IAddressFormFields,
+	IShippingFormValues,
+} from "../../types/shippingForm";
 import DeliverySelector from "./shippingForm/DeliverySelector";
 import {useAppDispatch, useAppSelector} from "../../hooks/redux";
 import {dispatchFormikSubmitPromise} from "../../lib/formikSubmit";
@@ -117,7 +116,7 @@ const useFormInitialValues = (
 const getEmptyAddressFields = (
 	address: IAddress | null = null,
 	order: IOrderWithCustmAttr | null = null,
-): IAddressFields => {
+): IAddressFormFields => {
 	let first_name = order ? order.customer?.first_name || null : null,
 		last_name = order ? order.customer?.last_name || null : null,
 		company,
@@ -125,8 +124,7 @@ const getEmptyAddressFields = (
 		address_line_2,
 		city,
 		state,
-		zip,
-		phone;
+		zip;
 
 	if (address) {
 		({
@@ -138,7 +136,6 @@ const getEmptyAddressFields = (
 			city,
 			state,
 			zip,
-			phone,
 		} = address);
 	}
 
@@ -154,7 +151,6 @@ const getEmptyAddressFields = (
 		// @todo: currently only shipping in Canada.
 		country_id: 40,
 		zip: zip || "",
-		phone: phone || "",
 	};
 };
 
@@ -256,7 +252,6 @@ const useSaveShippingForm = ({
 						state: shipping_address?.state,
 						country_id: 0, // Canada
 						zip: shipping_address?.zip,
-						phone: shipping_address?.phone,
 						created_at: new Date().toISOString(),
 						vwCountry: null,
 					});
@@ -275,7 +270,6 @@ const useSaveShippingForm = ({
 							state: billing_address?.state,
 							country_id: 0, // Canada
 							zip: billing_address?.zip,
-							phone: billing_address?.phone,
 							created_at: new Date().toISOString(),
 							vwCountry: null,
 						});
