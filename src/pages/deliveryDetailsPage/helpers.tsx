@@ -2,6 +2,34 @@ import {Box, Typography, TextField} from "@mui/material";
 import {fieldAttrs} from "../../lib/formUtils";
 import {CovaCartItem} from "../../types/cart";
 import {FormikProps, FormikValues} from "formik";
+import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
+
+export const renderDeliveryTimeOptions = (
+	times: DeliveryTimeOption[] | undefined,
+	isLoading: boolean,
+	hasError: boolean,
+) => (
+	<>
+		<option value=""></option>
+		{isLoading ? (
+			<option disabled value="">
+				{"Loading delivery times..."}
+			</option>
+		) : !hasError && times ? (
+			times.map((option) => (
+				<option key={option.label} value={option.label}>
+					{option.label}
+				</option>
+			))
+		) : (
+			<option disabled>
+				{
+					"Error loading delivery times. Please contact info@cannabis-cottage.ca."
+				}
+			</option>
+		)}
+	</>
+);
 
 export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 	items,

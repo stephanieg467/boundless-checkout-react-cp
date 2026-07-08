@@ -2,6 +2,12 @@ export interface DeliveryTimeSlot {
 	days: string[];
 	timeStart: string;
 	timeEnd: string;
+	applyDeliveryFee?: boolean;
+}
+
+export interface DeliveryTimeOption {
+	label: string;
+	applyDeliveryFee: boolean;
 }
 
 // Helper functions for dynamic delivery times
@@ -9,6 +15,7 @@ export interface DeliveryTimeSlot {
 type TimeWindow = {
 	start: number; // Hour in 24h format (e.g., 11 for 11am, 13 for 1pm)
 	end: number; // Hour in 24h format, can be fractional (e.g., 20.5 for 8:30pm)
+	applyDeliveryFee: boolean;
 };
 
 const parseTimeStringToNumber = (timeStr: string): number => {
@@ -28,6 +35,7 @@ const getSchedule = (
 				.map((slot) => ({
 					start: parseTimeStringToNumber(slot.timeStart),
 					end: parseTimeStringToNumber(slot.timeEnd),
+					applyDeliveryFee: slot.applyDeliveryFee ?? true,
 				}))
 				.sort((a, b) => a.start - b.start)
 		: [];
@@ -136,9 +144,9 @@ const getDateString = (year: number, month: number, day: number) => {
 	return `${year}-${month}-${day}`;
 };
 
-export type DeliveryTimesBase = {times: string[]; isNextDay: boolean};
+export type DeliveryTimesBase = {times: DeliveryTimeOption[]; isNextDay: boolean};
 export type DeliveryTimesWithDropShip = DeliveryTimesBase & {
-	dropShipTimes: {times: string[]; date: string};
+	dropShipTimes: {times: DeliveryTimeOption[]; date: string};
 };
 
 export function getDynamicDeliveryTimes(
@@ -183,7 +191,7 @@ const calculateSlotsForDate = (
 	date: Date,
 	deliveryTimesData: DeliveryTimeSlot[],
 	currentTime: number,
-): string[] => {
+): DeliveryTimeOption[] => {
 	const {year, month, day, weekdayName} = getVancouverDateTime(date);
 	const dateString = getDateString(year, month, day);
 
@@ -193,21 +201,21 @@ const calculateSlotsForDate = (
 	// Exception Dates for 2026
 	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
 		"2026-1-22": [
-			{start: 11, end: 13},
-			{start: 15, end: 16},
+			{start: 11, end: 13, applyDeliveryFee: true},
+			{start: 15, end: 16, applyDeliveryFee: true},
 		],
 		"2026-1-24": [
-			{start: 13, end: 17},
-			{start: 20, end: 21},
+			{start: 13, end: 17, applyDeliveryFee: true},
+			{start: 20, end: 21, applyDeliveryFee: true},
 		],
 		"2026-1-26": [
-			{start: 11, end: 13},
-			{start: 15, end: 17},
+			{start: 11, end: 13, applyDeliveryFee: true},
+			{start: 15, end: 17, applyDeliveryFee: true},
 		],
 		"2026-1-27": [
-			{start: 11, end: 13},
-			{start: 15, end: 16},
-			{start: 19, end: 20.5},
+			{start: 11, end: 13, applyDeliveryFee: true},
+			{start: 15, end: 16, applyDeliveryFee: true},
+			{start: 19, end: 20.5, applyDeliveryFee: true},
 		],
 	};
 
@@ -217,7 +225,7 @@ const calculateSlotsForDate = (
 		schedule = exceptionSchedules[dateString];
 	}
 
-	const deliveryTimes: string[] = [];
+	const deliveryTimes: DeliveryTimeOption[] = [];
 
 	// 1. Generate 1-hour windows
 	schedule.forEach((window) => {
@@ -235,7 +243,10 @@ const calculateSlotsForDate = (
 
 				const startStr = formatTime(slotStart);
 				const endStr = formatTime(slotEnd);
-				deliveryTimes.push(`${startStr} - ${endStr}`);
+				deliveryTimes.push({
+					label: `${startStr} - ${endStr}`,
+					applyDeliveryFee: window.applyDeliveryFee,
+				});
 			}
 			slotStart += 1;
 		}

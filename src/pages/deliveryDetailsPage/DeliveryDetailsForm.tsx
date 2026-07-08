@@ -24,39 +24,12 @@ import {
 } from "../../lib/products";
 import {hasDeliveryId} from "../../lib/shipping";
 import {DELIVERY_ID, SELF_PICKUP_ID} from "../../constants";
-import {DeliveryTimeSelector} from "./helpers";
+import {DeliveryTimeSelector, renderDeliveryTimeOptions} from "./helpers";
 import ExtraErrors from "../../components/ExtraErrors";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 
 const hasDropShipTimes = (data: unknown): data is DeliveryTimesWithDropShip =>
 	!!data && typeof data === "object" && "dropShipTimes" in data;
-
-export const renderDeliveryTimeOptions = (
-	times: string[] | undefined,
-	isLoading: boolean,
-	hasError: boolean,
-) => (
-	<>
-		<option value=""></option>
-		{isLoading ? (
-			<option disabled value="">
-				{"Loading delivery times..."}
-			</option>
-		) : !hasError && times ? (
-			times.map((t, idx) => (
-				<option key={idx} value={t}>
-					{t}
-				</option>
-			))
-		) : (
-			<option disabled>
-				{
-					"Error loading delivery times. Please contact info@cannabis-cottage.ca."
-				}
-			</option>
-		)}
-	</>
-);
 
 interface IDeliveryDetailsFormValues {
 	delivery_time: string;

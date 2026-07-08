@@ -1,5 +1,17 @@
 import {addBusinessDays, getDynamicDeliveryTimes, type DeliveryTimeSlot, type DeliveryTimesWithDropShip} from "../lib/deliveryTimes";
 
+type DeliveryTimeSlotWithFee = DeliveryTimeSlot & {applyDeliveryFee?: boolean};
+type DeliveryTimeOptionWithFee = {label: string; applyDeliveryFee: boolean};
+type DeliveryTimesResultWithFee = {times: DeliveryTimeOptionWithFee[]; isNextDay: boolean};
+type DeliveryTimesWithDropShipFee = DeliveryTimesResultWithFee & {
+  dropShipTimes: {times: DeliveryTimeOptionWithFee[]; date: string};
+};
+
+const setVancouverSystemTime = (isoDate: string) => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date(isoDate));
+};
+
 describe("addBusinessDays", () => {
   it("adds 2 business days from a Monday (Monday + 2 = Wednesday)", () => {
     // 2026-03-30 is a Monday
@@ -31,6 +43,62 @@ describe("addBusinessDays", () => {
     const result = addBusinessDays(saturday, 2);
     const {year, month, day} = getVancouverDateTimeParts(result);
     expect(`${year}-${month}-${day}`).toBe("2026-4-8"); // Wednesday
+  });
+});
+
+describe("getDynamicDeliveryTimes delivery fee metadata", () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("propagates applyDeliveryFee true and false from Contentful windows to generated options", () => {
+    setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
+
+    const slots: DeliveryTimeSlotWithFee[] = [
+      {days: ["Monday"], timeStart: "11:00", timeEnd: "13:00", applyDeliveryFee: false},
+      {days: ["Monday"], timeStart: "14:00", timeEnd: "16:00", applyDeliveryFee: true},
+    ];
+
+    const result = getDynamicDeliveryTimes(slots) as unknown as DeliveryTimesResultWithFee;
+
+    expect(result.times).toEqual([
+      {label: "11am - 12pm", applyDeliveryFee: false},
+      {label: "12pm - 1pm", applyDeliveryFee: false},
+      {label: "2pm - 3pm", applyDeliveryFee: true},
+      {label: "3pm - 4pm", applyDeliveryFee: true},
+    ]);
+  });
+
+  it("defaults generated options to apply delivery fee when applyDeliveryFee is missing", () => {
+    setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
+
+    const slots: DeliveryTimeSlotWithFee[] = [
+      {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00"},
+    ];
+
+    const result = getDynamicDeliveryTimes(slots) as unknown as DeliveryTimesResultWithFee;
+
+    expect(result.times).toEqual([
+      {label: "11am - 12pm", applyDeliveryFee: true},
+    ]);
+  });
+
+  it("returns fee metadata for both regular times and dropShipTimes when returnBothDays is true", () => {
+    setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
+
+    const slots: DeliveryTimeSlotWithFee[] = [
+      {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00", applyDeliveryFee: true},
+      {days: ["Wednesday"], timeStart: "13:00", timeEnd: "14:00", applyDeliveryFee: false},
+    ];
+
+    const result = getDynamicDeliveryTimes(slots, true) as unknown as DeliveryTimesWithDropShipFee;
+
+    expect(result.times).toEqual([
+      {label: "11am - 12pm", applyDeliveryFee: true},
+    ]);
+    expect(result.dropShipTimes.times).toEqual([
+      {label: "1pm - 2pm", applyDeliveryFee: false},
+    ]);
   });
 });
 

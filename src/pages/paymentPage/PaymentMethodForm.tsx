@@ -51,8 +51,10 @@ import {
 } from "../../lib/products";
 import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {scrollCheckoutToTop} from "../../lib/scrollCheckout";
-import {DeliveryTimeSelector} from "../deliveryDetailsPage/helpers";
-import {renderDeliveryTimeOptions} from "../deliveryDetailsPage/DeliveryDetailsForm";
+import {
+	DeliveryTimeSelector,
+	renderDeliveryTimeOptions,
+} from "../deliveryDetailsPage/helpers";
 import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 import PayHQ, {PayHQHandle} from "./PayHQ/PayHQ";
