@@ -4,7 +4,8 @@ export type IAddressFormFields = Omit<IAddressFields, "phone">;
 
 export interface IShippingFormValues {
 	delivery_id: number;
-  deliveryInstructions?: string;
+	delivery_time?: string;
+	deliveryInstructions?: string;
 	shipping_address?: IAddressFormFields;
 	billing_address_the_same?: boolean;
 	billing_address?: IAddressFormFields;

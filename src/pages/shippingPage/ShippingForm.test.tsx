@@ -1,7 +1,7 @@
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
-import {SELF_PICKUP_ID, SHIPPING_DELIVERY_ID} from "../../constants";
+import {DELIVERY_ID, SELF_PICKUP_ID, SHIPPING_DELIVERY_ID} from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 
 (globalThis as any).React = React;
@@ -30,11 +30,30 @@ jest.mock("../../components/CheckoutStepWarning", () => () => null);
 
 jest.mock("../../components/ExtraErrors", () => () => null);
 
-jest.mock("../../lib/products", () => ({useCartHasTickets: () => false}));
+jest.mock("../../lib/products", () => {
+	const actual = jest.requireActual("../../lib/products");
+
+	return {...actual, useCartHasTickets: () => false};
+});
+
+jest.mock("../../hooks/useDeliveryTimes", () => ({
+	useDeliveryTimes: () => ({
+		isLoading: false,
+		isError: false,
+		data: {
+			isNextDay: false,
+			times: [
+				{label: "10:00 AM", applyDeliveryFee: true},
+				{label: "12:00 PM", applyDeliveryFee: false},
+			],
+		},
+	}),
+}));
 
 jest.mock("./shippingForm/DeliverySelector", () => {
 	const {useFormikContext} = require("formik");
 	const {
+		DELIVERY_ID: deliveryId,
 		SELF_PICKUP_ID: selfPickupId,
 		SHIPPING_DELIVERY_ID: shippingDeliveryId,
 	} = require("../../constants");
@@ -51,6 +70,7 @@ jest.mock("./shippingForm/DeliverySelector", () => {
 					onChange={handleChange}
 				>
 					<option value={String(selfPickupId)}>Self Pickup</option>
+					<option value={String(deliveryId)}>Delivery</option>
 					<option value={String(shippingDeliveryId)}>Shipping</option>
 				</select>
 			</label>
@@ -99,7 +119,21 @@ jest.mock("./shippingForm/AddressesFields", () => {
 	};
 });
 
-const staleOrder = () => ({
+const cartItem = (isDropShip = false) => ({
+	product: {
+		Name: isDropShip ? "Drop-ship product" : "Regular product",
+		ClassificationName: "Flower",
+		ProductSpecifications: [
+			{
+				DisplayName: "Is Drop Shipping Inventory",
+				Unit: "",
+				Value: isDropShip ? "Yes" : "No",
+			},
+		],
+	},
+});
+
+const staleOrder = (deliveryId = SHIPPING_DELIVERY_ID) => ({
 	id: "order-1",
 	tax_amount: "0",
 	total_price: "10.00",
@@ -113,7 +147,7 @@ const staleOrder = () => ({
 		last_name: "Customer",
 		addresses: [],
 	},
-	services: [{service_id: SHIPPING_DELIVERY_ID}],
+	services: [{service_id: deliveryId}],
 });
 
 const checkoutTotal = () => ({
@@ -147,6 +181,12 @@ const shippingPage = () => ({
 				description: "Self Pickup",
 			},
 			{
+				delivery_id: DELIVERY_ID,
+				title: "Delivery",
+				alias: "delivery",
+				description: "Delivery",
+			},
+			{
 				delivery_id: SHIPPING_DELIVERY_ID,
 				title: "Shipping",
 				alias: "shipping",
@@ -175,7 +215,89 @@ describe("ShippingForm checkout address persistence", () => {
 				},
 			},
 		};
+		mockState.app.items = [cartItem(false)];
 		mockCheckoutData = {order, total: checkoutTotal()};
+	});
+
+	const setCheckoutOrder = (deliveryId: number, items = [cartItem(false)]) => {
+		const order = staleOrder(deliveryId);
+
+		mockState.app.order = order;
+		mockState.app.items = items;
+		mockCheckoutData = {order, total: mockState.app.total};
+	};
+
+	it("renders the delivery-time selector above address fields for Delivery with regular items", () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		const deliveryTimeSelector = screen.getByRole("combobox", {
+			name: /delivery time/i,
+		});
+		const firstAddressField = screen.getByLabelText("Shipping first name");
+
+		expect(deliveryTimeSelector).toBeInTheDocument();
+		expect(
+			deliveryTimeSelector.compareDocumentPosition(firstAddressField) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+	});
+
+	it.each([
+		{name: "Pickup", deliveryId: SELF_PICKUP_ID},
+		{name: "Shipping", deliveryId: SHIPPING_DELIVERY_ID},
+	])("does not render the delivery-time selector for $name", ({deliveryId}) => {
+		setCheckoutOrder(deliveryId);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		expect(
+			screen.queryByRole("combobox", {name: /delivery time/i}),
+		).not.toBeInTheDocument();
+	});
+
+	it("does not render the delivery-time selector for Delivery when the cart is drop-ship-only", () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		expect(
+			screen.queryByRole("combobox", {name: /delivery time/i}),
+		).not.toBeInTheDocument();
+	});
+
+	it("requires delivery_time before submitting Delivery with regular items", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fireEvent.click(
+			screen.getByRole("button", {name: "shippingForm.continueToPayment"}),
+		);
+
+		expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+	});
+
+	it("persists order.delivery_time on successful Delivery submit", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+			target: {value: "10:00 AM"},
+		});
+		fireEvent.click(
+			screen.getByRole("button", {name: "shippingForm.continueToPayment"}),
+		);
+
+		await waitFor(() => {
+			expect(mockSetLocalStorageCheckoutData).toHaveBeenCalled();
+		});
+
+		const persisted = mockSetLocalStorageCheckoutData.mock.calls[0][0];
+		expect(persisted.order.delivery_time).toBe("10:00 AM");
 	});
 
 	it("switches a paid shipping order to pickup and clears stale payment and shipping totals", async () => {

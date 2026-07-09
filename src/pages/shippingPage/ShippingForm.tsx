@@ -36,10 +36,15 @@ import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import {useCartHasTickets} from "../../lib/products";
+import {ordersRegularItems, useCartHasTickets} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
+import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
+import {
+	DeliveryTimeSelector,
+	renderDeliveryTimeOptions,
+} from "../deliveryDetailsPage/helpers";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -60,30 +65,39 @@ const isBCPostalCode = (postalCode: string): boolean => {
 };
 
 // Custom validation function for shipping form
-const validateShippingForm = (values: IShippingFormValues) => {
-	const errors: any = {};
+const makeValidateShippingForm = (hasRegularItems: boolean) =>
+	(values: IShippingFormValues) => {
+		const errors: any = {};
 
-	// Validate Penticton postal code for Delivery method
-	if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
-		if (!isPentictonPostalCode(values.shipping_address.zip)) {
-			errors["shipping_address.zip"] =
-				"Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.";
+		// Validate Penticton postal code for Delivery method
+		if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
+			if (!isPentictonPostalCode(values.shipping_address.zip)) {
+				errors["shipping_address.zip"] =
+					"Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.";
+			}
 		}
-	}
 
-	// Validate BC postal code for Shipping method
-	if (
-		values.delivery_id === SHIPPING_DELIVERY_ID &&
-		values.shipping_address?.zip
-	) {
-		if (!isBCPostalCode(values.shipping_address.zip)) {
-			errors["shipping_address.zip"] =
-				"Shipping is only available within British Columbia. Please enter a valid BC postal code.";
+		// Validate BC postal code for Shipping method
+		if (
+			values.delivery_id === SHIPPING_DELIVERY_ID &&
+			values.shipping_address?.zip
+		) {
+			if (!isBCPostalCode(values.shipping_address.zip)) {
+				errors["shipping_address.zip"] =
+					"Shipping is only available within British Columbia. Please enter a valid BC postal code.";
+			}
 		}
-	}
 
-	return errors;
-};
+		if (
+			hasRegularItems &&
+			values.delivery_id === DELIVERY_ID &&
+			!values.delivery_time
+		) {
+			errors.delivery_time = "Delivery time is required";
+		}
+
+		return errors;
+	};
 
 const useFormInitialValues = (
 	shippingPage: ICheckoutShippingPageData,
@@ -97,6 +111,7 @@ const useFormInitialValues = (
 			order.services[0].service_id != null
 				? order.services[0].service_id
 				: SELF_PICKUP_ID,
+		delivery_time: order?.delivery_time ?? "",
 		deliveryInstructions: "",
 		shipping_address: getEmptyAddressFields(
 			shippingPage.shippingAddress,
@@ -156,8 +171,10 @@ const getEmptyAddressFields = (
 
 const useSaveShippingForm = ({
 	shippingPage,
+	hasRegularItems,
 }: {
 	shippingPage: ICheckoutShippingPageData;
+	hasRegularItems: boolean;
 }) => {
 	const dispatch = useAppDispatch();
 	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
@@ -319,6 +336,9 @@ const useSaveShippingForm = ({
 
 				const updatedOrder = {
 					...order,
+					...(delivery_id === DELIVERY_ID && hasRegularItems
+						? {delivery_time: values.delivery_time}
+						: {delivery_time: undefined}),
 					total_price: totalOrderPrice,
 					tax_amount: totalOrderTaxes,
 					service_total_price: finalShippingRate,
@@ -341,7 +361,12 @@ const useSaveShippingForm = ({
 					},
 				} as unknown as IOrderWithCustmAttr;
 
-				const checkoutOrder = clearPaymentAndDeliveryProgress(updatedOrder);
+				const checkoutOrder = {
+					...clearPaymentAndDeliveryProgress(updatedOrder),
+					...(delivery_id === DELIVERY_ID && hasRegularItems
+						? {delivery_time: values.delivery_time}
+						: {delivery_time: undefined}),
+				};
 
 				if (total) {
 					const updatedTotal = {
@@ -389,16 +414,29 @@ export default function ShippingForm({
 }: {
 	shippingPage: ICheckoutShippingPageData;
 }) {
-	const {onSubmit} = useSaveShippingForm({shippingPage});
+	const items = useAppSelector((state) => state.app.items ?? []);
+	const regularItems = ordersRegularItems(items);
+	const hasRegularItems = regularItems.length > 0;
+	const {onSubmit} = useSaveShippingForm({shippingPage, hasRegularItems});
 	const {t} = useTranslation();
 	const initialValues = useFormInitialValues(shippingPage);
 	const cartItemHasTickets = useCartHasTickets();
+	const {
+		isLoading,
+		isError,
+		data: deliveryTimes,
+	} = useDeliveryTimes({
+		returnTimeForTodayAndTwoDaysFromNow: false,
+	});
+	const nextDayHelperText = deliveryTimes?.isNextDay
+		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
+		: "Will be delivered today.";
 
 	return (
 		<Formik
 			initialValues={initialValues}
 			onSubmit={onSubmit}
-			validate={validateShippingForm}
+			validate={makeValidateShippingForm(hasRegularItems)}
 		>
 			{(formikProps) => {
 				const {values} = formikProps;
@@ -407,7 +445,7 @@ export default function ShippingForm({
 				const {delivery_id} = values;
 
 				return (
-					<Form className={"bdl-shipping-form"}>
+					<Form className={"bdl-shipping-form"} noValidate>
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}
@@ -426,6 +464,16 @@ export default function ShippingForm({
 							</Typography>
 						)}
 						<DeliverySelector options={shippingPage.options} />
+						{delivery_id === DELIVERY_ID && hasRegularItems && (
+							<DeliveryTimeSelector
+								items={regularItems}
+								field="delivery_time"
+								helperText={nextDayHelperText}
+								formikProps={formikProps}
+							>
+								{renderDeliveryTimeOptions(deliveryTimes?.times, isLoading, isError)}
+							</DeliveryTimeSelector>
+						)}
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
