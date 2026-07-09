@@ -3,11 +3,13 @@ export interface DeliveryTimeSlot {
 	timeStart: string;
 	timeEnd: string;
 	applyDeliveryFee?: boolean;
+	asapDeliveryAvailable?: boolean;
 }
 
 export interface DeliveryTimeOption {
 	label: string;
 	applyDeliveryFee: boolean;
+	asapDeliveryAvailable?: boolean;
 }
 
 // Helper functions for dynamic delivery times
@@ -16,6 +18,7 @@ type TimeWindow = {
 	start: number; // Hour in 24h format (e.g., 11 for 11am, 13 for 1pm)
 	end: number; // Hour in 24h format, can be fractional (e.g., 20.5 for 8:30pm)
 	applyDeliveryFee: boolean;
+	asapDeliveryAvailable: boolean;
 };
 
 const parseTimeStringToNumber = (timeStr: string): number => {
@@ -36,6 +39,7 @@ const getSchedule = (
 					start: parseTimeStringToNumber(slot.timeStart),
 					end: parseTimeStringToNumber(slot.timeEnd),
 					applyDeliveryFee: slot.applyDeliveryFee ?? true,
+					asapDeliveryAvailable: slot.asapDeliveryAvailable ?? false,
 				}))
 				.sort((a, b) => a.start - b.start)
 		: [];
@@ -201,21 +205,21 @@ const calculateSlotsForDate = (
 	// Exception Dates for 2026
 	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
 		"2026-1-22": [
-			{start: 11, end: 13, applyDeliveryFee: true},
-			{start: 15, end: 16, applyDeliveryFee: true},
+			{start: 11, end: 13, applyDeliveryFee: true, asapDeliveryAvailable: false},
+			{start: 15, end: 16, applyDeliveryFee: true, asapDeliveryAvailable: false},
 		],
 		"2026-1-24": [
-			{start: 13, end: 17, applyDeliveryFee: true},
-			{start: 20, end: 21, applyDeliveryFee: true},
+			{start: 13, end: 17, applyDeliveryFee: true, asapDeliveryAvailable: false},
+			{start: 20, end: 21, applyDeliveryFee: true, asapDeliveryAvailable: false},
 		],
 		"2026-1-26": [
-			{start: 11, end: 13, applyDeliveryFee: true},
-			{start: 15, end: 17, applyDeliveryFee: true},
+			{start: 11, end: 13, applyDeliveryFee: true, asapDeliveryAvailable: false},
+			{start: 15, end: 17, applyDeliveryFee: true, asapDeliveryAvailable: false},
 		],
 		"2026-1-27": [
-			{start: 11, end: 13, applyDeliveryFee: true},
-			{start: 15, end: 16, applyDeliveryFee: true},
-			{start: 19, end: 20.5, applyDeliveryFee: true},
+			{start: 11, end: 13, applyDeliveryFee: true, asapDeliveryAvailable: false},
+			{start: 15, end: 16, applyDeliveryFee: true, asapDeliveryAvailable: false},
+			{start: 19, end: 20.5, applyDeliveryFee: true, asapDeliveryAvailable: false},
 		],
 	};
 
@@ -246,6 +250,7 @@ const calculateSlotsForDate = (
 				deliveryTimes.push({
 					label: `${startStr} - ${endStr}`,
 					applyDeliveryFee: window.applyDeliveryFee,
+					asapDeliveryAvailable: window.asapDeliveryAvailable,
 				});
 			}
 			slotStart += 1;

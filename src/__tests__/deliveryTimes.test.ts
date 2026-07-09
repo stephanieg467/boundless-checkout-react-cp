@@ -11,6 +11,24 @@ const setVancouverSystemTime = (isoDate: string) => {
   jest.setSystemTime(new Date(isoDate));
 };
 
+type DeliveryTimeSlotWithAsapMetadata = DeliveryTimeSlot & {
+  asapDeliveryAvailable?: boolean;
+};
+
+type GeneratedDeliveryOptionWithAsapMetadata = {
+  label: string;
+  applyDeliveryFee: boolean;
+  asapDeliveryAvailable?: boolean;
+};
+
+const normalizeMissingAsapToFalse = (
+  times: GeneratedDeliveryOptionWithAsapMetadata[],
+) => times.map(({label, applyDeliveryFee, asapDeliveryAvailable}) => ({
+  label,
+  applyDeliveryFee,
+  asapDeliveryAvailable: asapDeliveryAvailable ?? false,
+}));
+
 describe("addBusinessDays", () => {
   it("adds 2 business days from a Monday (Monday + 2 = Wednesday)", () => {
     // 2026-03-30 is a Monday
@@ -45,30 +63,30 @@ describe("addBusinessDays", () => {
   });
 });
 
-describe("getDynamicDeliveryTimes delivery fee metadata", () => {
+describe("getDynamicDeliveryTimes delivery option metadata", () => {
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it("propagates applyDeliveryFee true and false from Contentful windows to generated options", () => {
+  it("propagates fee and ASAP metadata from Contentful windows to generated one-hour options", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
-    const slots: DeliveryTimeSlot[] = [
-      {days: ["Monday"], timeStart: "11:00", timeEnd: "13:00", applyDeliveryFee: false},
-      {days: ["Monday"], timeStart: "14:00", timeEnd: "16:00", applyDeliveryFee: true},
+    const slots: DeliveryTimeSlotWithAsapMetadata[] = [
+      {days: ["Monday"], timeStart: "11:00", timeEnd: "13:00", applyDeliveryFee: false, asapDeliveryAvailable: true},
+      {days: ["Monday"], timeStart: "14:00", timeEnd: "16:00", applyDeliveryFee: true, asapDeliveryAvailable: false},
     ];
 
     const result: DeliveryTimesBase = getDynamicDeliveryTimes(slots);
 
     expect(result.times).toEqual([
-      {label: "11am - 12pm", applyDeliveryFee: false},
-      {label: "12pm - 1pm", applyDeliveryFee: false},
-      {label: "2pm - 3pm", applyDeliveryFee: true},
-      {label: "3pm - 4pm", applyDeliveryFee: true},
+      {label: "11am - 12pm", applyDeliveryFee: false, asapDeliveryAvailable: true},
+      {label: "12pm - 1pm", applyDeliveryFee: false, asapDeliveryAvailable: true},
+      {label: "2pm - 3pm", applyDeliveryFee: true, asapDeliveryAvailable: false},
+      {label: "3pm - 4pm", applyDeliveryFee: true, asapDeliveryAvailable: false},
     ]);
   });
 
-  it("defaults generated options to apply delivery fee when applyDeliveryFee is missing", () => {
+  it("defaults missing metadata to backward-compatible delivery option values", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
     const slots: DeliveryTimeSlot[] = [
@@ -77,26 +95,26 @@ describe("getDynamicDeliveryTimes delivery fee metadata", () => {
 
     const result: DeliveryTimesBase = getDynamicDeliveryTimes(slots);
 
-    expect(result.times).toEqual([
-      {label: "11am - 12pm", applyDeliveryFee: true},
+    expect(normalizeMissingAsapToFalse(result.times)).toEqual([
+      {label: "11am - 12pm", applyDeliveryFee: true, asapDeliveryAvailable: false},
     ]);
   });
 
-  it("returns fee metadata for both regular times and dropShipTimes when returnBothDays is true", () => {
+  it("returns metadata for both regular times and dropShipTimes when returnBothDays is true", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
-    const slots: DeliveryTimeSlot[] = [
-      {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00", applyDeliveryFee: true},
-      {days: ["Wednesday"], timeStart: "13:00", timeEnd: "14:00", applyDeliveryFee: false},
+    const slots: DeliveryTimeSlotWithAsapMetadata[] = [
+      {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00", applyDeliveryFee: true, asapDeliveryAvailable: true},
+      {days: ["Wednesday"], timeStart: "13:00", timeEnd: "14:00", applyDeliveryFee: false, asapDeliveryAvailable: false},
     ];
 
     const result = getDynamicDeliveryTimes(slots, true) as DeliveryTimesWithDropShip;
 
     expect(result.times).toEqual([
-      {label: "11am - 12pm", applyDeliveryFee: true},
+      {label: "11am - 12pm", applyDeliveryFee: true, asapDeliveryAvailable: true},
     ]);
     expect(result.dropShipTimes.times).toEqual([
-      {label: "1pm - 2pm", applyDeliveryFee: false},
+      {label: "1pm - 2pm", applyDeliveryFee: false, asapDeliveryAvailable: false},
     ]);
   });
 });
