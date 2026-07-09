@@ -1,11 +1,10 @@
-import {addBusinessDays, getDynamicDeliveryTimes, type DeliveryTimeSlot, type DeliveryTimesWithDropShip} from "../lib/deliveryTimes";
-
-type DeliveryTimeSlotWithFee = DeliveryTimeSlot & {applyDeliveryFee?: boolean};
-type DeliveryTimeOptionWithFee = {label: string; applyDeliveryFee: boolean};
-type DeliveryTimesResultWithFee = {times: DeliveryTimeOptionWithFee[]; isNextDay: boolean};
-type DeliveryTimesWithDropShipFee = DeliveryTimesResultWithFee & {
-  dropShipTimes: {times: DeliveryTimeOptionWithFee[]; date: string};
-};
+import {
+  addBusinessDays,
+  getDynamicDeliveryTimes,
+  type DeliveryTimeSlot,
+  type DeliveryTimesBase,
+  type DeliveryTimesWithDropShip,
+} from "../lib/deliveryTimes";
 
 const setVancouverSystemTime = (isoDate: string) => {
   jest.useFakeTimers();
@@ -54,12 +53,12 @@ describe("getDynamicDeliveryTimes delivery fee metadata", () => {
   it("propagates applyDeliveryFee true and false from Contentful windows to generated options", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
-    const slots: DeliveryTimeSlotWithFee[] = [
+    const slots: DeliveryTimeSlot[] = [
       {days: ["Monday"], timeStart: "11:00", timeEnd: "13:00", applyDeliveryFee: false},
       {days: ["Monday"], timeStart: "14:00", timeEnd: "16:00", applyDeliveryFee: true},
     ];
 
-    const result = getDynamicDeliveryTimes(slots) as unknown as DeliveryTimesResultWithFee;
+    const result: DeliveryTimesBase = getDynamicDeliveryTimes(slots);
 
     expect(result.times).toEqual([
       {label: "11am - 12pm", applyDeliveryFee: false},
@@ -72,11 +71,11 @@ describe("getDynamicDeliveryTimes delivery fee metadata", () => {
   it("defaults generated options to apply delivery fee when applyDeliveryFee is missing", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
-    const slots: DeliveryTimeSlotWithFee[] = [
+    const slots: DeliveryTimeSlot[] = [
       {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00"},
     ];
 
-    const result = getDynamicDeliveryTimes(slots) as unknown as DeliveryTimesResultWithFee;
+    const result: DeliveryTimesBase = getDynamicDeliveryTimes(slots);
 
     expect(result.times).toEqual([
       {label: "11am - 12pm", applyDeliveryFee: true},
@@ -86,12 +85,12 @@ describe("getDynamicDeliveryTimes delivery fee metadata", () => {
   it("returns fee metadata for both regular times and dropShipTimes when returnBothDays is true", () => {
     setVancouverSystemTime("2026-03-30T17:00:00Z"); // Monday 10am in Vancouver
 
-    const slots: DeliveryTimeSlotWithFee[] = [
+    const slots: DeliveryTimeSlot[] = [
       {days: ["Monday"], timeStart: "11:00", timeEnd: "12:00", applyDeliveryFee: true},
       {days: ["Wednesday"], timeStart: "13:00", timeEnd: "14:00", applyDeliveryFee: false},
     ];
 
-    const result = getDynamicDeliveryTimes(slots, true) as unknown as DeliveryTimesWithDropShipFee;
+    const result = getDynamicDeliveryTimes(slots, true) as DeliveryTimesWithDropShip;
 
     expect(result.times).toEqual([
       {label: "11am - 12pm", applyDeliveryFee: true},

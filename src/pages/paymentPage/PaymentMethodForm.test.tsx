@@ -51,7 +51,10 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
     isError: false,
     data: {
       isNextDay: false,
-      times: ["10:00 AM", "11:00 AM"],
+      times: [
+        {label: "10:00 AM", applyDeliveryFee: true},
+        {label: "11:00 AM", applyDeliveryFee: true},
+      ],
     },
   }),
 }));
