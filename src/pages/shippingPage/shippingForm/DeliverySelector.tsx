@@ -17,7 +17,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
 import type {DeliveryTimeOption} from "../../../lib/deliveryTimes";
-import {SHIPPING_COST} from "../../../constants";
+import {DELIVERY_COST, SHIPPING_COST} from "../../../constants";
 
 const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -41,6 +41,17 @@ const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	);
 };
 
+const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
+	const allAvailableSlotsAreFeeFree =
+		Array.isArray(deliveryTimeOptions) &&
+		deliveryTimeOptions.length > 0 &&
+		deliveryTimeOptions.every((option) => option.applyDeliveryFee === false);
+
+	return allAvailableSlotsAreFeeFree
+		? "Delivery fee: $0.00 for available delivery time slots"
+		: `Delivery fee: $${DELIVERY_COST} for certain delivery time slots`;
+};
+
 const DeliveryDetails = ({
 	delivery,
 	deliveryTimeOptions,
@@ -52,12 +63,7 @@ const DeliveryDetails = ({
 	const details = delivery.description;
 
 	const freeShippingApplies = qualifiesForFreeShipping(total);
-	const anyFeeBearingSlot = (deliveryTimeOptions ?? []).some(
-		(option) => option.applyDeliveryFee ?? true,
-	);
-	const deliveryFeeCopy = !deliveryTimeOptions || anyFeeBearingSlot
-		? "Delivery fee: $4.00 for certain delivery time slots"
-		: "Delivery fee: $0.00 for available delivery time slots";
+	const deliveryFeeCopy = getDeliveryFeeCopy(deliveryTimeOptions);
 
 	if (!details) {
 		return null;

@@ -3,6 +3,7 @@ import {render, screen} from "@testing-library/react";
 import {Formik} from "formik";
 import DeliverySelector from "./DeliverySelector";
 import {
+	DELIVERY_COST,
 	DELIVERY_ID,
 	SELF_PICKUP_ID,
 	SHIPPING_COST,
@@ -40,7 +41,7 @@ const deliveryOptions = [
 
 const renderDeliverySelector = ({
 	itemsSubTotalPrice = "10.00",
-	deliveryTimeOptions = [],
+	deliveryTimeOptions,
 }: {
 	itemsSubTotalPrice?: string;
 	deliveryTimeOptions?: Array<{label: string; applyDeliveryFee?: boolean}>;
@@ -66,30 +67,38 @@ const renderDeliverySelector = ({
 };
 
 describe("DeliverySelector fee copy", () => {
+	const paidOrConditionalDeliveryFeeCopy = `Delivery fee: $${DELIVERY_COST} for certain delivery time slots`;
+
 	it.each([
 		{
-			name: "an explicit paid slot",
+			name: "delivery time options are still loading",
+			deliveryTimeOptions: undefined,
+		},
+		{
+			name: "loaded delivery time options are empty",
+			deliveryTimeOptions: [],
+		},
+		{
+			name: "available regular slots include an explicit paid slot",
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm", applyDeliveryFee: true},
 			],
 		},
 		{
-			name: "a slot missing applyDeliveryFee, defaulting to paid",
+			name: "available regular slots include a slot missing applyDeliveryFee, defaulting to paid",
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm"},
 			],
 		},
 	])(
-		"shows conditional Delivery fee copy when available regular slots include $name",
+		"shows conditional Delivery fee copy when $name",
 		({deliveryTimeOptions}) => {
 			renderDeliverySelector({deliveryTimeOptions});
 
 			expect(
-				screen.getByText(
-					"Delivery fee: $4.00 for certain delivery time slots",
-				),
+				screen.getByText(paidOrConditionalDeliveryFeeCopy),
 			).toBeInTheDocument();
 		},
 	);
