@@ -27,6 +27,7 @@ jest.mock("../../hooks/checkoutData", () => ({
 		mockSetLocalStorageCheckoutData(data),
 }));
 
+const regularAsapFeeFree = {label: "ASAP", applyDeliveryFee: false};
 const regularFeeRequired = {label: "Regular fee slot", applyDeliveryFee: true};
 const regularFeeFree = {label: "Regular free slot", applyDeliveryFee: false};
 const dropShipFeeRequired = {
@@ -44,7 +45,7 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 		isError: false,
 		data: {
 			isNextDay: false,
-			times: [regularFeeRequired, regularFeeFree],
+			times: [regularAsapFeeFree, regularFeeRequired, regularFeeFree],
 			dropShipTimes: {
 				date: "Friday, July 10",
 				times: [dropShipFeeRequired, dropShipFeeFree],
@@ -261,6 +262,7 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 		expect(selectors).toHaveLength(1);
 		expect(selectors[0]).toHaveTextContent(dropShipFeeRequired.label);
 		expect(selectors[0]).toHaveTextContent(dropShipFeeFree.label);
+		expect(selectors[0]).not.toHaveTextContent(regularAsapFeeFree.label);
 		expect(selectors[0]).not.toHaveTextContent(regularFeeRequired.label);
 		expect(screen.getByText("Drop-ship product")).toBeInTheDocument();
 		expect(screen.queryByText("Regular product")).not.toBeInTheDocument();
@@ -392,6 +394,13 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 		},
 		{
 			regularSlot: regularFeeFree.label,
+			dropShipSlot: dropShipFeeFree.label,
+			expectedRate: "0.00",
+			expectedShippingTax: 0,
+			expectedTotalPrice: "11.00",
+		},
+		{
+			regularSlot: regularAsapFeeFree.label,
 			dropShipSlot: dropShipFeeFree.label,
 			expectedRate: "0.00",
 			expectedShippingTax: 0,

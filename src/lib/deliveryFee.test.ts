@@ -11,7 +11,7 @@ import {
   calculateCheckoutShippingTotals,
   selectedDeliveryTimesRequireFee,
 } from "./deliveryFee";
-import type {DeliveryTimeOption} from "./deliveryTimes";
+import {ASAP_DELIVERY_LABEL, type DeliveryTimeOption} from "./deliveryTimes";
 
 type TestOrder = {
   tax_amount: string;
@@ -212,6 +212,42 @@ describe("delivery fee calculation", () => {
       });
 
       expect(result.shippingRate).toBe(DELIVERY_COST);
+    },
+  );
+
+  it.each([
+    {applyDeliveryFee: true, expectedRate: DELIVERY_COST, expectedShippingTax: 0.2},
+    {applyDeliveryFee: false, expectedRate: "0.00", expectedShippingTax: 0},
+  ])(
+    "treats ASAP as a regular delivery option label for mixed carts when applyDeliveryFee is $applyDeliveryFee",
+    ({applyDeliveryFee, expectedRate, expectedShippingTax}) => {
+      const asapOption: DeliveryTimeOption = {
+        label: ASAP_DELIVERY_LABEL,
+        applyDeliveryFee,
+      };
+
+      expect(
+        deliveryFeeApplies({
+          hasRegularItems: true,
+          hasDropShipItems: true,
+          deliveryTime: ASAP_DELIVERY_LABEL,
+          dropShipDeliveryTime: dropShipFeeFree.label,
+          regularOptions: [asapOption],
+        }),
+      ).toBe(applyDeliveryFee);
+
+      const result = calculateTotals({
+        hasRegularItems: true,
+        hasDropShipItems: true,
+        regularOptions: [asapOption],
+        order: {
+          delivery_time: ASAP_DELIVERY_LABEL,
+          drop_ship_delivery_time: dropShipFeeFree.label,
+        },
+      });
+
+      expect(result.shippingRate).toBe(expectedRate);
+      expect(result.shippingTax).toBe(expectedShippingTax);
     },
   );
 
