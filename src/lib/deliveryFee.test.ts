@@ -1,8 +1,17 @@
-import {DELIVERY_COST, SHIPPING_COST} from "../constants";
-import {calculateDeliveryFeeTotals} from "./deliveryFee";
+import type {ITotal} from "boundless-api-client";
+import {
+  DELIVERY_COST,
+  DELIVERY_ID,
+  SELF_PICKUP_ID,
+  SHIPPING_COST,
+  SHIPPING_DELIVERY_ID,
+} from "../constants";
+import type {IOrderWithCustmAttr} from "../types/Order";
+import {
+  calculateCheckoutShippingTotals,
+  selectedDeliveryTimesRequireFee,
+} from "./deliveryFee";
 import type {DeliveryTimeOption} from "./deliveryTimes";
-
-type DeliveryTitle = "Delivery" | "Shipping" | "Self Pickup";
 
 type TestOrder = {
   tax_amount: string;
@@ -28,52 +37,76 @@ const dropShipFeeFree: DeliveryTimeOption = {
   applyDeliveryFee: false,
 };
 
-const calculate = (overrides: {
-  deliveryTitle?: DeliveryTitle;
-  hasRegularItems?: boolean;
-  hasDropShipItems?: boolean;
-  order?: Partial<TestOrder>;
-  deliveryTimes?: DeliveryTimeOption[];
-  dropShipDeliveryTimes?: DeliveryTimeOption[];
-} = {}) => {
-  const order: TestOrder = {
-    tax_amount: "1.00",
-    delivery_time: feeRequired.label,
-    custom_attrs: {},
-    ...overrides.order,
-  };
+const defaultOrder: TestOrder = {
+  tax_amount: "1.00",
+  delivery_time: feeRequired.label,
+  custom_attrs: {},
+};
+const defaultTotal = {itemsSubTotal: {price: "20.00"}} as ITotal;
+const defaultRegularOptions = [feeRequired, feeFree];
+const defaultDropShipOptions = [dropShipFeeRequired, dropShipFeeFree];
 
-  return calculateDeliveryFeeTotals({
-    deliveryTitle: overrides.deliveryTitle ?? "Delivery",
-    order,
-    total: {itemsSubTotal: {price: "20.00"}},
-    hasRegularItems: overrides.hasRegularItems ?? true,
-    hasDropShipItems: overrides.hasDropShipItems ?? false,
-    deliveryTimes: overrides.deliveryTimes ?? [feeRequired, feeFree],
-    dropShipDeliveryTimes: overrides.dropShipDeliveryTimes ?? [
-      dropShipFeeRequired,
-      dropShipFeeFree,
-    ],
+const defaultSelection = {
+  isDelivery: true,
+  hasRegularItems: true,
+  hasDropShipItems: false,
+  deliveryTime: feeRequired.label,
+  regularOptions: defaultRegularOptions,
+  dropShipOptions: defaultDropShipOptions,
+};
+
+type DeliveryFeeSelectionOverrides = Partial<
+  Parameters<typeof selectedDeliveryTimesRequireFee>[0]
+>;
+
+const deliveryFeeApplies = (overrides: DeliveryFeeSelectionOverrides = {}) =>
+  selectedDeliveryTimesRequireFee({...defaultSelection, ...overrides});
+
+type CalculateTotalsOverrides = Partial<
+  Omit<Parameters<typeof calculateCheckoutShippingTotals>[0], "order">
+> & {
+  order?: Partial<TestOrder>;
+};
+
+const calculateTotals = ({
+  order: orderOverrides = {},
+  ...overrides
+}: CalculateTotalsOverrides = {}) => {
+  const order = {...defaultOrder, ...orderOverrides};
+
+  return calculateCheckoutShippingTotals({
+    deliveryId: DELIVERY_ID,
+    total: defaultTotal,
+    hasRegularItems: true,
+    hasDropShipItems: false,
+    regularOptions: defaultRegularOptions,
+    dropShipOptions: defaultDropShipOptions,
+    ...overrides,
+    order: order as IOrderWithCustmAttr,
+    deliveryTime: order.delivery_time,
+    dropShipDeliveryTime: order.drop_ship_delivery_time,
   });
 };
 
 describe("delivery fee calculation", () => {
   it("requires the $4 Delivery fee when the selected option applies the fee", () => {
-    const result = calculate({
+    expect(deliveryFeeApplies({deliveryTime: feeRequired.label})).toBe(true);
+
+    const result = calculateTotals({
       order: {delivery_time: feeRequired.label},
     });
 
-    expect(result.deliveryFeeApplies).toBe(true);
     expect(result.shippingRate).toBe(DELIVERY_COST);
     expect(result.shippingTax).toBe(0.2);
   });
 
   it("waives the Delivery fee when the selected option is fee-free", () => {
-    const result = calculate({
+    expect(deliveryFeeApplies({deliveryTime: feeFree.label})).toBe(false);
+
+    const result = calculateTotals({
       order: {delivery_time: feeFree.label},
     });
 
-    expect(result.deliveryFeeApplies).toBe(false);
     expect(result.shippingRate).toBe("0.00");
     expect(result.shippingTax).toBe(0);
   });
@@ -84,22 +117,43 @@ describe("delivery fee calculation", () => {
     } as DeliveryTimeOption;
 
     expect(
-      calculate({
-        order: {delivery_time: missingMetadata.label},
-        deliveryTimes: [missingMetadata],
-      }).deliveryFeeApplies,
+      deliveryFeeApplies({
+        deliveryTime: missingMetadata.label,
+        regularOptions: [missingMetadata],
+      }),
     ).toBe(true);
+    expect(
+      calculateTotals({
+        order: {delivery_time: missingMetadata.label},
+        regularOptions: [missingMetadata],
+      }).shippingRate,
+    ).toBe(DELIVERY_COST);
 
     expect(
-      calculate({
-        order: {delivery_time: "unlisted option"},
-        deliveryTimes: [feeFree],
-      }).deliveryFeeApplies,
+      deliveryFeeApplies({
+        deliveryTime: "unlisted option",
+        regularOptions: [feeFree],
+      }),
     ).toBe(true);
+    expect(
+      calculateTotals({
+        order: {delivery_time: "unlisted option"},
+        regularOptions: [feeFree],
+      }).shippingRate,
+    ).toBe(DELIVERY_COST);
   });
 
   it("uses only delivery_time for a regular-only cart", () => {
-    const result = calculate({
+    expect(
+      deliveryFeeApplies({
+        hasRegularItems: true,
+        hasDropShipItems: false,
+        deliveryTime: feeFree.label,
+        dropShipDeliveryTime: dropShipFeeRequired.label,
+      }),
+    ).toBe(false);
+
+    const result = calculateTotals({
       hasRegularItems: true,
       hasDropShipItems: false,
       order: {
@@ -108,12 +162,20 @@ describe("delivery fee calculation", () => {
       },
     });
 
-    expect(result.deliveryFeeApplies).toBe(false);
     expect(result.shippingRate).toBe("0.00");
   });
 
   it("uses only drop_ship_delivery_time for a drop-ship-only cart", () => {
-    const result = calculate({
+    expect(
+      deliveryFeeApplies({
+        hasRegularItems: false,
+        hasDropShipItems: true,
+        deliveryTime: feeRequired.label,
+        dropShipDeliveryTime: dropShipFeeFree.label,
+      }),
+    ).toBe(false);
+
+    const result = calculateTotals({
       hasRegularItems: false,
       hasDropShipItems: true,
       order: {
@@ -122,7 +184,6 @@ describe("delivery fee calculation", () => {
       },
     });
 
-    expect(result.deliveryFeeApplies).toBe(false);
     expect(result.shippingRate).toBe("0.00");
   });
 
@@ -132,7 +193,16 @@ describe("delivery fee calculation", () => {
   ])(
     "applies the fee for a mixed cart when either selected relevant field requires it (%s / %s)",
     (deliveryTime, dropShipDeliveryTime) => {
-      const result = calculate({
+      expect(
+        deliveryFeeApplies({
+          hasRegularItems: true,
+          hasDropShipItems: true,
+          deliveryTime,
+          dropShipDeliveryTime,
+        }),
+      ).toBe(true);
+
+      const result = calculateTotals({
         hasRegularItems: true,
         hasDropShipItems: true,
         order: {
@@ -141,13 +211,21 @@ describe("delivery fee calculation", () => {
         },
       });
 
-      expect(result.deliveryFeeApplies).toBe(true);
       expect(result.shippingRate).toBe(DELIVERY_COST);
     },
   );
 
   it("waives the fee for a mixed cart only when both selected relevant fields are fee-free", () => {
-    const result = calculate({
+    expect(
+      deliveryFeeApplies({
+        hasRegularItems: true,
+        hasDropShipItems: true,
+        deliveryTime: feeFree.label,
+        dropShipDeliveryTime: dropShipFeeFree.label,
+      }),
+    ).toBe(false);
+
+    const result = calculateTotals({
       hasRegularItems: true,
       hasDropShipItems: true,
       order: {
@@ -156,34 +234,38 @@ describe("delivery fee calculation", () => {
       },
     });
 
-    expect(result.deliveryFeeApplies).toBe(false);
     expect(result.shippingRate).toBe("0.00");
   });
 
   it("does not let delivery-time metadata affect Pickup or Shipping rates", () => {
-    const pickup = calculate({
-      deliveryTitle: "Self Pickup",
+    expect(
+      deliveryFeeApplies({
+        isDelivery: false,
+        deliveryTime: feeRequired.label,
+      }),
+    ).toBe(false);
+
+    const pickup = calculateTotals({
+      deliveryId: SELF_PICKUP_ID,
       order: {delivery_time: feeRequired.label},
     });
-    const shipping = calculate({
-      deliveryTitle: "Shipping",
+    const shipping = calculateTotals({
+      deliveryId: SHIPPING_DELIVERY_ID,
       order: {delivery_time: feeFree.label},
     });
 
     expect(pickup).toMatchObject({
-      deliveryFeeApplies: false,
       shippingRate: "0.00",
       shippingTax: 0,
     });
     expect(shipping).toMatchObject({
-      deliveryFeeApplies: false,
       shippingRate: SHIPPING_COST,
       shippingTax: 0.3,
     });
   });
 
   it("subtracts the previous custom_attrs.shippingTax before adding the new shipping tax", () => {
-    const result = calculate({
+    const result = calculateTotals({
       order: {
         tax_amount: "1.50",
         custom_attrs: {shippingTax: 0.3},
@@ -191,7 +273,7 @@ describe("delivery fee calculation", () => {
       },
     });
 
-    expect(Number(result.taxAmount)).toBeCloseTo(1.4);
-    expect(result.totalPrice).toBe("25.40");
+    expect(Number(result.totalOrderTaxes)).toBeCloseTo(1.4);
+    expect(result.totalOrderPrice).toBe("25.40");
   });
 });

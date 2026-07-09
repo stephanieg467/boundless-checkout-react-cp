@@ -12,22 +12,6 @@ import {qualifiesForFreeShipping} from "./shipping";
 const DELIVERY_TAX = 0.2;
 const SHIPPING_TAX = 0.3;
 
-type DeliveryFeeOrder = Pick<
-	IOrderWithCustmAttr,
-	"tax_amount" | "delivery_time" | "drop_ship_delivery_time"
-> & {
-	custom_attrs?: {
-		shippingTax?: number | string;
-		[key: string]: unknown;
-	};
-};
-
-type DeliveryFeeTotal = {
-	itemsSubTotal?: {
-		price?: string | number | null;
-	};
-};
-
 export const findDeliveryTimeOptionByLabel = (
 	options: DeliveryTimeOption[] | undefined,
 	label: string | undefined,
@@ -135,58 +119,5 @@ export const calculateCheckoutShippingTotals = ({
 		shippingTax,
 		totalOrderTaxes,
 		totalOrderPrice,
-	};
-};
-
-const getDeliveryIdByTitle = (deliveryTitle: string | undefined): number => {
-	if (deliveryTitle === "Delivery") return DELIVERY_ID;
-	if (deliveryTitle === "Shipping") return SHIPPING_DELIVERY_ID;
-	return 0;
-};
-
-export const calculateDeliveryFeeTotals = ({
-	deliveryTitle,
-	order,
-	total,
-	hasRegularItems,
-	hasDropShipItems,
-	deliveryTimes,
-	dropShipDeliveryTimes,
-}: {
-	deliveryTitle?: string;
-	order: DeliveryFeeOrder;
-	total: DeliveryFeeTotal | undefined;
-	hasRegularItems: boolean;
-	hasDropShipItems: boolean;
-	deliveryTimes?: DeliveryTimeOption[];
-	dropShipDeliveryTimes?: DeliveryTimeOption[];
-}) => {
-	const deliveryId = getDeliveryIdByTitle(deliveryTitle);
-	const deliveryFeeApplies = selectedDeliveryTimesRequireFee({
-		isDelivery: deliveryId === DELIVERY_ID,
-		hasRegularItems,
-		hasDropShipItems,
-		deliveryTime: order.delivery_time,
-		dropShipDeliveryTime: order.drop_ship_delivery_time,
-		regularOptions: deliveryTimes,
-		dropShipOptions: dropShipDeliveryTimes,
-	});
-	const totals = calculateCheckoutShippingTotals({
-		order: order as IOrderWithCustmAttr,
-		total: total as ITotal | undefined,
-		deliveryId,
-		hasRegularItems,
-		hasDropShipItems,
-		deliveryTime: order.delivery_time,
-		dropShipDeliveryTime: order.drop_ship_delivery_time,
-		regularOptions: deliveryTimes,
-		dropShipOptions: dropShipDeliveryTimes,
-	});
-
-	return {
-		...totals,
-		deliveryFeeApplies,
-		taxAmount: totals.totalOrderTaxes,
-		totalPrice: totals.totalOrderPrice,
 	};
 };
