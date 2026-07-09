@@ -44,18 +44,9 @@ import {
 	getFirstIncompleteCheckoutStep,
 } from "../../lib/checkoutGuards";
 import {ICheckoutStepper} from "../../types/common";
-import {
-	useCartHasTickets,
-	ordersDropShippingItems,
-	ordersRegularItems,
-} from "../../lib/products";
+import {useCartHasTickets} from "../../lib/products";
 import {hasDeliveryId, hasShipping} from "../../lib/shipping";
 import {scrollCheckoutToTop} from "../../lib/scrollCheckout";
-import {
-	DeliveryTimeSelector,
-	renderDeliveryTimeOptions,
-} from "../deliveryDetailsPage/helpers";
-import {useDeliveryTimes} from "../../hooks/useDeliveryTimes";
 import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 import PayHQ, {PayHQHandle} from "./PayHQ/PayHQ";
 import {useCreditCardPaymentOutcome} from "../../hooks/useCreditCardPaymentOutcome";
@@ -63,7 +54,6 @@ import {useCreditCardPaymentOutcome} from "../../hooks/useCreditCardPaymentOutco
 const paymentFormFieldOrder: Array<keyof IPaymentMethodFormValues> = [
 	"payment_method_id",
 	"tip",
-	"delivery_time",
 ];
 
 const scrollPaymentFormToFirstErrorField = (
@@ -107,64 +97,27 @@ const ScrollToFirstFormikSubmitError = ({
 	return null;
 };
 
-const DELIVERY_TIME_REQUIRED_ERROR = "Delivery time is required";
+const makeValidatePaymentForm = (values: IPaymentMethodFormValues) => {
+	const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
 
-const hasPaymentFormValue = (value: unknown): boolean => {
-	if (typeof value === "string") return value.trim().length > 0;
-
-	return value != null;
-};
-
-const makeValidatePaymentForm =
-	(requireDeliveryTime: boolean) => (values: IPaymentMethodFormValues) => {
-		const errors: Partial<Record<keyof IPaymentMethodFormValues, string>> = {};
-
-		if (!values.payment_method_id || values.payment_method_id === "0") {
-			errors.payment_method_id = "Payment method is required";
-		}
-
-		if (values.tip && parseFloat(values.tip) < 0) {
-			errors.tip = "Tip must be positive";
-		}
-
-		if (requireDeliveryTime && !values.delivery_time) {
-			errors.delivery_time = DELIVERY_TIME_REQUIRED_ERROR;
-		}
-
-		return errors;
-	};
-
-type PaymentDeliveryItems = Parameters<typeof ordersDropShippingItems>[0];
-
-const getPaymentDeliveryContext = (
-	order: IOrderWithCustmAttr | undefined,
-	items: PaymentDeliveryItems = [],
-) => {
-	const isDelivery = order ? hasDeliveryId(order, DELIVERY_ID) : false;
-	const hasDropShipItems = ordersDropShippingItems(items ?? []).length > 0;
-	const regularItems = ordersRegularItems(items ?? []);
-	const requireDeliveryTime = isDelivery && !hasDropShipItems;
-	return {isDelivery, requireDeliveryTime, regularItems};
-};
-
-const getLatestDeliveryTimeError = (
-	order: IOrderWithCustmAttr | undefined,
-	items: PaymentDeliveryItems | undefined,
-	submittedDeliveryTime: string | undefined,
-): string | null => {
-	const {requireDeliveryTime} = getPaymentDeliveryContext(order, items ?? []);
-
-	if (!requireDeliveryTime) return null;
-	if (hasPaymentFormValue(order?.delivery_time) || hasPaymentFormValue(submittedDeliveryTime)) {
-		return null;
+	if (!values.payment_method_id || values.payment_method_id === "0") {
+		errors.payment_method_id = "Payment method is required";
 	}
 
-	return DELIVERY_TIME_REQUIRED_ERROR;
+	if (values.tip && parseFloat(values.tip) < 0) {
+		errors.tip = "Tip must be positive";
+	}
+
+	return errors;
 };
 
+const getPaymentDeliveryContext = (order: IOrderWithCustmAttr | undefined) => ({
+	isDelivery: order ? hasDeliveryId(order, DELIVERY_ID) : false,
+});
+
 const usePaymentDeliveryContext = () => {
-	const {order, items} = useAppSelector((state) => state.app);
-	return getPaymentDeliveryContext(order, items ?? []);
+	const {order} = useAppSelector((state) => state.app);
+	return getPaymentDeliveryContext(order);
 };
 
 const redirectToIncompleteStep = (
@@ -194,7 +147,7 @@ export default function PaymentMethodForm({
 	const stepper = useAppSelector((state) => state.app.stepper);
 	const dispatch = useAppDispatch();
 	const {onSubmit} = useSavePaymentMethod(paymentPage, stepper);
-	const {requireDeliveryTime, isDelivery} = usePaymentDeliveryContext();
+	const {isDelivery} = usePaymentDeliveryContext();
 	const {t} = useTranslation();
 	const {recordApprovedPayment} = useCreditCardPaymentOutcome();
 	const [isPaymentApproved, setIsPaymentApproved] = useState(false);
@@ -210,27 +163,17 @@ export default function PaymentMethodForm({
 		[recordApprovedPayment],
 	);
 
-	const {
-		isLoading: loadingDeliveryTimes,
-		isError: errorLoadingDeliveryTimes,
-		data: deliveryTimes,
-	} = useDeliveryTimes({returnTimeForTodayAndTwoDaysFromNow: false});
-
 	const paymentMethods = paymentPage.paymentMethods;
 	const onlyPaymentMethodIsCreditCard =
 		paymentMethods.length === 1 &&
 		paymentMethods[0].payment_method_id === CREDIT_CARD_PAYMENT_METHOD;
-
-	const nextDayHelperText = deliveryTimes?.isNextDay
-		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
-		: "Will be delivered today.";
 
 	return (
 		<Formik
 			initialValues={getFormInitialValues(order, paymentMethods)}
 			onSubmit={onSubmit}
 			validateOnChange={false}
-			validate={makeValidatePaymentForm(requireDeliveryTime)}
+			validate={makeValidatePaymentForm}
 		>
 			{(formikProps) => {
 				const {values} = formikProps;
@@ -255,18 +198,6 @@ export default function PaymentMethodForm({
 					const latestCheckoutData = getCheckoutData();
 					const latestOrder = latestCheckoutData?.order;
 					if (redirectToIncompleteStep(dispatch, stepper, latestOrder)) {
-						return;
-					}
-
-					const latestDeliveryTimeError = getLatestDeliveryTimeError(
-						latestOrder,
-						latestCheckoutData?.items,
-						values.delivery_time,
-					);
-					if (latestDeliveryTimeError) {
-						formikProps.setFieldError("delivery_time", latestDeliveryTimeError);
-						formikProps.setStatus({serverError: latestDeliveryTimeError});
-						scrollPaymentFormToFirstErrorField({delivery_time: latestDeliveryTimeError});
 						return;
 					}
 
@@ -344,7 +275,7 @@ export default function PaymentMethodForm({
 						/>
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
-								excludedFields={["payment_method_id", "delivery_time"]}
+								excludedFields={["payment_method_id"]}
 								errors={formikProps.errors}
 							/>
 						)}
@@ -365,19 +296,6 @@ export default function PaymentMethodForm({
 							isDelivery={isDelivery}
 							setIsPaymentApproved={setIsPaymentApproved}
 						/>
-						{requireDeliveryTime && (
-							<DeliveryTimeSelector
-								field="delivery_time"
-								helperText={nextDayHelperText}
-								formikProps={formikProps}
-							>
-								{renderDeliveryTimeOptions(
-									deliveryTimes?.times,
-									loadingDeliveryTimes,
-									errorLoadingDeliveryTimes,
-								)}
-							</DeliveryTimeSelector>
-						)}
 						{showPayHQ && (
 							<PayHQ
 								ref={payHQRef}
@@ -432,7 +350,6 @@ const getFormInitialValues = (
 			: order?.payment_method_id
 				? order.payment_method_id
 				: paymentMethods[0]?.payment_method_id || undefined,
-		delivery_time: order?.delivery_time ?? "",
 		tip: order?.tip !== "0.00" ? order?.tip : "",
 	};
 
@@ -555,7 +472,7 @@ const useSavePaymentMethod = (
 
 	const onSubmit = async (
 		values: IPaymentMethodFormValues,
-		{setErrors, setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
+		{setSubmitting, setStatus}: FormikHelpers<IPaymentMethodFormValues>,
 	) => {
 		const checkoutData = getCheckoutData();
 		const checkoutDataOrder = checkoutData?.order;
@@ -578,20 +495,8 @@ const useSavePaymentMethod = (
 			return;
 		}
 
-		const latestDeliveryTimeError = getLatestDeliveryTimeError(
-			checkoutDataOrder,
-			items,
-			values.delivery_time,
-		);
-		if (latestDeliveryTimeError) {
-			setErrors({delivery_time: latestDeliveryTimeError});
-			setStatus({serverError: latestDeliveryTimeError});
-			setSubmitting(false);
-			return;
-		}
-
 		try {
-			const {payment_method_id, tip, delivery_time} = values;
+			const {payment_method_id, tip} = values;
 
 			const selectedPaymentMethod = paymentPage.paymentMethods.find(
 				(method) => method.payment_method_id === payment_method_id,
@@ -607,7 +512,6 @@ const useSavePaymentMethod = (
 						paymentMethodId: payment_method_id,
 						paymentMethod: selectedPaymentMethod,
 						tip,
-						deliveryTime: delivery_time,
 					},
 				);
 
@@ -619,7 +523,6 @@ const useSavePaymentMethod = (
 					paymentMethod: selectedPaymentMethod,
 					tip: tip ? parseLenientAmount(tip).toString() : "0",
 					payment_method_id: payment_method_id,
-					...(delivery_time ? {delivery_time} : {}),
 					custom_attrs: {
 						...checkoutDataOrder.custom_attrs,
 						checkoutCompleted: true,
@@ -680,5 +583,4 @@ const useSavePaymentMethod = (
 interface IPaymentMethodFormValues {
 	payment_method_id?: string;
 	tip?: string;
-	delivery_time?: string;
 }

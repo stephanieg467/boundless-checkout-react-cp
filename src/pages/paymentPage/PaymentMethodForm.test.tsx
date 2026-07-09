@@ -318,32 +318,43 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(checkoutArg.order.paid_at).toBe("2026-05-23T12:00:00.000Z");
     expect(checkoutArg.order.tip).toBe("5");
     expect(checkoutArg.order.total_price).toBe("105.00");
+    expect(checkoutArg.order.delivery_time).toBe("10:00 AM");
     expect(checkoutArg.total.price).toBe("105.00");
   });
 
-  it("validates delivery time before submitting PayHQ payment", async () => {
+  it("does not render a delivery_time selector for Delivery orders", () => {
+    const deliveryOrder = makeOrder({
+      services: [deliveryService()],
+    });
+
+    setup({order: deliveryOrder});
+
+    expect(screen.queryByRole("combobox", {name: /delivery time/i})).not.toBeInTheDocument();
+  });
+
+  it("does not require a submitted delivery_time before submitting PayHQ payment", async () => {
     const user = userEvent.setup();
     const deliveryOrder = makeOrder({
       delivery_time: "",
-      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+      services: [deliveryService()],
     });
 
     setup({order: deliveryOrder});
 
     await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
-    expect(mockSubmitPayment).not.toHaveBeenCalled();
-    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
-    expect(mockOnThankYouPage).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Delivery time is required")).not.toBeInTheDocument();
+    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
   });
 
-  it("validates delivery time against the latest persisted order before submitting PayHQ payment", async () => {
+  it("does not revalidate delivery_time from the latest persisted order before submitting PayHQ payment", async () => {
     const user = userEvent.setup();
 
     setup({order: makeOrder({services: [pickupService()]})});
 
-    // Simulate persisted checkout data changing from pickup to delivery after render.
+    // Simulate persisted checkout data changing from pickup to Delivery after render.
     mockCheckoutData = {
       ...mockCheckoutData,
       order: makeOrder({
@@ -354,11 +365,10 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
-    expect(mockSubmitPayment).not.toHaveBeenCalled();
-    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
-    expect(mockOnThankYouPage).not.toHaveBeenCalled();
-    expect(mockCheckoutData.order.custom_attrs.checkoutCompleted).toBeUndefined();
+    await waitFor(() => expect(mockSubmitPayment).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Delivery time is required")).not.toBeInTheDocument();
+    expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
   });
 
   it("does not recharge when the latest persisted credit-card order is already paid", async () => {
@@ -651,6 +661,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     expect(checkoutArg.order.tip).toBe("15");
     expect(checkoutArg.order.total_price).toBe("115");
+    expect(checkoutArg.order.delivery_time).toBe("10:00 AM");
     expect(checkoutArg.total.price).toBe("115");
   });
 
@@ -766,19 +777,23 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const scrollIntoViewMock = jest.spyOn(Element.prototype, "scrollIntoView");
 
     const deliveryOrder = makeOrder({
-      delivery_time: "",
-      services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
+      delivery_time: "10:00 AM",
+      services: [deliveryService()],
     });
 
     setup({order: deliveryOrder});
 
+    const tipInput = screen.getByRole("spinbutton", {name: /tip/i}) as HTMLInputElement;
+    await user.clear(tipInput);
+    await user.type(tipInput, "-5");
+
     await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
-    expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
+    expect(await screen.findByText(/tip must be positive/i)).toBeInTheDocument();
 
     expect(scrollIntoViewMock).toHaveBeenCalled();
     const scrolledElement = scrollIntoViewMock.mock.contexts[0] as HTMLElement;
-    expect(scrolledElement.getAttribute("name") || scrolledElement.querySelector("[name='delivery_time']")).toBeTruthy();
+    expect(scrolledElement.getAttribute("name")).toBe("tip");
 
     expect(mockSubmitPayment).not.toHaveBeenCalled();
   });
