@@ -464,7 +464,10 @@ export default function ShippingForm({
 								}
 							</Typography>
 						)}
-						<DeliverySelector options={shippingPage.options} />
+						<DeliverySelector
+							options={shippingPage.options}
+							deliveryTimeOptions={deliveryTimes?.times}
+						/>
 						{delivery_id === DELIVERY_ID && hasRegularItems && (
 							<DeliveryTimeSelector
 								items={regularItems}

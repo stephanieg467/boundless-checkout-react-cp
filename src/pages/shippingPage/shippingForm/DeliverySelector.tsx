@@ -16,6 +16,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
+import type {DeliveryTimeOption} from "../../../lib/deliveryTimes";
 import {SHIPPING_COST} from "../../../constants";
 
 const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
@@ -40,11 +41,23 @@ const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	);
 };
 
-const DeliveryDetails = ({delivery}: { delivery: IDelivery }) => {
+const DeliveryDetails = ({
+	delivery,
+	deliveryTimeOptions,
+}: {
+	delivery: IDelivery;
+	deliveryTimeOptions?: DeliveryTimeOption[];
+}) => {
 	const {total} = useAppSelector((state) => state.app);
 	const details = delivery.description;
 
 	const freeShippingApplies = qualifiesForFreeShipping(total);
+	const anyFeeBearingSlot = (deliveryTimeOptions ?? []).some(
+		(option) => option.applyDeliveryFee ?? true,
+	);
+	const deliveryFeeCopy = !deliveryTimeOptions || anyFeeBearingSlot
+		? "Delivery fee: $4.00 for certain delivery time slots"
+		: "Delivery fee: $0.00 for available delivery time slots";
 
 	if (!details) {
 		return null;
@@ -61,24 +74,7 @@ const DeliveryDetails = ({delivery}: { delivery: IDelivery }) => {
 			</Typography>
 			{delivery.title === "Delivery" && (
 				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-					{freeShippingApplies ? (
-						<>
-							<span style={{textDecoration: "line-through", color: "#999"}}>
-								Delivery fee: $4.00
-							</span>
-							<span
-								style={{
-									color: "#4a7c4d",
-									fontWeight: "bold",
-									marginLeft: "8px",
-								}}
-							>
-								FREE (Order over $100)
-							</span>
-						</>
-					) : (
-						"Delivery fee: $4.00"
-					)}
+					{deliveryFeeCopy}
 				</Typography>
 			)}
 			{delivery.title === "Shipping" && (
@@ -107,9 +103,11 @@ const DeliveryDetails = ({delivery}: { delivery: IDelivery }) => {
 	);
 };
 
-type IInPros = Pick<ICheckoutShippingPageData, "options">;
+type IInPros = Pick<ICheckoutShippingPageData, "options"> & {
+	deliveryTimeOptions?: DeliveryTimeOption[];
+};
 
-export default function DeliverySelector({options}: IInPros) {
+export default function DeliverySelector({options, deliveryTimeOptions}: IInPros) {
 	const formikProps = useFormikContext<IShippingFormValues>();
 
 	return (
@@ -166,7 +164,10 @@ export default function DeliverySelector({options}: IInPros) {
 													width: "100%",
 												}}
 											>
-												<DeliveryDetails delivery={delivery} />
+												<DeliveryDetails
+													delivery={delivery}
+													deliveryTimeOptions={deliveryTimeOptions}
+												/>
 												<DeliveryTitle delivery={delivery} />
 											</Box>
 										</Box>
