@@ -6,6 +6,7 @@ import {
 	addFilledStep,
 	setCurrentStep,
 	setOrder,
+	setTotal,
 } from "../../redux/reducers/app";
 import {TCheckoutStep} from "../../types/common";
 import {
@@ -27,6 +28,7 @@ import {DELIVERY_ID, SELF_PICKUP_ID} from "../../constants";
 import {DeliveryTimeSelector, renderDeliveryTimeOptions} from "./helpers";
 import ExtraErrors from "../../components/ExtraErrors";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
+import {calculateCheckoutShippingTotals} from "../../lib/deliveryFee";
 
 const hasDropShipTimes = (data: unknown): data is DeliveryTimesWithDropShip =>
 	!!data && typeof data === "object" && "dropShipTimes" in data;
@@ -37,17 +39,12 @@ interface IDeliveryDetailsFormValues {
 }
 
 export const makeValidateDeliveryDetailsForm =
-	(hasRegularItems: boolean, hasDropShipItems: boolean, isDelivery: boolean) =>
+	(_hasRegularItems: boolean, hasDropShipItems: boolean, isDelivery: boolean) =>
 	(values: IDeliveryDetailsFormValues) => {
 		const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> =
 			{};
-		if (isDelivery) {
-			if (hasRegularItems && !values.delivery_time) {
-				errors.delivery_time = "Delivery time is required";
-			}
-			if (hasDropShipItems && !values.drop_ship_delivery_time) {
-				errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
-			}
+		if (isDelivery && hasDropShipItems && !values.drop_ship_delivery_time) {
+			errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
 		}
 		return errors;
 	};
@@ -60,6 +57,13 @@ const useSaveDeliveryDetails = () => {
 	const hasRegularItems = regularItems.length > 0;
 	const dropShipItems = ordersDropShippingItems(items ?? []);
 	const hasDropShipItems = dropShipItems.length > 0;
+	const {
+		isLoading: loadingDeliveryTimes,
+		isError: errorLoadingDeliveryTimes,
+		data: deliveryTimes,
+	} = useDeliveryTimes({
+		returnTimeForTodayAndTwoDaysFromNow: hasDropShipItems,
+	});
 
 	const onSubmit = (
 		values: IDeliveryDetailsFormValues,
@@ -74,19 +78,75 @@ const useSaveDeliveryDetails = () => {
 			return;
 		}
 
-		const updatedOrder: IOrderWithCustmAttr = {
+		const persistAndContinue = (
+			updatedOrder: IOrderWithCustmAttr,
+			updatedTotal: typeof total,
+		) => {
+			setLocalStorageCheckoutData({order: updatedOrder, total: updatedTotal});
+			dispatch(setOrder(updatedOrder));
+			dispatch(setTotal(updatedTotal));
+			dispatch(addFilledStep({step: TCheckoutStep.deliveryDetails}));
+			dispatch(setCurrentStep(TCheckoutStep.paymentMethod));
+			setSubmitting(false);
+		};
+
+		const updatedOrderBase: IOrderWithCustmAttr = {
 			...checkoutDataOrder,
-			...(hasRegularItems && {delivery_time: values.delivery_time}),
 			...(hasDropShipItems && {
 				drop_ship_delivery_time: values.drop_ship_delivery_time,
 			}),
 		};
 
-		setLocalStorageCheckoutData({order: updatedOrder, total});
-		dispatch(setOrder(updatedOrder));
-		dispatch(addFilledStep({step: TCheckoutStep.deliveryDetails}));
-		dispatch(setCurrentStep(TCheckoutStep.paymentMethod));
-		setSubmitting(false);
+		if (!hasDeliveryId(checkoutDataOrder, DELIVERY_ID)) {
+			persistAndContinue(updatedOrderBase, total);
+			return;
+		}
+
+		const calculation = calculateCheckoutShippingTotals({
+			order: checkoutDataOrder,
+			total,
+			deliveryId: DELIVERY_ID,
+			hasRegularItems,
+			hasDropShipItems,
+			deliveryTime: checkoutDataOrder.delivery_time,
+			dropShipDeliveryTime: values.drop_ship_delivery_time,
+			regularOptions: deliveryTimes?.times,
+			dropShipOptions: hasDropShipTimes(deliveryTimes)
+				? deliveryTimes.dropShipTimes.times
+				: undefined,
+		});
+		const updatedOrder = {
+			...updatedOrderBase,
+			total_price: calculation.totalOrderPrice,
+			tax_amount: calculation.totalOrderTaxes,
+			service_total_price: calculation.shippingRate,
+			servicesSubTotal: {qty: 1, price: calculation.shippingRate},
+			custom_attrs: {
+				...checkoutDataOrder.custom_attrs,
+				shippingRate: calculation.shippingRate,
+				originalShippingRate: calculation.originalShippingRate,
+				shippingTax: calculation.shippingTax,
+				freeShippingApplied: false,
+			},
+		} as unknown as IOrderWithCustmAttr;
+		const updatedTotal = {
+			...total,
+			price: calculation.totalOrderPrice,
+			tax: {
+				...total.tax,
+				shipping: {
+					...total.tax?.shipping,
+					shippingTaxes: calculation.shippingTax.toString(),
+				} as any,
+				totalTaxAmount: calculation.totalOrderTaxes,
+			},
+			servicesSubTotal: {
+				...total.servicesSubTotal,
+				price: calculation.shippingRate,
+			},
+		};
+
+		persistAndContinue(updatedOrder, updatedTotal);
 	};
 
 	return {
@@ -95,6 +155,9 @@ const useSaveDeliveryDetails = () => {
 		hasDropShipItems,
 		dropShipItems,
 		regularItems,
+		loadingDeliveryTimes,
+		errorLoadingDeliveryTimes,
+		deliveryTimes,
 	};
 };
 
@@ -105,15 +168,11 @@ export default function DeliveryDetailsForm() {
 		hasDropShipItems,
 		dropShipItems,
 		regularItems,
+		loadingDeliveryTimes,
+		errorLoadingDeliveryTimes,
+		deliveryTimes,
 	} = useSaveDeliveryDetails();
 	const {order} = useAppSelector((state) => state.app);
-	const {
-		isLoading: loadingDeliveryTimes,
-		isError: errorLoadingDeliveryTimes,
-		data: deliveryTimes,
-	} = useDeliveryTimes({
-		returnTimeForTodayAndTwoDaysFromNow: hasDropShipItems,
-	});
 	const isPickup = !!(order && hasDeliveryId(order, SELF_PICKUP_ID));
 	const isDelivery = !!(order && hasDeliveryId(order, DELIVERY_ID));
 	const isShipping = !isPickup && !isDelivery;
@@ -124,10 +183,6 @@ export default function DeliveryDetailsForm() {
 			drop_ship_delivery_time: order?.drop_ship_delivery_time ?? "",
 		}),
 	};
-
-	const nextDayHelperText = deliveryTimes?.isNextDay
-		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
-		: "Will be delivered today.";
 
 	const dropShipDateLabel = hasDropShipTimes(deliveryTimes)
 		? deliveryTimes.dropShipTimes.date
@@ -157,20 +212,6 @@ export default function DeliveryDetailsForm() {
 						{"Delivery details"}
 					</Typography>
 
-					{(hasRegularItems && isDelivery) && (
-						<DeliveryTimeSelector
-							items={regularItems}
-							field={"delivery_time"}
-							helperText={nextDayHelperText}
-							formikProps={formikProps}
-						>
-							{renderDeliveryTimeOptions(
-								deliveryTimes?.times,
-								loadingDeliveryTimes,
-								errorLoadingDeliveryTimes,
-							)}
-						</DeliveryTimeSelector>
-					)}
 					{hasDropShipItems && isDelivery && (
 						<DeliveryTimeSelector
 							items={dropShipItems}
