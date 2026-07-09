@@ -617,6 +617,25 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	);
 
 	useEffect(() => {
+		const addressDefaults = getPaymentAddressDefaults(order);
+		setFirstName(order?.customer?.first_name ?? "");
+		setLastName(order?.customer?.last_name ?? "");
+		setEmail(order?.customer?.email ?? "");
+		setAddress1(addressDefaults.address1);
+		setAddress2(addressDefaults.address2);
+		setCity(addressDefaults.city);
+		setCountry(addressDefaults.country);
+		setPostalCode(addressDefaults.postalCode);
+		setProvince(addressDefaults.province);
+	}, [
+		order,
+		order?.customer?.first_name,
+		order?.customer?.last_name,
+		order?.customer?.email,
+		order?.customer?.addresses,
+	]);
+
+	useEffect(() => {
 		if (
 			order?.paid_at ||
 			!apiKey ||
