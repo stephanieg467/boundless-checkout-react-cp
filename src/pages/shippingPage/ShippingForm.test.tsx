@@ -1,5 +1,5 @@
 import React from "react";
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
 import {
 	DELIVERY_COST,
@@ -16,6 +16,37 @@ const mockDispatch = jest.fn();
 let mockState: any = {};
 let mockCheckoutData: any = {};
 const mockSetLocalStorageCheckoutData = jest.fn();
+
+type MockDeliveryTimes = {
+	isNextDay: boolean;
+	times: Array<{
+		label: string;
+		applyDeliveryFee: boolean;
+		asapDeliveryAvailable?: boolean;
+	}>;
+};
+
+const defaultDeliveryTimes: MockDeliveryTimes = {
+	isNextDay: false,
+	times: [
+		{label: "10:00 AM", applyDeliveryFee: true},
+		{label: "12:00 PM", applyDeliveryFee: false},
+	],
+};
+let mockDeliveryTimes: MockDeliveryTimes = defaultDeliveryTimes;
+
+const setAsapDeliveryTime = (applyDeliveryFee: boolean) => {
+	mockDeliveryTimes = {
+		isNextDay: false,
+		times: [
+			{
+				label: "ASAP",
+				applyDeliveryFee,
+				asapDeliveryAvailable: true,
+			},
+		],
+	};
+};
 
 jest.mock("../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
@@ -46,13 +77,7 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 	useDeliveryTimes: () => ({
 		isLoading: false,
 		isError: false,
-		data: {
-			isNextDay: false,
-			times: [
-				{label: "10:00 AM", applyDeliveryFee: true},
-				{label: "12:00 PM", applyDeliveryFee: false},
-			],
-		},
+		data: mockDeliveryTimes,
 	}),
 }));
 
@@ -270,6 +295,7 @@ describe("ShippingForm checkout address persistence", () => {
 	beforeEach(() => {
 		mockDispatch.mockClear();
 		mockSetLocalStorageCheckoutData.mockClear();
+		mockDeliveryTimes = defaultDeliveryTimes;
 
 		const order = staleOrder();
 		mockState = {
@@ -322,6 +348,21 @@ describe("ShippingForm checkout address persistence", () => {
 		).toBeTruthy();
 	});
 
+	it("renders an ASAP delivery-time option for Delivery with regular items", () => {
+		setCheckoutOrder(DELIVERY_ID);
+		setAsapDeliveryTime(true);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		const deliveryTimeSelector = screen.getByRole("combobox", {
+			name: /delivery time/i,
+		});
+
+		expect(
+			within(deliveryTimeSelector).getByRole("option", {name: "ASAP"}),
+		).toBeInTheDocument();
+	});
+
 	it.each([
 		{name: "Pickup", deliveryId: SELF_PICKUP_ID},
 		{name: "Shipping", deliveryId: SHIPPING_DELIVERY_ID},
@@ -344,6 +385,27 @@ describe("ShippingForm checkout address persistence", () => {
 			screen.queryByRole("combobox", {name: /delivery time/i}),
 		).not.toBeInTheDocument();
 	});
+
+	it.each([
+		{name: "Pickup", deliveryId: SELF_PICKUP_ID, items: [cartItem(false)]},
+		{name: "Shipping", deliveryId: SHIPPING_DELIVERY_ID, items: [cartItem(false)]},
+		{name: "drop-ship-only Delivery", deliveryId: DELIVERY_ID, items: [cartItem(true)]},
+	])(
+		"does not show ASAP for $name because the regular delivery-time selector is hidden",
+		({deliveryId, items}) => {
+			setCheckoutOrder(deliveryId, items);
+			setAsapDeliveryTime(true);
+
+			render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+			expect(
+				screen.queryByRole("combobox", {name: /delivery time/i}),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("option", {name: "ASAP"}),
+			).not.toBeInTheDocument();
+		},
+	);
 
 	it("requires delivery_time before submitting Delivery with regular items", async () => {
 		setCheckoutOrder(DELIVERY_ID);
@@ -391,6 +453,40 @@ describe("ShippingForm checkout address persistence", () => {
 		const persisted = await continueToPayment();
 
 		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+	});
+
+	it("persists and prices paid ASAP Delivery like any fee-bearing delivery-time option", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+		setAsapDeliveryTime(true);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fillRequiredShippingAddressFields();
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+			target: {value: "ASAP"},
+		});
+
+		const persisted = await continueToPayment();
+
+		expect(persisted.order.delivery_time).toBe("ASAP");
+		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+	});
+
+	it("waives the Delivery fee for fee-free ASAP Delivery", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+		setAsapDeliveryTime(false);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fillRequiredShippingAddressFields();
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+			target: {value: "ASAP"},
+		});
+
+		const persisted = await continueToPayment();
+
+		expect(persisted.order.delivery_time).toBe("ASAP");
+		expectPersistedShippingFee(persisted, "0.00", 0);
 	});
 
 	it("waives the Delivery fee when the selected regular delivery time is fee-free", async () => {
