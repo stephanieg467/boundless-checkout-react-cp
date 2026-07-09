@@ -12,6 +12,8 @@ export interface DeliveryTimeOption {
 	asapDeliveryAvailable?: boolean;
 }
 
+export const ASAP_DELIVERY_LABEL = "ASAP";
+
 // Helper functions for dynamic delivery times
 
 type TimeWindow = {
@@ -153,6 +155,31 @@ export type DeliveryTimesWithDropShip = DeliveryTimesBase & {
 	dropShipTimes: {times: DeliveryTimeOption[]; date: string};
 };
 
+const withAsapDeliveryOption = (
+	times: DeliveryTimeOption[],
+	isNextDay: boolean,
+): DeliveryTimeOption[] => {
+	if (isNextDay) return times;
+	if (times.some((option) => option.label === ASAP_DELIVERY_LABEL)) {
+		return times;
+	}
+
+	const asapSourceOption = times.find(
+		(option) => option.asapDeliveryAvailable === true,
+	);
+
+	if (!asapSourceOption) return times;
+
+	return [
+		{
+			label: ASAP_DELIVERY_LABEL,
+			applyDeliveryFee: asapSourceOption.applyDeliveryFee,
+			asapDeliveryAvailable: true,
+		},
+		...times,
+	];
+};
+
 export function getDynamicDeliveryTimes(
 	deliveryTimesData: DeliveryTimeSlot[],
 	returnBothDays?: boolean,
@@ -170,7 +197,10 @@ export function getDynamicDeliveryTimes(
 		deliveryTimes = calculateSlotsForDate(tomorrow, deliveryTimesData, -1);
 	}
 
-	const base: DeliveryTimesBase = {times: deliveryTimes, isNextDay};
+	const base: DeliveryTimesBase = {
+		times: withAsapDeliveryOption(deliveryTimes, isNextDay),
+		isNextDay,
+	};
 
 	if (!returnBothDays) {
 		return base;
