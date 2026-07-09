@@ -115,12 +115,19 @@ const useSaveDeliveryDetails = () => {
 				? deliveryTimes.dropShipTimes.times
 				: undefined,
 		});
+		const updatedServices = checkoutDataOrder.services?.map((service) =>
+			service.service_id === DELIVERY_ID
+				? {...service, total_price: calculation.shippingRate}
+				: service,
+		);
+
 		const updatedOrder = {
 			...updatedOrderBase,
 			total_price: calculation.totalOrderPrice,
 			tax_amount: calculation.totalOrderTaxes,
 			service_total_price: calculation.shippingRate,
 			servicesSubTotal: {qty: 1, price: calculation.shippingRate},
+			services: updatedServices,
 			custom_attrs: {
 				...checkoutDataOrder.custom_attrs,
 				shippingRate: calculation.shippingRate,

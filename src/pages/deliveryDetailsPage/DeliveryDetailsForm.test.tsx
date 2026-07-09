@@ -1,7 +1,12 @@
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import DeliveryDetailsForm from "./DeliveryDetailsForm";
-import {DELIVERY_COST, DELIVERY_ID} from "../../constants";
+import {
+	DELIVERY_COST,
+	DELIVERY_ID,
+	SHIPPING_COST,
+	SHIPPING_DELIVERY_ID,
+} from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 
 (globalThis as any).React = React;
@@ -83,17 +88,27 @@ const checkoutTotalsForRate = (shippingRate: string) => {
 	};
 };
 
-const deliveryService = (shippingRate: string) => ({
-	service_id: DELIVERY_ID,
+const checkoutService = (
+	deliveryId: number,
+	shippingRate: string,
+	title: string,
+) => ({
+	service_id: deliveryId,
 	qty: 1,
 	total_price: shippingRate,
 	is_delivery: true,
 	serviceDelivery: {
-		delivery_id: DELIVERY_ID,
-		title: "Delivery",
-		delivery: {title: "Delivery"},
+		delivery_id: deliveryId,
+		title,
+		delivery: {title},
 	},
 });
+
+const deliveryService = (shippingRate: string) =>
+	checkoutService(DELIVERY_ID, shippingRate, "Delivery");
+
+const shippingService = (shippingRate: string) =>
+	checkoutService(SHIPPING_DELIVERY_ID, shippingRate, "Shipping");
 
 const makeOrder = ({
 	shippingRate,
@@ -127,12 +142,14 @@ const setup = ({
 	items = [dropShipItem],
 	orderOverrides = {},
 	staleShippingRate = DELIVERY_COST,
+	totalOverride,
 }: {
 	items?: any[];
 	orderOverrides?: Record<string, any>;
 	staleShippingRate?: string;
+	totalOverride?: any;
 } = {}) => {
-	const total = checkoutTotalsForRate(staleShippingRate);
+	const total = totalOverride ?? checkoutTotalsForRate(staleShippingRate);
 	const order = makeOrder({
 		shippingRate: staleShippingRate,
 		overrides: orderOverrides,
@@ -200,6 +217,14 @@ const expectPersistedDeliveryTotals = ({
 }) => {
 	expect(persisted.order.service_total_price).toBe(expectedRate);
 	expect(persisted.order.servicesSubTotal.price).toBe(expectedRate);
+	expect(persisted.order.services).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				service_id: DELIVERY_ID,
+				total_price: expectedRate,
+			}),
+		]),
+	);
 	expect(persisted.order.custom_attrs.shippingRate).toBe(expectedRate);
 	expect(persisted.order.custom_attrs.originalShippingRate).toBe(expectedRate);
 	expect(persisted.order.custom_attrs.shippingTax).toBe(expectedShippingTax);
@@ -280,6 +305,68 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 			});
 		},
 	);
+
+	it("does not recalculate local Delivery fees for Shipping orders", async () => {
+		const shippingTotal = {
+			price: "16.30",
+			itemsSubTotal: {price: "10.00", qty: 1},
+			servicesSubTotal: {price: SHIPPING_COST, qty: 1},
+			tax: {
+				shipping: {shippingTaxes: "0.3"},
+				totalTaxAmount: "0.3",
+			},
+		};
+		setup({
+			items: [regularItem, dropShipItem],
+			staleShippingRate: SHIPPING_COST,
+			totalOverride: shippingTotal,
+			orderOverrides: {
+				delivery_time: regularFeeRequired.label,
+				drop_ship_delivery_time: dropShipFeeRequired.label,
+				services: [shippingService(SHIPPING_COST)],
+				service_total_price: SHIPPING_COST,
+				servicesSubTotal: shippingTotal.servicesSubTotal,
+				tax_amount: shippingTotal.tax.totalTaxAmount,
+				total_price: shippingTotal.price,
+				custom_attrs: {
+					shippingRate: SHIPPING_COST,
+					originalShippingRate: SHIPPING_COST,
+					shippingTax: 0.3,
+					freeShippingApplied: false,
+				},
+			},
+		});
+		const originalOrder = mockCheckoutData.order;
+		const originalTotal = mockCheckoutData.total;
+
+		const persisted = await submitDeliveryDetails();
+
+		expect(persisted.order.service_total_price).toBe(
+			originalOrder.service_total_price,
+		);
+		expect(persisted.order.servicesSubTotal).toEqual(
+			originalOrder.servicesSubTotal,
+		);
+		expect(persisted.order.custom_attrs).toEqual(originalOrder.custom_attrs);
+		expect(persisted.order.tax_amount).toBe(originalOrder.tax_amount);
+		expect(persisted.order.total_price).toBe(originalOrder.total_price);
+		expect(persisted.total.servicesSubTotal).toEqual(
+			originalTotal.servicesSubTotal,
+		);
+		expect(persisted.total.tax).toEqual(originalTotal.tax);
+		expect(persisted.total.price).toBe(originalTotal.price);
+		expect(persisted.order.services).toEqual([
+			expect.objectContaining({
+				service_id: SHIPPING_DELIVERY_ID,
+				total_price: SHIPPING_COST,
+			}),
+		]);
+		expect(persisted.order.services).not.toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({service_id: DELIVERY_ID}),
+			]),
+		);
+	});
 
 	it.each([
 		{
