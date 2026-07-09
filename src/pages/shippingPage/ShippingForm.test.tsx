@@ -1,7 +1,13 @@
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
-import {DELIVERY_ID, SELF_PICKUP_ID, SHIPPING_DELIVERY_ID} from "../../constants";
+import {
+	DELIVERY_COST,
+	DELIVERY_ID,
+	SELF_PICKUP_ID,
+	SHIPPING_COST,
+	SHIPPING_DELIVERY_ID,
+} from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 
 (globalThis as any).React = React;
@@ -149,9 +155,9 @@ const staleOrder = (deliveryId = SHIPPING_DELIVERY_ID) => ({
 	services: [{service_id: deliveryId}],
 });
 
-const checkoutTotal = () => ({
-	price: "10.00",
-	itemsSubTotal: {price: "10.00"},
+const checkoutTotal = (itemsSubTotalPrice = "10.00") => ({
+	price: itemsSubTotalPrice,
+	itemsSubTotal: {price: itemsSubTotalPrice},
 	servicesSubTotal: {qty: 0, price: "0.00"},
 	tax: {
 		shipping: {shippingTaxes: "0"},
@@ -233,6 +239,33 @@ const fillRequiredShippingAddressFields = (
 	});
 };
 
+const continueToPayment = async () => {
+	fireEvent.click(
+		screen.getByRole("button", {name: "shippingForm.continueToPayment"}),
+	);
+
+	await waitFor(() => {
+		expect(mockSetLocalStorageCheckoutData).toHaveBeenCalled();
+	});
+
+	return mockSetLocalStorageCheckoutData.mock.calls[0][0];
+};
+
+const expectPersistedShippingFee = (
+	persisted: any,
+	expectedRate: string,
+	expectedTax: number,
+) => {
+	expect(persisted.order.service_total_price).toBe(expectedRate);
+	expect(persisted.order.custom_attrs.shippingRate).toBe(expectedRate);
+	expect(persisted.order.servicesSubTotal.price).toBe(expectedRate);
+	expect(persisted.total.servicesSubTotal.price).toBe(expectedRate);
+	expect(persisted.order.custom_attrs.shippingTax).toBe(expectedTax);
+	expect(persisted.total.tax.shipping.shippingTaxes).toBe(
+		expectedTax.toString(),
+	);
+};
+
 describe("ShippingForm checkout address persistence", () => {
 	beforeEach(() => {
 		mockDispatch.mockClear();
@@ -256,12 +289,20 @@ describe("ShippingForm checkout address persistence", () => {
 		mockCheckoutData = {order, total: checkoutTotal()};
 	});
 
-	const setCheckoutOrder = (deliveryId: number, items = [cartItem(false)]) => {
-		const order = staleOrder(deliveryId);
+	const setCheckoutOrder = (
+		deliveryId: number,
+		items = [cartItem(false)],
+		{
+			orderOverrides = {},
+			total = mockState.app.total,
+		}: {orderOverrides?: Record<string, any>; total?: any} = {},
+	) => {
+		const order = {...staleOrder(deliveryId), ...orderOverrides};
 
 		mockState.app.order = order;
 		mockState.app.items = items;
-		mockCheckoutData = {order, total: mockState.app.total};
+		mockState.app.total = total;
+		mockCheckoutData = {order, total};
 	};
 
 	it("renders the delivery-time selector above address fields for Delivery with regular items", () => {
@@ -332,17 +373,160 @@ describe("ShippingForm checkout address persistence", () => {
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
 			target: {value: "10:00 AM"},
 		});
-		fireEvent.click(
-			screen.getByRole("button", {name: "shippingForm.continueToPayment"}),
-		);
+		const persisted = await continueToPayment();
 
-		await waitFor(() => {
-			expect(mockSetLocalStorageCheckoutData).toHaveBeenCalled();
-		});
-
-		const persisted = mockSetLocalStorageCheckoutData.mock.calls[0][0];
 		expect(persisted.order.delivery_time).toBe("10:00 AM");
 	});
+
+	it("persists the Delivery fee when the selected regular delivery time applies the fee", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fillRequiredShippingAddressFields();
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+			target: {value: "10:00 AM"},
+		});
+
+		const persisted = await continueToPayment();
+
+		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+	});
+
+	it("waives the Delivery fee when the selected regular delivery time is fee-free", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fillRequiredShippingAddressFields();
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+			target: {value: "12:00 PM"},
+		});
+
+		const persisted = await continueToPayment();
+
+		expectPersistedShippingFee(persisted, "0.00", 0);
+	});
+
+	it("defaults to the Delivery fee when the selected regular delivery time label is unmatched", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		fillRequiredShippingAddressFields();
+		const deliveryTimeSelector = screen.getByRole("combobox", {
+			name: /delivery time/i,
+		});
+		const staleOption = document.createElement("option");
+		staleOption.value = "Unlisted regular time";
+		deliveryTimeSelector.appendChild(staleOption);
+		fireEvent.change(deliveryTimeSelector, {
+			target: {value: "Unlisted regular time"},
+		});
+
+		const persisted = await continueToPayment();
+
+		expect(persisted.order.delivery_time).toBe("Unlisted regular time");
+		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+	});
+
+	it("keeps Pickup free even when stale delivery-time metadata would otherwise require a fee", async () => {
+		setCheckoutOrder(SELF_PICKUP_ID, [cartItem(false)], {
+			orderOverrides: {delivery_time: "10:00 AM"},
+		});
+
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		const persisted = await continueToPayment();
+
+		expectPersistedShippingFee(persisted, "0.00", 0);
+	});
+
+	it.each([
+		{
+			name: "uses the Shipping fee below the free-shipping threshold",
+			itemsSubTotalPrice: "10.00",
+			deliveryTime: "12:00 PM",
+			expectedRate: SHIPPING_COST,
+			expectedTax: 0.3,
+			expectedFreeShippingApplied: false,
+		},
+		{
+			name: "keeps free Shipping above the free-shipping threshold",
+			itemsSubTotalPrice: "100.00",
+			deliveryTime: "10:00 AM",
+			expectedRate: "0.00",
+			expectedTax: 0,
+			expectedFreeShippingApplied: true,
+		},
+	])(
+		"$name and ignores delivery-time fee metadata",
+		async ({
+			itemsSubTotalPrice,
+			deliveryTime,
+			expectedRate,
+			expectedTax,
+			expectedFreeShippingApplied,
+		}) => {
+			setCheckoutOrder(SHIPPING_DELIVERY_ID, [cartItem(false)], {
+				orderOverrides: {delivery_time: deliveryTime},
+				total: checkoutTotal(itemsSubTotalPrice),
+			});
+
+			render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+			fillRequiredShippingAddressFields();
+
+			const persisted = await continueToPayment();
+
+			expectPersistedShippingFee(persisted, expectedRate, expectedTax);
+			expect(persisted.order.custom_attrs.originalShippingRate).toBe(SHIPPING_COST);
+			expect(persisted.order.custom_attrs.freeShippingApplied).toBe(
+				expectedFreeShippingApplied,
+			);
+			expect(persisted.order.delivery_time).toBeUndefined();
+		},
+	);
+
+	it.each([
+		{
+			name: "mixed cart with no drop-ship delivery time yet",
+			items: [cartItem(false), cartItem(true)],
+			selectedRegularTime: "12:00 PM",
+		},
+		{
+			name: "mixed cart with an unmatched drop-ship delivery time",
+			items: [cartItem(false), cartItem(true)],
+			selectedRegularTime: "12:00 PM",
+			dropShipDeliveryTime: "Unlisted drop-ship time",
+		},
+		{
+			name: "drop-ship-only cart with no drop-ship delivery time yet",
+			items: [cartItem(true)],
+		},
+	])(
+		"applies the Delivery fee for a $name until Delivery Details recalculates",
+		async ({items, selectedRegularTime, dropShipDeliveryTime}) => {
+			setCheckoutOrder(DELIVERY_ID, items, {
+				orderOverrides: {
+					drop_ship_delivery_time: dropShipDeliveryTime,
+				},
+			});
+
+			render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+			fillRequiredShippingAddressFields();
+			if (selectedRegularTime) {
+				fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
+					target: {value: selectedRegularTime},
+				});
+			}
+
+			const persisted = await continueToPayment();
+
+			expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+		},
+	);
 
 	it("switches a paid shipping order to pickup and clears stale payment and shipping totals", async () => {
 		const paidShippingOrder = {

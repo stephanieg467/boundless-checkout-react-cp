@@ -22,21 +22,23 @@ import {isPickUpDelivery, qualifiesForFreeShipping} from "../../lib/shipping";
 import {useTranslation} from "react-i18next";
 import {IOrderWithCustmAttr} from "../../types/Order";
 import {
-	DELIVERY_COST,
 	DELIVERY_ID,
 	DELIVERY_INFO,
 	SELF_PICKUP_ID,
 	SELF_PICKUP_INFO,
 	SHIPPING_DELIVERY_ID,
 	SHIPPING_DELIVERY_INFO,
-	SHIPPING_COST,
 } from "../../constants";
 import {v4} from "uuid";
 import {
 	getCheckoutData,
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
-import {ordersRegularItems, useCartHasTickets} from "../../lib/products";
+import {
+	ordersDropShippingItems,
+	ordersRegularItems,
+	useCartHasTickets,
+} from "../../lib/products";
 import {TCheckoutStep} from "../../types/common";
 import CheckoutStepWarning from "../../components/CheckoutStepWarning";
 import {clearPaymentAndDeliveryProgress} from "../../lib/checkoutProgressReset";
@@ -45,6 +47,8 @@ import {
 	DeliveryTimeSelector,
 	renderDeliveryTimeOptions,
 } from "../deliveryDetailsPage/helpers";
+import {calculateCheckoutShippingTotals} from "../../lib/deliveryFee";
+import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
 
 // Function to validate if postal code is a Penticton postal code
 const isPentictonPostalCode = (postalCode: string): boolean => {
@@ -171,10 +175,14 @@ const getEmptyAddressFields = (
 
 const useSaveShippingForm = ({
 	shippingPage,
+	regularDeliveryOptions,
 	hasRegularItems,
+	hasDropShipItems,
 }: {
 	shippingPage: ICheckoutShippingPageData;
+	regularDeliveryOptions?: DeliveryTimeOption[];
 	hasRegularItems: boolean;
+	hasDropShipItems: boolean;
 }) => {
 	const dispatch = useAppDispatch();
 	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
@@ -307,55 +315,42 @@ const useSaveShippingForm = ({
 			.then((result) => {
 				if (!result) throw new Error("Order data is missing");
 				const {order} = result;
-				let shippingTaxes = delivery_id === DELIVERY_ID ? 0.2 : 0;
-				let shippingRate = delivery_id === DELIVERY_ID ? DELIVERY_COST : "0.00";
+				const shippingCalculation = calculateCheckoutShippingTotals({
+					order,
+					total,
+					deliveryId: delivery_id,
+					hasRegularItems,
+					hasDropShipItems,
+					deliveryTime: values.delivery_time,
+					dropShipDeliveryTime: order.drop_ship_delivery_time,
+					regularOptions: regularDeliveryOptions,
+				});
 
-				if (delivery_id === SHIPPING_DELIVERY_ID) {
-					shippingRate = SHIPPING_COST;
-					shippingTaxes = 0.3;
-				}
-
-				const freeShippingApplies = qualifiesForFreeShipping(total);
-
-				// Apply free shipping if qualifies
-				const finalShippingRate = freeShippingApplies ? "0.00" : shippingRate;
-				const finalShippingTaxes = freeShippingApplies ? 0 : shippingTaxes;
-
-				let currentTaxes = Number(order.tax_amount);
-				// Handle case where user changed delivery type.
-				if (order.custom_attrs.shippingTax) {
-					currentTaxes -= Number(order.custom_attrs.shippingTax);
-				}
-				const totalOrderTaxes = (currentTaxes + finalShippingTaxes).toString();
-
-				const totalOrderPrice = (
-					Number(total?.itemsSubTotal.price) +
-					Number(totalOrderTaxes) +
-					Number(finalShippingRate)
-				).toFixed(2);
+				const freeShippingApplies =
+					delivery_id === SHIPPING_DELIVERY_ID && qualifiesForFreeShipping(total);
 
 				const updatedOrder = {
 					...order,
 					...(delivery_id === DELIVERY_ID && hasRegularItems
 						? {delivery_time: values.delivery_time}
 						: {delivery_time: undefined}),
-					total_price: totalOrderPrice,
-					tax_amount: totalOrderTaxes,
-					service_total_price: finalShippingRate,
+					total_price: shippingCalculation.totalOrderPrice,
+					tax_amount: shippingCalculation.totalOrderTaxes,
+					service_total_price: shippingCalculation.shippingRate,
 					servicesSubTotal: {
 						qty: 1,
-						price: finalShippingRate,
+						price: shippingCalculation.shippingRate,
 					},
 					customer: {
 						...order.customer,
 						email: order.customer?.email ?? null,
 					},
-					services: [service(delivery_id, finalShippingRate)],
+					services: [service(delivery_id, shippingCalculation.shippingRate)],
 					custom_attrs: {
 						...order.custom_attrs,
-						shippingRate: finalShippingRate,
-						originalShippingRate: shippingRate,
-						shippingTax: finalShippingTaxes,
+						shippingRate: shippingCalculation.shippingRate,
+						originalShippingRate: shippingCalculation.originalShippingRate,
+						shippingTax: shippingCalculation.shippingTax,
 						freeShippingApplied: freeShippingApplies,
 						deliveryInstructions: values.deliveryInstructions || "",
 					},
@@ -371,18 +366,18 @@ const useSaveShippingForm = ({
 				if (total) {
 					const updatedTotal = {
 						...total,
-						price: totalOrderPrice,
+						price: shippingCalculation.totalOrderPrice,
 						tax: {
 							...total.tax,
 							shipping: {
 								...total.tax.shipping,
-								shippingTaxes: finalShippingTaxes.toString(),
+								shippingTaxes: shippingCalculation.shippingTax.toString(),
 							} as any,
-							totalTaxAmount: totalOrderTaxes,
+							totalTaxAmount: shippingCalculation.totalOrderTaxes,
 						},
 						servicesSubTotal: {
 							...total.servicesSubTotal,
-							price: finalShippingRate,
+							price: shippingCalculation.shippingRate,
 						},
 					};
 
@@ -417,7 +412,7 @@ export default function ShippingForm({
 	const items = useAppSelector((state) => state.app.items ?? []);
 	const regularItems = ordersRegularItems(items);
 	const hasRegularItems = regularItems.length > 0;
-	const {onSubmit} = useSaveShippingForm({shippingPage, hasRegularItems});
+	const hasDropShipItems = ordersDropShippingItems(items).length > 0;
 	const {t} = useTranslation();
 	const initialValues = useFormInitialValues(shippingPage);
 	const cartItemHasTickets = useCartHasTickets();
@@ -427,6 +422,12 @@ export default function ShippingForm({
 		data: deliveryTimes,
 	} = useDeliveryTimes({
 		returnTimeForTodayAndTwoDaysFromNow: false,
+	});
+	const {onSubmit} = useSaveShippingForm({
+		shippingPage,
+		regularDeliveryOptions: deliveryTimes?.times,
+		hasRegularItems,
+		hasDropShipItems,
 	});
 	const nextDayHelperText = deliveryTimes?.isNextDay
 		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
