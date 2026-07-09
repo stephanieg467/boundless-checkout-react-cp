@@ -397,6 +397,43 @@ describe("PayHQ", () => {
 		);
 	});
 
+	it("preserves user-edited billing fields when unchanged checkout order data is cloned", async () => {
+		const user = userEvent.setup();
+		const getPaymentToken = jest.fn().mockResolvedValue({
+			payment_token: "payment-token-1",
+		});
+		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
+			getPaymentToken,
+		}));
+
+		const {rerender} = render(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() => expect(createPaymentInstance).toHaveBeenCalled());
+
+		const firstNameField = screen.getByRole("textbox", {name: /first name/i});
+		expect(firstNameField).toHaveValue("Original");
+
+		await user.clear(firstNameField);
+		await user.type(firstNameField, "Customer Override");
+		expect(firstNameField).toHaveValue("Customer Override");
+
+		const clonedOrder = JSON.parse(JSON.stringify(order));
+		mockState = {app: {order: clonedOrder, items, total}};
+		mockCheckoutData = {order: clonedOrder, items, total};
+
+		rerender(
+			<PayHQSubmitHarness createPaymentInstance={createPaymentInstance} />,
+		);
+
+		await waitFor(() =>
+			expect(screen.getByRole("textbox", {name: /first name/i})).toHaveValue(
+				"Customer Override",
+			),
+		);
+	});
+
 	it("refreshes billing fields and sale payload when the checkout order changes", async () => {
 		const user = userEvent.setup();
 		const getPaymentToken = jest.fn().mockResolvedValue({

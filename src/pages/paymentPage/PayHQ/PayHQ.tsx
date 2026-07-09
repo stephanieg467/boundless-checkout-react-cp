@@ -278,6 +278,36 @@ function getPaymentAddressDefaults(
 	};
 }
 
+function getPaymentBillingDefaults(
+	order?: ICheckoutData["order"],
+): PaymentBillingFields {
+	const {customer} = order ?? {};
+	const {first_name: firstName, last_name: lastName, email} = customer ?? {};
+
+	return {
+		firstName: firstName ?? "",
+		lastName: lastName ?? "",
+		email: email ?? "",
+		...getPaymentAddressDefaults(order),
+	};
+}
+
+function getPaymentBillingDefaultsSignature(
+	fields: PaymentBillingFields,
+): string {
+	return JSON.stringify([
+		fields.firstName,
+		fields.lastName,
+		fields.email,
+		fields.address1,
+		fields.address2,
+		fields.city,
+		fields.country,
+		fields.postalCode,
+		fields.province,
+	]);
+}
+
 const missingCheckoutSessionMessage =
 	"Unable to start payment because checkout session data is missing. Please refresh and try again.";
 const genericPaymentFailureMessage =
@@ -581,24 +611,35 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	const order = propOrder || appState.order;
 	const items = propItems || appState.items;
 
+	const paymentBillingDefaults = getPaymentBillingDefaults(order);
+	const paymentBillingDefaultsSignature = getPaymentBillingDefaultsSignature(
+		paymentBillingDefaults,
+	);
+
 	const hasInitialized = useRef(false);
 	const submitInFlightRef = useRef(false);
 	const paymentApprovedRef = useRef(false);
+	const latestPaymentBillingDefaultsRef = useRef(paymentBillingDefaults);
+	const syncedPaymentBillingDefaultsSignatureRef = useRef(
+		paymentBillingDefaultsSignature,
+	);
 	const requiredPaymentFieldRefs = useRef<
 		Partial<Record<RequiredPaymentField, RequiredPaymentFieldElement | null>>
 	>({});
+	latestPaymentBillingDefaultsRef.current = paymentBillingDefaults;
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [firstName, setFirstName] = useState(order?.customer?.first_name ?? "");
-	const [lastName, setLastName] = useState(order?.customer?.last_name ?? "");
-	const [email, setEmail] = useState(order?.customer?.email ?? "");
-	const initialAddressFields = getPaymentAddressDefaults(order);
-	const [address1, setAddress1] = useState(initialAddressFields.address1);
-	const [address2, setAddress2] = useState(initialAddressFields.address2);
-	const [city, setCity] = useState(initialAddressFields.city);
-	const [country, setCountry] = useState(initialAddressFields.country);
-	const [postalCode, setPostalCode] = useState(initialAddressFields.postalCode);
-	const [province, setProvince] = useState(initialAddressFields.province);
+	const [firstName, setFirstName] = useState(paymentBillingDefaults.firstName);
+	const [lastName, setLastName] = useState(paymentBillingDefaults.lastName);
+	const [email, setEmail] = useState(paymentBillingDefaults.email);
+	const [address1, setAddress1] = useState(paymentBillingDefaults.address1);
+	const [address2, setAddress2] = useState(paymentBillingDefaults.address2);
+	const [city, setCity] = useState(paymentBillingDefaults.city);
+	const [country, setCountry] = useState(paymentBillingDefaults.country);
+	const [postalCode, setPostalCode] = useState(
+		paymentBillingDefaults.postalCode,
+	);
+	const [province, setProvince] = useState(paymentBillingDefaults.province);
 	const [requiredPaymentFieldErrors, setRequiredPaymentFieldErrors] =
 		useState<RequiredPaymentFieldErrors>({});
 	const countryOptions = useMemo(
@@ -617,23 +658,26 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	);
 
 	useEffect(() => {
-		const addressDefaults = getPaymentAddressDefaults(order);
-		setFirstName(order?.customer?.first_name ?? "");
-		setLastName(order?.customer?.last_name ?? "");
-		setEmail(order?.customer?.email ?? "");
-		setAddress1(addressDefaults.address1);
-		setAddress2(addressDefaults.address2);
-		setCity(addressDefaults.city);
-		setCountry(addressDefaults.country);
-		setPostalCode(addressDefaults.postalCode);
-		setProvince(addressDefaults.province);
-	}, [
-		order,
-		order?.customer?.first_name,
-		order?.customer?.last_name,
-		order?.customer?.email,
-		order?.customer?.addresses,
-	]);
+		if (
+			syncedPaymentBillingDefaultsSignatureRef.current ===
+			paymentBillingDefaultsSignature
+		) {
+			return;
+		}
+
+		syncedPaymentBillingDefaultsSignatureRef.current =
+			paymentBillingDefaultsSignature;
+		const defaults = latestPaymentBillingDefaultsRef.current;
+		setFirstName(defaults.firstName);
+		setLastName(defaults.lastName);
+		setEmail(defaults.email);
+		setAddress1(defaults.address1);
+		setAddress2(defaults.address2);
+		setCity(defaults.city);
+		setCountry(defaults.country);
+		setPostalCode(defaults.postalCode);
+		setProvince(defaults.province);
+	}, [paymentBillingDefaultsSignature]);
 
 	useEffect(() => {
 		if (
