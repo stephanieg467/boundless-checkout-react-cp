@@ -445,7 +445,7 @@ export default function ShippingForm({
 				const {delivery_id} = values;
 
 				return (
-					<Form className={"bdl-shipping-form"} noValidate>
+					<Form className={"bdl-shipping-form"}>
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}

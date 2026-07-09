@@ -80,40 +80,39 @@ jest.mock("./shippingForm/DeliverySelector", () => {
 
 jest.mock("./shippingForm/AddressesFields", () => {
 	const {useFormikContext} = require("formik");
+	const requiredAddressFields = [
+		{field: "first_name", label: "first name"},
+		{field: "last_name", label: "last name"},
+		{field: "address_line_1", label: "address line 1"},
+		{field: "zip", label: "zip"},
+		{field: "city", label: "city"},
+		{field: "state", label: "state"},
+	];
 
 	return function MockAddressesFields() {
 		const {values, handleChange} = useFormikContext();
+		const renderRequiredFields = (prefix: string, labelPrefix: string) =>
+			requiredAddressFields.map(({field, label}) => {
+				const id = `${prefix.replace("_address", "")}-${field.replaceAll("_", "-")}`;
+
+				return (
+					<div key={`${prefix}.${field}`}>
+						<label htmlFor={id}>{`${labelPrefix} ${label}`}</label>
+						<input
+							id={id}
+							name={`${prefix}.${field}`}
+							required
+							value={values[prefix]?.[field] ?? ""}
+							onChange={handleChange}
+						/>
+					</div>
+				);
+			});
 
 		return (
 			<div>
-				<label htmlFor="shipping-first-name">Shipping first name</label>
-				<input
-					id="shipping-first-name"
-					name="shipping_address.first_name"
-					value={values.shipping_address?.first_name ?? ""}
-					onChange={handleChange}
-				/>
-				<label htmlFor="shipping-last-name">Shipping last name</label>
-				<input
-					id="shipping-last-name"
-					name="shipping_address.last_name"
-					value={values.shipping_address?.last_name ?? ""}
-					onChange={handleChange}
-				/>
-				<label htmlFor="billing-first-name">Billing first name</label>
-				<input
-					id="billing-first-name"
-					name="billing_address.first_name"
-					value={values.billing_address?.first_name ?? ""}
-					onChange={handleChange}
-				/>
-				<label htmlFor="billing-last-name">Billing last name</label>
-				<input
-					id="billing-last-name"
-					name="billing_address.last_name"
-					value={values.billing_address?.last_name ?? ""}
-					onChange={handleChange}
-				/>
+				{renderRequiredFields("shipping_address", "Shipping")}
+				{renderRequiredFields("billing_address", "Billing")}
 			</div>
 		);
 	};
@@ -196,6 +195,44 @@ const shippingPage = () => ({
 	},
 });
 
+const fillRequiredShippingAddressFields = (
+	overrides: Partial<
+		Record<
+			"first_name" | "last_name" | "address_line_1" | "zip" | "city" | "state",
+			string
+		>
+	> = {},
+) => {
+	const values = {
+		first_name: "Jane",
+		last_name: "Customer",
+		address_line_1: "123 Main St",
+		zip: "V2A 1A1",
+		city: "Penticton",
+		state: "BC",
+		...overrides,
+	};
+
+	fireEvent.change(screen.getByLabelText("Shipping first name"), {
+		target: {value: values.first_name},
+	});
+	fireEvent.change(screen.getByLabelText("Shipping last name"), {
+		target: {value: values.last_name},
+	});
+	fireEvent.change(screen.getByLabelText("Shipping address line 1"), {
+		target: {value: values.address_line_1},
+	});
+	fireEvent.change(screen.getByLabelText("Shipping zip"), {
+		target: {value: values.zip},
+	});
+	fireEvent.change(screen.getByLabelText("Shipping city"), {
+		target: {value: values.city},
+	});
+	fireEvent.change(screen.getByLabelText("Shipping state"), {
+		target: {value: values.state},
+	});
+};
+
 describe("ShippingForm checkout address persistence", () => {
 	beforeEach(() => {
 		mockDispatch.mockClear();
@@ -272,9 +309,15 @@ describe("ShippingForm checkout address persistence", () => {
 
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
 
-		fireEvent.click(
-			screen.getByRole("button", {name: "shippingForm.continueToPayment"}),
-		);
+		fillRequiredShippingAddressFields();
+
+		const submitButton = screen.getByRole("button", {
+			name: "shippingForm.continueToPayment",
+		});
+		const form = submitButton.closest("form");
+		if (!form) throw new Error("Expected continue button to be inside a form");
+
+		fireEvent.submit(form);
 
 		expect(await screen.findByText("Delivery time is required")).toBeInTheDocument();
 		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
@@ -285,6 +328,7 @@ describe("ShippingForm checkout address persistence", () => {
 
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
 
+		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
 			target: {value: "10:00 AM"},
 		});
@@ -380,11 +424,9 @@ describe("ShippingForm checkout address persistence", () => {
 	it("persists submitted shipping names and keeps billing names from the billing form", async () => {
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
 
-		fireEvent.change(screen.getByLabelText("Shipping first name"), {
-			target: {value: "Submitted"},
-		});
-		fireEvent.change(screen.getByLabelText("Shipping last name"), {
-			target: {value: "Recipient"},
+		fillRequiredShippingAddressFields({
+			first_name: "Submitted",
+			last_name: "Recipient",
 		});
 		fireEvent.change(screen.getByLabelText("Billing first name"), {
 			target: {value: "Billing"},
