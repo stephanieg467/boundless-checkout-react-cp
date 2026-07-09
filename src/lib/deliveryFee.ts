@@ -82,6 +82,7 @@ export const calculateCheckoutShippingTotals = ({
 	dropShipOptions?: DeliveryTimeOption[];
 }) => {
 	let shippingRate = "0.00";
+	let originalShippingRate = "0.00";
 	let shippingTax = 0;
 
 	if (deliveryId === DELIVERY_ID) {
@@ -95,10 +96,12 @@ export const calculateCheckoutShippingTotals = ({
 			dropShipOptions,
 		});
 		shippingRate = requiresFee ? DELIVERY_COST : "0.00";
+		originalShippingRate = shippingRate;
 		shippingTax = requiresFee ? DELIVERY_TAX : 0;
 	} else if (deliveryId === SHIPPING_DELIVERY_ID) {
 		const freeShippingApplies = qualifiesForFreeShipping(total);
 		shippingRate = freeShippingApplies ? "0.00" : SHIPPING_COST;
+		originalShippingRate = SHIPPING_COST;
 		shippingTax = freeShippingApplies ? 0 : SHIPPING_TAX;
 	}
 
@@ -115,7 +118,7 @@ export const calculateCheckoutShippingTotals = ({
 
 	return {
 		shippingRate,
-		originalShippingRate: shippingRate,
+		originalShippingRate,
 		shippingTax,
 		totalOrderTaxes,
 		totalOrderPrice,

@@ -264,6 +264,29 @@ describe("delivery fee calculation", () => {
     });
   });
 
+  it("keeps the original Shipping amount when a qualifying subtotal receives free shipping", () => {
+    const result = calculateTotals({
+      deliveryId: SHIPPING_DELIVERY_ID,
+      total: {itemsSubTotal: {price: "100.00"}} as ITotal,
+      hasRegularItems: true,
+      hasDropShipItems: true,
+      order: {
+        tax_amount: "1.30",
+        custom_attrs: {shippingTax: 0.3},
+        delivery_time: feeRequired.label,
+        drop_ship_delivery_time: dropShipFeeRequired.label,
+      },
+    });
+
+    expect(result).toMatchObject({
+      shippingRate: "0.00",
+      originalShippingRate: SHIPPING_COST,
+      shippingTax: 0,
+      totalOrderPrice: "101.00",
+    });
+    expect(Number(result.totalOrderTaxes)).toBeCloseTo(1);
+  });
+
   it("subtracts the previous custom_attrs.shippingTax before adding the new shipping tax", () => {
     const result = calculateTotals({
       order: {
