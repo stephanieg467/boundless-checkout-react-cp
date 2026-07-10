@@ -229,6 +229,7 @@ export default function DeliveryDetailsForm() {
 									: ""
 							}
 							formikProps={formikProps}
+							showDeliveryFor={true}
 						>
 							{renderDeliveryTimeOptions(
 								hasDropShipTimes(deliveryTimes)

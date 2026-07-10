@@ -45,12 +45,14 @@ export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 	helperText,
 	children,
 	formikProps,
+	showDeliveryFor = false
 }: {
 	items?: CovaCartItem[];
 	field: string;
 	helperText: string;
 	children: React.ReactNode;
 	formikProps: FormikProps<TFormValues>;
+	showDeliveryFor?: boolean;
 }) {
 	const styles = {
 		"& .MuiFormHelperText-root": {
@@ -61,7 +63,7 @@ export function DeliveryTimeSelector<TFormValues extends FormikValues>({
 
 	return (
 		<Box sx={{mb: 2}}>
-			{items && (
+			{items && showDeliveryFor && (
 				<>
 					<Typography variant="subtitle1" sx={{mb: 1, fontWeight: "bold"}}>
 						{"Delivery for:"}
