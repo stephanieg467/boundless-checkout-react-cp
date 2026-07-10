@@ -95,51 +95,41 @@ describe("DeliverySelector fee copy", () => {
 		expect(screen.getByText(paidDeliveryFeeCopy)).toBeInTheDocument();
 	});
 
-	it("lists one fee-free delivery time when one available regular slot is fee-free", () => {
-		renderDeliverySelector({
+	it.each([
+		{
+			name: "one available regular slot is fee-free",
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm", applyDeliveryFee: true},
 			],
-		});
-
-		expect(
-			screen.getByText(
-				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am`,
-			),
-		).toBeInTheDocument();
-	});
-
-	it("lists multiple fee-free delivery times when some available regular slots are fee-free", () => {
-		renderDeliverySelector({
+		},
+		{
+			name: "some available regular slots are fee-free",
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm", applyDeliveryFee: true},
 				{label: "12pm - 1pm", applyDeliveryFee: false},
 			],
-		});
-
-		expect(
-			screen.getByText(
-				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am, 12pm - 1pm`,
-			),
-		).toBeInTheDocument();
-	});
-
-	it("lists only explicitly fee-free delivery times when another slot is missing applyDeliveryFee", () => {
-		renderDeliverySelector({
+		},
+		{
+			name: "a slot missing applyDeliveryFee counts as paid",
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm"},
 			],
-		});
+		},
+	])(
+		"shows select-time-slots free-delivery copy when $name",
+		({deliveryTimeOptions}) => {
+			renderDeliverySelector({deliveryTimeOptions});
 
-		expect(
-			screen.getByText(
-				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am`,
-			),
-		).toBeInTheDocument();
-	});
+			expect(
+				screen.getByText(
+					`Delivery fee: $${DELIVERY_COST} — free delivery available on select time slots`,
+				),
+			).toBeInTheDocument();
+		},
+	);
 
 	it("shows free Delivery copy when all available regular slots are fee-free", () => {
 		renderDeliverySelector({

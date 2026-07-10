@@ -42,21 +42,21 @@ const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 };
 
 const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
-	const feeFreeSlotLabels = Array.isArray(deliveryTimeOptions)
-		? deliveryTimeOptions
-				.filter((option) => option.applyDeliveryFee === false)
-				.map((option) => option.label)
-		: [];
+	const feeFreeSlotCount = Array.isArray(deliveryTimeOptions)
+		? deliveryTimeOptions.filter(
+				(option) => option.applyDeliveryFee === false,
+			).length
+		: 0;
 
-	if (feeFreeSlotLabels.length === 0) {
+	if (feeFreeSlotCount === 0) {
 		return `Delivery fee: $${DELIVERY_COST}`;
 	}
 
-	if (feeFreeSlotLabels.length === deliveryTimeOptions?.length) {
+	if (feeFreeSlotCount === deliveryTimeOptions?.length) {
 		return "Free delivery";
 	}
 
-	return `Delivery fee: $${DELIVERY_COST}. No delivery fee for ${feeFreeSlotLabels.join(", ")}`;
+	return `Delivery fee: $${DELIVERY_COST} — free delivery available on select time slots`;
 };
 
 const DeliveryDetails = ({
