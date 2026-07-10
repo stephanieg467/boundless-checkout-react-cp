@@ -12,7 +12,7 @@ import {qualifiesForFreeShipping} from "./shipping";
 const DELIVERY_TAX = 0.2;
 const SHIPPING_TAX = 0.3;
 
-export const findDeliveryTimeOptionByLabel = (
+const findDeliveryTimeOptionByLabel = (
 	options: DeliveryTimeOption[] | undefined,
 	label: string | undefined,
 ): DeliveryTimeOption | undefined => {

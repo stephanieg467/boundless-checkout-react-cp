@@ -67,7 +67,7 @@ const renderDeliverySelector = ({
 };
 
 describe("DeliverySelector fee copy", () => {
-	const paidOrConditionalDeliveryFeeCopy = `Delivery fee: $${DELIVERY_COST} for certain delivery time slots`;
+	const paidDeliveryFeeCopy = `Delivery fee: $${DELIVERY_COST}`;
 
 	it.each([
 		{
@@ -79,31 +79,69 @@ describe("DeliverySelector fee copy", () => {
 			deliveryTimeOptions: [],
 		},
 		{
-			name: "available regular slots include an explicit paid slot",
+			name: "available regular slots are explicitly paid",
 			deliveryTimeOptions: [
-				{label: "10am - 11am", applyDeliveryFee: false},
+				{label: "10am - 11am", applyDeliveryFee: true},
 				{label: "11am - 12pm", applyDeliveryFee: true},
 			],
 		},
 		{
-			name: "available regular slots include a slot missing applyDeliveryFee, defaulting to paid",
+			name: "available regular slots are missing applyDeliveryFee, defaulting to paid",
+			deliveryTimeOptions: [{label: "10am - 11am"}, {label: "11am - 12pm"}],
+		},
+	])("shows base Delivery fee copy when $name", ({deliveryTimeOptions}) => {
+		renderDeliverySelector({deliveryTimeOptions});
+
+		expect(screen.getByText(paidDeliveryFeeCopy)).toBeInTheDocument();
+	});
+
+	it("lists one fee-free delivery time when one available regular slot is fee-free", () => {
+		renderDeliverySelector({
+			deliveryTimeOptions: [
+				{label: "10am - 11am", applyDeliveryFee: false},
+				{label: "11am - 12pm", applyDeliveryFee: true},
+			],
+		});
+
+		expect(
+			screen.getByText(
+				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am`,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("lists multiple fee-free delivery times when some available regular slots are fee-free", () => {
+		renderDeliverySelector({
+			deliveryTimeOptions: [
+				{label: "10am - 11am", applyDeliveryFee: false},
+				{label: "11am - 12pm", applyDeliveryFee: true},
+				{label: "12pm - 1pm", applyDeliveryFee: false},
+			],
+		});
+
+		expect(
+			screen.getByText(
+				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am, 12pm - 1pm`,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("lists only explicitly fee-free delivery times when another slot is missing applyDeliveryFee", () => {
+		renderDeliverySelector({
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
 				{label: "11am - 12pm"},
 			],
-		},
-	])(
-		"shows conditional Delivery fee copy when $name",
-		({deliveryTimeOptions}) => {
-			renderDeliverySelector({deliveryTimeOptions});
+		});
 
-			expect(
-				screen.getByText(paidOrConditionalDeliveryFeeCopy),
-			).toBeInTheDocument();
-		},
-	);
+		expect(
+			screen.getByText(
+				`Delivery fee: $${DELIVERY_COST}. No delivery fee for 10am - 11am`,
+			),
+		).toBeInTheDocument();
+	});
 
-	it("shows fee-free Delivery copy when all available regular slots are fee-free", () => {
+	it("shows free Delivery copy when all available regular slots are fee-free", () => {
 		renderDeliverySelector({
 			deliveryTimeOptions: [
 				{label: "10am - 11am", applyDeliveryFee: false},
@@ -111,11 +149,7 @@ describe("DeliverySelector fee copy", () => {
 			],
 		});
 
-		expect(
-			screen.getByText(
-				"Delivery fee: $0.00 for available delivery time slots",
-			),
-		).toBeInTheDocument();
+		expect(screen.getByText("Free delivery")).toBeInTheDocument();
 	});
 
 	it("does not show order-over-$100 free-shipping messaging for local Delivery", () => {
