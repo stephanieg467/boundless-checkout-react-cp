@@ -359,7 +359,9 @@ describe("ShippingForm checkout address persistence", () => {
 		});
 
 		expect(
-			within(deliveryTimeSelector).getByRole("option", {name: "ASAP"}),
+			within(deliveryTimeSelector).getByRole("option", {
+				name: `ASAP — $${DELIVERY_COST} delivery fee`,
+			}),
 		).toBeInTheDocument();
 	});
 
