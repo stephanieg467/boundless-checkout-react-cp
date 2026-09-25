@@ -21,6 +21,16 @@ const formatCents = (cents: number): string =>
 	currency(cents, {fromCents: true}).toString();
 
 /**
+ * Rounds a computed cent amount half up. The one-epsilon relative nudge absorbs
+ * float noise that lands a half-cent tie just below .5 (55.00 at 0.7% computes
+ * to 38.49999999999999 cents) without lifting genuinely smaller fractions.
+ * @param cents Unrounded cent amount.
+ * @returns Nearest integer cents.
+ */
+const roundCents = (cents: number): number =>
+	Math.round(cents + cents * Number.EPSILON);
+
+/**
  * Validates a cart line and returns its base amount in cents.
  * @param item Original line with selected base price and quantity.
  * @returns Rounded line amount in cents.
@@ -121,9 +131,7 @@ export const allocateCouponDiscount = (
 	);
 	const requestedDiscountCents =
 		coupon.type === "Percent"
-			? currency(eligibleCents, {fromCents: true})
-					.multiply(couponValue)
-					.divide(100).intValue
+			? roundCents((eligibleCents * couponValue) / 100)
 			: currency(couponValue).intValue;
 	const discountCents = Math.min(requestedDiscountCents, eligibleCents);
 

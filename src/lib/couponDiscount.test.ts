@@ -52,6 +52,31 @@ describe("allocateCouponDiscount", () => {
 		).toBeCloseTo(83.18);
 	});
 
+	it.each<[string, CovaCartItem[], string, string[], string, string]>([
+		["15 cents at 3.3%", [item("A", 0.15)], "3.3", ["0.15"], "0.00", "0.15"],
+		["10.00 at 3.0495%", [item("A", 10)], "3.0495", ["9.70"], "0.30", "9.70"],
+		["55.00 at 0.7% (38.4999… float noise)", [item("A", 55)], "0.7", ["54.61"], "0.39", "54.61"],
+		["50.00 at 1.13% (56.4999… float noise)", [item("A", 50)], "1.13", ["49.43"], "0.57", "49.43"],
+		["27.32 at 0.0183% (0.499956 cents)", [item("A", 27.32)], "0.0183", ["27.32"], "0.00", "27.32"],
+		[
+			"10.00 at 3.05% rounding the half cent up",
+			[item("A", 6), item("B", 4)],
+			"3.05",
+			["5.81", "3.88"],
+			"0.31",
+			"9.69",
+		],
+	])(
+		"rounds a fractional percentage once for %s",
+		(_label, items, percent, totals, discount, subtotal) => {
+			const result = allocateCouponDiscount(items, coupon(percent, "Percent"));
+
+			expect(result.items.map(({total}) => total)).toEqual(totals);
+			expect(result.discountAmount).toBe(discount);
+			expect(result.merchandiseSubtotal).toBe(subtotal);
+		},
+	);
+
 	it("allocates a fixed coupon proportionally", () => {
 		const result = allocateCouponDiscount(
 			[item("A", 10), item("B", 20)],
