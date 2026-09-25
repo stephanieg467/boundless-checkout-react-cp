@@ -22,12 +22,9 @@ import {
 	setLocalStorageCheckoutData,
 } from "../../hooks/checkoutData";
 import {getOrderTaxes} from "../../lib/taxes";
-import {
-	cartPromotionItems,
-	covaProductPrice,
-	isPromotionItem,
-} from "../../lib/products";
+import {isPromotionItem} from "../../lib/products";
 import {getCartOrRetrieve, setCart} from "../../hooks/getCartOrRetrieve";
+import {allocateCouponDiscount} from "../../lib/couponDiscount";
 import {ITotal} from "boundless-api-client";
 import {useQuery} from "@tanstack/react-query";
 import {useCustomer} from "../../hooks/useCustomer";
@@ -150,59 +147,26 @@ export default function CartDiscountForm() {
 			setSubmitting(false);
 			return;
 		}
-		const cartPromoItems = cartPromotionItems(cart);
-		let discount =
-			coupon.type === "Percent"
-				? Number(total.itemsSubTotal.price) * (Number(coupon.value) / 100)
-				: Number(coupon.value);
-
-		const cartPromoItemsSubtotal = cartPromoItems.reduce(
-			(accumulator, currentValue) => accumulator + Number(currentValue.total),
-			0
-		);
-		const subTotalWithoutPromoItems =
-			Number(total.itemsSubTotal.price) - cartPromoItemsSubtotal;
-		if (cartPromoItems.length > 0 && coupon.type === "Percent") {
-			discount = subTotalWithoutPromoItems * (Number(coupon.value) / 100);
+		const originalCart = order.custom_attrs.originalCart ?? cart;
+		if (!originalCart.items) {
+			setErrors({code: "Unable to apply coupon"});
+			setSubmitting(false);
+			return;
 		}
-		const discountValue = subTotalWithoutPromoItems < discount ? subTotalWithoutPromoItems : discount;
 
+		let allocation: ReturnType<typeof allocateCouponDiscount>;
+		try {
+			allocation = allocateCouponDiscount(originalCart.items, coupon);
+		} catch {
+			setErrors({code: "Unable to apply coupon"});
+			setSubmitting(false);
+			return;
+		}
+
+		const {items: discountedCartItems, discountAmount, merchandiseSubtotal} =
+			allocation;
 		const promise = Promise.resolve().then(async () => {
-			const discountedCartItems = cart.items!.map((item) => {
-				if (isPromotionItem(item.product)) {
-					return {
-						...item,
-					};
-				}
-				const product = item.product;
-				const finalPrice = covaProductPrice(product);
-				const roundedPrice = Number.parseFloat(Number(finalPrice).toFixed(2));
-				let lineDollarAmount = roundedPrice * item.qty;
-				if (discount > 0) {
-					const originalLineDollarAmount = lineDollarAmount;
-					if (originalLineDollarAmount < discount) {
-						lineDollarAmount = 0;
-						discount = discount - originalLineDollarAmount;
-					} else {
-						lineDollarAmount -= discount;
-						discount = 0;
-					}
-				}
-				return {
-					...item,
-					product: {
-						...item.product,
-						couponPrice: (lineDollarAmount / item.qty).toFixed(2),
-					},
-					total:
-						lineDollarAmount > 0 ? Number(lineDollarAmount.toFixed(2)) : 0,
-				};
-			});
-
-			const newSubTotal = discountedCartItems.reduce(
-				(acc, item) => acc + Number(item.total || 0),
-				0
-			);
+			const newSubTotal = merchandiseSubtotal;
 			const shippingTaxes = total.tax.shipping?.shippingTaxes;
 			const newOrderTaxes = await getOrderTaxes(discountedCartItems);
 			const totalOrderTaxes = (
@@ -233,7 +197,7 @@ export default function CartDiscountForm() {
 						value: coupon.value,
 					},
 				],
-				discount_for_order: discountValue,
+				discount_for_order: discountAmount,
 				total_price: totalOrderPrice,
 				tax_amount: totalOrderTaxes,
 				tax_calculations: {
@@ -243,7 +207,7 @@ export default function CartDiscountForm() {
 						...order.tax_calculations?.itemsSubTotal,
 						price: newSubTotal,
 					},
-					discount: discountValue.toString(),
+					discount: discountAmount,
 					tax: {
 						...order.tax_calculations?.tax,
 						totalTaxAmount: totalOrderTaxes,
@@ -251,8 +215,9 @@ export default function CartDiscountForm() {
 				} as unknown as ITotal,
 				custom_attrs: {
 					...order.custom_attrs,
-					originalCart: cart,
-					originalSubTotalPrice: total.itemsSubTotal.price,
+					originalCart,
+					originalSubTotalPrice:
+						order.custom_attrs.originalSubTotalPrice ?? total.itemsSubTotal.price,
 				},
 			} as unknown as IOrderWithCustmAttr;
 
@@ -262,9 +227,9 @@ export default function CartDiscountForm() {
 					price: totalOrderPrice,
 					itemsSubTotal: {
 						...total.itemsSubTotal,
-						price: newSubTotal.toString(),
+						price: newSubTotal,
 					},
-					discount: discountValue.toString(),
+					discount: discountAmount,
 					tax: {
 						...total.tax,
 						totalTaxAmount: totalOrderTaxes,
