@@ -25,7 +25,6 @@ export interface CovaProduct {
 	Name: string;
 	ShortDescription: string;
 	LongDescription: string;
-	HeroShotAssetId: string;
 	HeroShotUri: string;
 	SupplierSkus: Array<{
 		SKU: string;
@@ -82,19 +81,10 @@ export interface CovaProduct {
 	discountedPrice?: string;
 	couponPrice?: string;
 	discount?: number;
-	CreatedDateUtc: string;
 	UpdatedDateUtc: string;
-	ApplicableTaxRates: Array<string>;
 	taxTotal?: string;
-	ClassificationTreeId: number;
-	ManufacturerId: null | number;
-	Manufacturer: null | string;
 	MSRP: null | number;
 	MSRPCurrencyCode: null | string;
-	CompanyLevelRegularPrice: {
-		Price: number;
-		SalePrices: Array<any>;
-	};
 }
 
 export interface CleanedCovaProduct
