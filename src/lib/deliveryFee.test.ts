@@ -323,6 +323,29 @@ describe("delivery fee calculation", () => {
     expect(Number(result.totalOrderTaxes)).toBeCloseTo(1);
   });
 
+  it("charges Shipping when the allocated coupon subtotal crosses below the free-shipping threshold", () => {
+    const originalSubtotal = calculateTotals({
+      deliveryId: SHIPPING_DELIVERY_ID,
+      total: {itemsSubTotal: {price: "103.97"}} as ITotal,
+    });
+    const allocatedSubtotal = calculateTotals({
+      deliveryId: SHIPPING_DELIVERY_ID,
+      total: {itemsSubTotal: {price: "83.18"}} as ITotal,
+    });
+
+    expect(originalSubtotal).toMatchObject({
+      shippingRate: "0.00",
+      originalShippingRate: SHIPPING_COST,
+      shippingTax: 0,
+    });
+    expect(allocatedSubtotal).toMatchObject({
+      shippingRate: SHIPPING_COST,
+      originalShippingRate: SHIPPING_COST,
+      shippingTax: 0.3,
+      totalOrderPrice: "90.48",
+    });
+  });
+
   it("subtracts the previous custom_attrs.shippingTax before adding the new shipping tax", () => {
     const result = calculateTotals({
       order: {
