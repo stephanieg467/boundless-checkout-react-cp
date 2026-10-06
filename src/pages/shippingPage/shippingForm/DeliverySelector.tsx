@@ -17,7 +17,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
 import type {DeliveryTimeOption} from "../../../lib/deliveryTimes";
-import {DELIVERY_COST, SHIPPING_COST} from "../../../constants";
+import {SHIPPING_COST} from "../../../constants";
 
 const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -48,16 +48,40 @@ const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
 			).length
 		: 0;
 
+	const feeCopy = "Delivery fee is based on driving distance and confirmed after your address is entered.";
 	if (feeFreeSlotCount === 0) {
-		return `Delivery fee: $${DELIVERY_COST}`;
+		return feeCopy;
 	}
 
 	if (feeFreeSlotCount === deliveryTimeOptions?.length) {
-		return "Free delivery";
+		return `${feeCopy} Free delivery available on all time slots.`;
 	}
 
-	return `Delivery fee: $${DELIVERY_COST} — free delivery available on select time slots`;
+	return `${feeCopy} Free delivery available on select time slots.`;
 };
+
+const FeeCopy = ({isFree, children}: {isFree: boolean; children: React.ReactNode}) => (
+	<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+		{isFree ? (
+			<>
+				<span style={{textDecoration: "line-through", color: "#999"}}>
+					{children}
+				</span>
+				<span
+					style={{
+						color: "#4a7c4d",
+						fontWeight: "bold",
+						marginLeft: "8px",
+					}}
+				>
+					FREE SHIPPING (Order over $100)
+				</span>
+			</>
+		) : (
+			children
+		)}
+	</Typography>
+);
 
 const DeliveryDetails = ({
 	delivery,
@@ -86,31 +110,14 @@ const DeliveryDetails = ({
 				{details}
 			</Typography>
 			{delivery.title === "Delivery" && (
-				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+				<FeeCopy isFree={freeShippingApplies}>
 					{deliveryFeeCopy}
-				</Typography>
+					<br />
+					Free delivery on orders over $100
+				</FeeCopy>
 			)}
 			{delivery.title === "Shipping" && (
-				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-					{freeShippingApplies ? (
-						<>
-							<span style={{textDecoration: "line-through", color: "#999"}}>
-								{`Shipping fee: $${SHIPPING_COST}`}
-							</span>
-							<span
-								style={{
-									color: "#4a7c4d",
-									fontWeight: "bold",
-									marginLeft: "8px",
-								}}
-							>
-								FREE SHIPPING (Order over $100)
-							</span>
-						</>
-					) : (
-						`Shipping fee: $${SHIPPING_COST}`
-					)}
-				</Typography>
+				<FeeCopy isFree={freeShippingApplies}>{`Shipping fee: $${SHIPPING_COST}`}</FeeCopy>
 			)}
 		</Box>
 	);

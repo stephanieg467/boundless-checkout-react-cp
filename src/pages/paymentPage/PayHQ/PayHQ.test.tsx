@@ -347,22 +347,22 @@ describe("PayHQ", () => {
 		expect(screen.queryByRole("button", {name: /^pay$/i})).not.toBeInTheDocument();
 
 		await user.clear(screen.getByLabelText(/first name/i));
-		await user.type(screen.getByLabelText(/first name/i), " Ada ");
+		await user.paste(" Ada ");
 		const emailField = screen.getByLabelText(/email/i);
 		expect(emailField).toHaveValue("original@example.com");
 
 		await user.clear(screen.getByLabelText(/last name/i));
-		await user.type(screen.getByLabelText(/last name/i), " Lovelace ");
+		await user.paste(" Lovelace ");
 		await user.clear(emailField);
-		await user.type(emailField, " ada@example.com ");
+		await user.paste(" ada@example.com ");
 		await user.clear(screen.getByLabelText(/address 1/i));
-		await user.type(screen.getByLabelText(/address 1/i), " 456 Oak Ave ");
+		await user.paste(" 456 Oak Ave ");
 		await user.clear(screen.getByLabelText(/address 2/i));
-		await user.type(screen.getByLabelText(/address 2/i), " Suite 12 ");
+		await user.paste(" Suite 12 ");
 		await user.clear(screen.getByLabelText(/city/i));
-		await user.type(screen.getByLabelText(/city/i), " Victoria ");
+		await user.paste(" Victoria ");
 		await user.clear(screen.getByLabelText(/postal code/i));
-		await user.type(screen.getByLabelText(/postal code/i), " V8W 1A1 ");
+		await user.paste(" V8W 1A1 ");
 		await user.click(screen.getByRole("button", {name: /external payment submit/i}));
 
 		await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(

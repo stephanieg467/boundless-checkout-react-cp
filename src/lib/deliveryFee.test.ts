@@ -1,12 +1,12 @@
 import type {ITotal} from "boundless-api-client";
 import {
-  DELIVERY_COST,
   DELIVERY_ID,
   SELF_PICKUP_ID,
   SHIPPING_COST,
   SHIPPING_DELIVERY_ID,
 } from "../constants";
 import type {IOrderWithCustmAttr} from "../types/Order";
+import type {StoredDeliveryQuote} from "./deliveryQuote";
 import {
   calculateCheckoutShippingTotals,
   selectedDeliveryTimesRequireFee,
@@ -17,7 +17,7 @@ type TestOrder = {
   tax_amount: string;
   delivery_time?: string;
   drop_ship_delivery_time?: string;
-  custom_attrs?: {shippingTax?: number | string};
+  custom_attrs?: {shippingTax?: number | string; deliveryQuote?: StoredDeliveryQuote};
 };
 
 const feeRequired: DeliveryTimeOption = {
@@ -40,7 +40,7 @@ const dropShipFeeFree: DeliveryTimeOption = {
 const defaultOrder: TestOrder = {
   tax_amount: "1.00",
   delivery_time: feeRequired.label,
-  custom_attrs: {},
+  custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: 1}},
 };
 const defaultTotal = {itemsSubTotal: {price: "20.00"}} as ITotal;
 const defaultRegularOptions = [feeRequired, feeFree];
@@ -72,7 +72,11 @@ const calculateTotals = ({
   order: orderOverrides = {},
   ...overrides
 }: CalculateTotalsOverrides = {}) => {
-  const order = {...defaultOrder, ...orderOverrides};
+  const order = {
+    ...defaultOrder,
+    ...orderOverrides,
+    custom_attrs: {...defaultOrder.custom_attrs, ...orderOverrides.custom_attrs},
+  };
 
   return calculateCheckoutShippingTotals({
     deliveryId: DELIVERY_ID,
@@ -89,15 +93,16 @@ const calculateTotals = ({
 };
 
 describe("delivery fee calculation", () => {
-  it("requires the $4 Delivery fee when the selected option applies the fee", () => {
+  it("charges the quoted $6 zone fee and proportional tax for a paid slot", () => {
     expect(deliveryFeeApplies({deliveryTime: feeRequired.label})).toBe(true);
 
     const result = calculateTotals({
       order: {delivery_time: feeRequired.label},
     });
 
-    expect(result.shippingRate).toBe(DELIVERY_COST);
-    expect(result.shippingTax).toBe(0.2);
+    expect(result.shippingRate).toBe("6.00");
+    expect(result.shippingTax).toBe(0.3);
+    expect(result.freeShippingApplied).toBe(false);
   });
 
   it("waives the Delivery fee when the selected option is fee-free", () => {
@@ -109,6 +114,42 @@ describe("delivery fee calculation", () => {
 
     expect(result.shippingRate).toBe("0.00");
     expect(result.shippingTax).toBe(0);
+    expect(result.originalShippingRate).toBe("6.00");
+    expect(result.freeShippingApplied).toBe(true);
+  });
+
+  it.each([
+    ["4.00", 0.2],
+    ["6.50", 0.33],
+  ])("calculates rounded 5%% tax from the quoted %s fee", (fee, shippingTax) => {
+    expect(calculateTotals({
+      order: {custom_attrs: {deliveryQuote: {fee, zoneLabel: "Delivery zone", quotedAt: 1}}},
+    })).toMatchObject({shippingRate: fee, originalShippingRate: fee, shippingTax});
+  });
+
+  it.each(["100.00", "125.00"])("waives Delivery for a %s subtotal without losing the quote fee", (price) => {
+    expect(calculateTotals({total: {itemsSubTotal: {price}} as ITotal})).toMatchObject({
+      shippingRate: "0.00", originalShippingRate: "6.00", shippingTax: 0, freeShippingApplied: true,
+    });
+  });
+
+  it("charges Delivery again when the discounted subtotal falls below $100", () => {
+    expect(calculateTotals({total: {itemsSubTotal: {price: "99.99"}} as ITotal})).toMatchObject({
+      shippingRate: "6.00", shippingTax: 0.3, freeShippingApplied: false,
+    });
+  });
+
+  it.each(["20.00", "100.00"])("refuses to price a missing quote even at subtotal %s", (price) => {
+    expect(() => calculateTotals({
+      order: {custom_attrs: {deliveryQuote: undefined}, delivery_time: feeFree.label},
+      total: {itemsSubTotal: {price}} as ITotal,
+    })).toThrow("Delivery quote is required");
+  });
+
+  it("refuses malformed persisted pricing rather than returning NaN totals", () => {
+    expect(() => calculateTotals({
+      order: {custom_attrs: {deliveryQuote: {fee: "not a price", zoneLabel: "Naramata", quotedAt: 1}}},
+    })).toThrow("Delivery quote fee is invalid");
   });
 
   it("defaults to applying the fee when metadata is missing or the selected label is unmatched", () => {
@@ -127,7 +168,7 @@ describe("delivery fee calculation", () => {
         order: {delivery_time: missingMetadata.label},
         regularOptions: [missingMetadata],
       }).shippingRate,
-    ).toBe(DELIVERY_COST);
+    ).toBe("6.00");
 
     expect(
       deliveryFeeApplies({
@@ -140,7 +181,7 @@ describe("delivery fee calculation", () => {
         order: {delivery_time: "unlisted option"},
         regularOptions: [feeFree],
       }).shippingRate,
-    ).toBe(DELIVERY_COST);
+    ).toBe("6.00");
   });
 
   it("uses only delivery_time for a regular-only cart", () => {
@@ -211,12 +252,14 @@ describe("delivery fee calculation", () => {
         },
       });
 
-      expect(result.shippingRate).toBe(DELIVERY_COST);
+      expect(result).toMatchObject({
+        shippingRate: "6.00", shippingTax: 0.3, freeShippingApplied: false,
+      });
     },
   );
 
   it.each([
-    {applyDeliveryFee: true, expectedRate: DELIVERY_COST, expectedShippingTax: 0.2},
+    {applyDeliveryFee: true, expectedRate: "6.00", expectedShippingTax: 0.3},
     {applyDeliveryFee: false, expectedRate: "0.00", expectedShippingTax: 0},
   ])(
     "treats ASAP as a regular delivery option label for mixed carts when applyDeliveryFee is $applyDeliveryFee",
@@ -318,6 +361,7 @@ describe("delivery fee calculation", () => {
       shippingRate: "0.00",
       originalShippingRate: SHIPPING_COST,
       shippingTax: 0,
+      freeShippingApplied: true,
       totalOrderPrice: "101.00",
     });
     expect(Number(result.totalOrderTaxes)).toBeCloseTo(1);
@@ -337,6 +381,7 @@ describe("delivery fee calculation", () => {
       shippingRate: "0.00",
       originalShippingRate: SHIPPING_COST,
       shippingTax: 0,
+      freeShippingApplied: true,
     });
     expect(allocatedSubtotal).toMatchObject({
       shippingRate: SHIPPING_COST,
@@ -355,7 +400,7 @@ describe("delivery fee calculation", () => {
       },
     });
 
-    expect(Number(result.totalOrderTaxes)).toBeCloseTo(1.4);
-    expect(result.totalOrderPrice).toBe("25.40");
+    expect(Number(result.totalOrderTaxes)).toBeCloseTo(1.5);
+    expect(result.totalOrderPrice).toBe("27.50");
   });
 });

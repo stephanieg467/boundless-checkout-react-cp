@@ -133,7 +133,7 @@ const useSaveDeliveryDetails = () => {
 				shippingRate: calculation.shippingRate,
 				originalShippingRate: calculation.originalShippingRate,
 				shippingTax: calculation.shippingTax,
-				freeShippingApplied: false,
+				freeShippingApplied: calculation.freeShippingApplied,
 			},
 		} as unknown as IOrderWithCustmAttr;
 		const updatedTotal = {
@@ -218,6 +218,11 @@ export default function DeliveryDetailsForm() {
 					<Typography variant="h5" sx={{mb: 2}}>
 						{"Delivery details"}
 					</Typography>
+					{isDelivery && order?.custom_attrs?.deliveryQuote && (
+						<Typography variant="body1" sx={{mb: 2}}>
+							{`Delivery zone: ${order.custom_attrs.deliveryQuote.zoneLabel}`}
+						</Typography>
+					)}
 
 					{hasDropShipItems && isDelivery && (
 						<DeliveryTimeSelector
@@ -237,6 +242,7 @@ export default function DeliveryDetailsForm() {
 									: undefined,
 								loadingDeliveryTimes,
 								errorLoadingDeliveryTimes,
+								order?.custom_attrs?.deliveryQuote?.fee,
 							)}
 						</DeliveryTimeSelector>
 					)}

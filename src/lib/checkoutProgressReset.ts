@@ -9,6 +9,7 @@ const shippingCustomAttrKeys = [
 	"shippingTax",
 	"freeShippingApplied",
 	"deliveryInstructions",
+	"deliveryQuote",
 ];
 
 const removeKeys = <T extends object>(

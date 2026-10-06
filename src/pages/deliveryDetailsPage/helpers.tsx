@@ -1,5 +1,4 @@
 import {Box, Typography, TextField} from "@mui/material";
-import {DELIVERY_COST} from "../../constants";
 import {fieldAttrs} from "../../lib/formUtils";
 import {CovaCartItem} from "../../types/cart";
 import {FormikProps, FormikValues} from "formik";
@@ -7,15 +6,19 @@ import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
 
 export const getDeliveryTimeOptionText = (
 	option: DeliveryTimeOption,
+	quoteFee?: string,
 ): string =>
 	option.applyDeliveryFee === false
 		? `${option.label} — Free delivery`
-		: `${option.label} — $${DELIVERY_COST} delivery fee`;
+		: quoteFee !== undefined
+			? `${option.label} — $${quoteFee} delivery fee`
+			: option.label;
 
 export const renderDeliveryTimeOptions = (
 	times: DeliveryTimeOption[] | undefined,
 	isLoading: boolean,
 	hasError: boolean,
+	quoteFee?: string,
 ) => (
 	<>
 		<option value=""></option>
@@ -26,7 +29,7 @@ export const renderDeliveryTimeOptions = (
 		) : !hasError && times ? (
 			times.map((option) => (
 				<option key={option.label} value={option.label}>
-					{getDeliveryTimeOptionText(option)}
+					{getDeliveryTimeOptionText(option, quoteFee)}
 				</option>
 			))
 		) : (

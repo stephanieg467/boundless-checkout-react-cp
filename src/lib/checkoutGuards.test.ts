@@ -16,6 +16,7 @@ import {
 	isContactStepComplete,
 	isShippingStepComplete,
 } from "./checkoutGuards";
+import {CHECKOUT_WINDOW_MS} from "./deliveryQuote";
 
 const requiredContactFields = ["id", "first_name", "last_name", "email", "phone", "dob"] as const;
 const requiredAddressFields = ["first_name", "last_name", "address_line_1", "city", "state", "zip"] as const;
@@ -94,7 +95,7 @@ const orderWith = (overrides: Partial<IOrderWithCustmAttr> = {}): IOrderWithCust
 	customer: completeCustomer(),
 	services: [pickupService()],
 	tax_calculations: null,
-	custom_attrs: {},
+	custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now()}},
 	paid_at: null,
 	...overrides,
 });
@@ -155,6 +156,7 @@ describe("checkout guards", () => {
 					orderWith({
 						services: [pickupService()],
 						customer: completeCustomer({addresses: []}),
+						custom_attrs: {},
 					}),
 				),
 			).toBe(true);
@@ -219,6 +221,67 @@ describe("checkout guards", () => {
 					),
 				).toBe(true);
 			});
+		});
+
+		it.each([
+			{label: "no quote", quote: undefined, complete: false},
+			{label: "a 9-hour-old quote", quote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now() - 9 * 60 * 60 * 1000}, complete: false},
+			{label: "a malformed fee", quote: {fee: "invalid", zoneLabel: "15–30 km", quotedAt: Date.now()}, complete: false},
+			{label: "a missing zone label", quote: {fee: "6.00", quotedAt: Date.now()}, complete: false},
+			{label: "a fresh quote", quote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now()}, complete: true},
+		])("requires a valid fresh Delivery quote ($label)", ({quote, complete}) => {
+			const order = orderWith({
+				services: [deliveryService()],
+				customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
+				custom_attrs: {deliveryQuote: quote} as IOrderWithCustmAttr["custom_attrs"],
+			});
+
+			expect(isShippingStepComplete(order)).toBe(complete);
+		});
+
+		it("expires the Delivery quote at exactly the 8-hour checkout cutoff", () => {
+			const now = Date.now();
+			const clock = jest.spyOn(Date, "now").mockReturnValue(now);
+			try {
+				const order = orderWith({
+					services: [deliveryService()],
+					customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
+					custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: now - CHECKOUT_WINDOW_MS + 1}},
+				});
+				expect(isShippingStepComplete(order)).toBe(true);
+				order.custom_attrs!.deliveryQuote!.quotedAt -= 1;
+				expect(isShippingStepComplete(order)).toBe(false);
+			} finally {
+				clock.mockRestore();
+			}
+		});
+
+		it.each([
+			{title: "Delivery", delivery: {...DELIVERY_INFO, title: "Unknown"}},
+			{title: "Unknown", delivery: DELIVERY_INFO},
+		])("requires a quote when Delivery is recognized by title fallback (%j)", ({title, delivery}) => {
+			const order = orderWith({
+				services: [selectedService(-1, title, delivery)],
+				customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
+				custom_attrs: {},
+			});
+			expect(isShippingStepComplete(order)).toBe(false);
+			order.custom_attrs = {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now()}};
+			expect(isShippingStepComplete(order)).toBe(true);
+		});
+
+		it.each([
+			{method: "Self Pickup", serviceFactory: pickupService},
+			{method: "Shipping", serviceFactory: shippingService},
+		])("does not require a quote for $method", ({serviceFactory}) => {
+			const order = orderWith({
+				services: [serviceFactory()],
+				customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
+				custom_attrs: {},
+			});
+			expect(isShippingStepComplete(order)).toBe(true);
+			order.custom_attrs = {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now() - 9 * 60 * 60 * 1000}};
+			expect(isShippingStepComplete(order)).toBe(true);
 		});
 
 		it("requires an existing billing address to have all required address fields", () => {

@@ -1,14 +1,22 @@
 import React from "react";
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
 import {
-	DELIVERY_COST,
 	DELIVERY_ID,
 	SELF_PICKUP_ID,
 	SHIPPING_COST,
 	SHIPPING_DELIVERY_ID,
 } from "../../constants";
 import {TCheckoutStep} from "../../types/common";
+import {requestDeliveryQuote} from "../../lib/deliveryQuote";
+import type {DeliveryQuoteResponse} from "../../lib/deliveryQuote";
+
+jest.mock("../../lib/deliveryQuote", () => ({
+	...jest.requireActual("../../lib/deliveryQuote"),
+	requestDeliveryQuote: jest.fn(),
+}));
+const mockRequestDeliveryQuote = jest.mocked(requestDeliveryQuote);
+const originalFetch = global.fetch;
 
 (globalThis as any).React = React;
 
@@ -115,6 +123,7 @@ jest.mock("./shippingForm/AddressesFields", () => {
 		{field: "first_name", label: "first name"},
 		{field: "last_name", label: "last name"},
 		{field: "address_line_1", label: "address line 1"},
+		{field: "address_line_2", label: "unit"},
 		{field: "zip", label: "zip"},
 		{field: "city", label: "city"},
 		{field: "state", label: "state"},
@@ -132,7 +141,7 @@ jest.mock("./shippingForm/AddressesFields", () => {
 						<input
 							id={id}
 							name={`${prefix}.${field}`}
-							required
+							required={field !== "address_line_2"}
 							value={values[prefix]?.[field] ?? ""}
 							onChange={handleChange}
 						/>
@@ -296,6 +305,10 @@ describe("ShippingForm checkout address persistence", () => {
 		mockDispatch.mockClear();
 		mockSetLocalStorageCheckoutData.mockClear();
 		mockDeliveryTimes = defaultDeliveryTimes;
+		mockRequestDeliveryQuote.mockReset();
+		mockRequestDeliveryQuote.mockResolvedValue({
+			status: "ok", fee: "6.00", zoneLabel: "Naramata", distanceKm: 20,
+		});
 
 		const order = staleOrder();
 		mockState = {
@@ -313,6 +326,10 @@ describe("ShippingForm checkout address persistence", () => {
 		};
 		mockState.app.items = [cartItem(false)];
 		mockCheckoutData = {order, total: checkoutTotal()};
+	});
+
+	afterEach(() => {
+		global.fetch = originalFetch;
 	});
 
 	const setCheckoutOrder = (
@@ -360,9 +377,28 @@ describe("ShippingForm checkout address persistence", () => {
 
 		expect(
 			within(deliveryTimeSelector).getByRole("option", {
-				name: `ASAP — $${DELIVERY_COST} delivery fee`,
+				name: "ASAP",
 			}),
 		).toBeInTheDocument();
+	});
+
+	it("hides an old saved quote from slot prices while editing a Delivery address", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(false)], {
+			orderOverrides: {
+				custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
+			},
+		});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
+		const selector = screen.getByRole("combobox", {name: /delivery time/i});
+		expect(within(selector).getByRole("option", {name: "10:00 AM"})).toBeInTheDocument();
+		expect(within(selector).getByRole("option", {name: "12:00 PM — Free delivery"})).toBeInTheDocument();
+		expect(selector).not.toHaveTextContent("$6.00");
+
+		fillRequiredShippingAddressFields({city: "Naramata", zip: "V0H 1N0"});
+		await waitFor(() => expect(screen.getByLabelText("Shipping city")).toHaveValue("Naramata"));
+		expect(selector).not.toHaveTextContent("$6.00");
+		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -454,7 +490,19 @@ describe("ShippingForm checkout address persistence", () => {
 
 		const persisted = await continueToPayment();
 
-		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+		expectPersistedShippingFee(persisted, "6.00", 0.3);
+		expect(persisted.order.custom_attrs.originalShippingRate).toBe("6.00");
+		expect(persisted.order.custom_attrs.deliveryQuote).toEqual({
+			fee: "6.00", zoneLabel: "Naramata", quotedAt: expect.any(Number),
+		});
+		expect(persisted.order.custom_attrs.freeShippingApplied).toBe(false);
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledWith({
+			street: "123 Main St", unit: "", city: "Penticton", province: "BC", postalCode: "V2A 1A1",
+		});
+		expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({
+			type: "app/setCurrentStep", payload: TCheckoutStep.paymentMethod,
+		}));
 	});
 
 	it("persists and prices paid ASAP Delivery like any fee-bearing delivery-time option", async () => {
@@ -471,7 +519,7 @@ describe("ShippingForm checkout address persistence", () => {
 		const persisted = await continueToPayment();
 
 		expect(persisted.order.delivery_time).toBe("ASAP");
-		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+		expectPersistedShippingFee(persisted, "6.00", 0.3);
 	});
 
 	it("waives the Delivery fee for fee-free ASAP Delivery", async () => {
@@ -504,6 +552,8 @@ describe("ShippingForm checkout address persistence", () => {
 		const persisted = await continueToPayment();
 
 		expectPersistedShippingFee(persisted, "0.00", 0);
+		expect(persisted.order.custom_attrs.freeShippingApplied).toBe(true);
+		expect(persisted.order.custom_attrs.originalShippingRate).toBe("6.00");
 	});
 
 	it("defaults to the Delivery fee when the selected regular delivery time label is unmatched", async () => {
@@ -525,7 +575,7 @@ describe("ShippingForm checkout address persistence", () => {
 		const persisted = await continueToPayment();
 
 		expect(persisted.order.delivery_time).toBe("Unlisted regular time");
-		expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+		expectPersistedShippingFee(persisted, "6.00", 0.3);
 	});
 
 	it("keeps Pickup free even when stale delivery-time metadata would otherwise require a fee", async () => {
@@ -622,9 +672,232 @@ describe("ShippingForm checkout address persistence", () => {
 
 			const persisted = await continueToPayment();
 
-			expectPersistedShippingFee(persisted, DELIVERY_COST, 0.2);
+			expectPersistedShippingFee(persisted, "6.00", 0.3);
 		},
 	);
+
+	it("quotes a non-Penticton BC address again on every Delivery submit, never on field edits", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)], {
+			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "4.00", zoneLabel: "Old", quotedAt: Date.now()}}},
+		});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields({city: "Naramata", zip: "V0H 1N0"});
+		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
+
+		await continueToPayment();
+		fireEvent.change(screen.getByLabelText("Shipping address line 1"), {
+			target: {value: "2 New St"},
+		});
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+		await waitFor(() => expect(mockSetLocalStorageCheckoutData).toHaveBeenCalledTimes(2));
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2);
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(expect.objectContaining({
+			street: "2 New St", city: "Naramata", postalCode: "V0H 1N0",
+		}));
+	});
+
+	it("rejects a non-BC Delivery postal code before requesting a quote", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields({zip: "T2P 1A1"});
+		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
+		fireEvent.submit(button.closest("form")!);
+		await waitFor(() => expect(button).not.toBeDisabled());
+		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{status: "out_of_range", maxKm: 30} as const,
+		{status: "unverifiable"} as const,
+		{status: "unavailable"} as const,
+	])("blocks $status without saving, advancing, mutating the order or changing the method", async (response) => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)], {
+			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "4.00", zoneLabel: "Old", quotedAt: 1}}},
+		});
+		const originalOrder = JSON.parse(JSON.stringify(mockCheckoutData.order));
+		mockRequestDeliveryQuote.mockResolvedValue(response);
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+
+		const alert = await screen.findByRole("alert");
+		expect(alert).toHaveTextContent(response.status === "out_of_range"
+			? "Local delivery is available up to 30 km from the store. Please switch to Shipping."
+			: "We couldn't verify your delivery address.");
+		expect(screen.getByLabelText("Delivery method")).toHaveValue(String(DELIVERY_ID));
+		expect(mockCheckoutData.order).toEqual(originalOrder);
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", {name: "shippingForm.continueToPayment"})).not.toBeDisabled();
+	});
+
+	it.each([
+		{label: "Shipping address line 1", value: "2 Edited St"},
+		{label: "Delivery method", value: String(SHIPPING_DELIVERY_ID)},
+	])("does not show an old correction when $label changes during a pending quote, but shows fresh-submit feedback", async ({label, value}) => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+		let resolveQuote!: (response: DeliveryQuoteResponse) => void;
+		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
+		mockRequestDeliveryQuote.mockImplementationOnce(() => new Promise((resolve) => {
+			resolveQuote = resolve;
+		}));
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
+		fireEvent.click(button);
+		await waitFor(() => expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1));
+		expect(button).toBeDisabled();
+
+		fireEvent.change(screen.getByLabelText(label), {target: {value}});
+		await act(async () => resolveQuote({
+			status: "needs_confirmation",
+			address: {street: "385 Martin St", city: "Naramata", province: "BC", postalCode: "V0H 1N0"},
+		}));
+
+		expect(screen.getByLabelText(label)).toHaveValue(value);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(button).not.toBeDisabled();
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+
+		fireEvent.change(screen.getByLabelText("Delivery method"), {target: {value: String(DELIVERY_ID)}});
+		fireEvent.click(button);
+		expect(await screen.findByRole("alert")).toHaveTextContent("Local delivery is available up to 30 km");
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2);
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(expect.objectContaining({
+			street: label === "Shipping address line 1" ? value : "123 Main St",
+		}));
+		expect(button).not.toBeDisabled();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+	});
+
+	it("normalizes a rejected fetch through the real quote client without crashing Formik, and allows retry", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+		mockRequestDeliveryQuote.mockImplementation(jest.requireActual("../../lib/deliveryQuote").requestDeliveryQuote);
+		const fetchMock = jest.fn().mockRejectedValueOnce(new Error("Network offline"));
+		global.fetch = fetchMock;
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+
+		expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't verify your delivery address.");
+		expect(fetchMock).toHaveBeenCalledWith("/api/deliveryQuote", expect.objectContaining({method: "POST"}));
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", {name: "shippingForm.continueToPayment"})).not.toBeDisabled();
+
+		fetchMock.mockResolvedValueOnce({
+			status: 200,
+			json: async () => ({status: "ok", fee: "6.00", zoneLabel: "Naramata", distanceKm: 20}),
+		});
+		const persisted = await continueToPayment();
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expectPersistedShippingFee(persisted, "6.00", 0.3);
+	});
+
+	it("accepts a corrected address into Formik before re-quoting and saves only after ok", async () => {
+		setCheckoutOrder(DELIVERY_ID);
+		const originalOrder = JSON.parse(JSON.stringify(mockCheckoutData.order));
+		const correctedAddress = {street: "385 Martin St", unit: "2", city: "Naramata", province: "BC", postalCode: "V0H 1N0"};
+		mockRequestDeliveryQuote.mockResolvedValueOnce({status: "needs_confirmation", address: correctedAddress});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+
+		expect(await screen.findByRole("alert")).toHaveTextContent("385 Martin St, 2, Naramata, BC, V0H 1N0");
+		expect(mockCheckoutData.order).toEqual(originalOrder);
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", {name: "Use this address"}));
+
+		await waitFor(() => expect(mockSetLocalStorageCheckoutData).toHaveBeenCalledTimes(1));
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2);
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(correctedAddress);
+		expect(screen.getByLabelText("Shipping address line 1")).toHaveValue(correctedAddress.street);
+		expect(screen.getByLabelText("Shipping unit")).toHaveValue(correctedAddress.unit);
+		expect(screen.getByLabelText("Shipping city")).toHaveValue(correctedAddress.city);
+		expect(screen.getByLabelText("Shipping state")).toHaveValue(correctedAddress.province);
+		expect(screen.getByLabelText("Shipping zip")).toHaveValue(correctedAddress.postalCode);
+		const persisted = mockSetLocalStorageCheckoutData.mock.calls[0][0];
+		expect(persisted.order.customer.addresses[0]).toEqual(expect.objectContaining({
+			first_name: "Jane", address_line_1: correctedAddress.street, address_line_2: "2", city: correctedAddress.city, zip: correctedAddress.postalCode,
+		}));
+		expect(persisted.order.delivery_time).toBe("10:00 AM");
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	it.each([
+		{label: "Shipping first name", value: "Edited"},
+		{label: "Shipping last name", value: "Edited"},
+		{label: "Shipping address line 1", value: "2 Edited St"},
+		{label: "Shipping unit", value: "3"},
+		{label: "Shipping city", value: "Naramata"},
+		{label: "Shipping state", value: "BC"},
+		{label: "Shipping zip", value: "V0H 1N0"},
+		{label: "Billing first name", value: "Edited"},
+		{label: "Delivery time", value: "12:00 PM"},
+		{label: "Delivery method", value: String(SELF_PICKUP_ID)},
+	])("clears quote feedback when $label is edited without making another quote request", async ({label, value}) => {
+		setCheckoutOrder(DELIVERY_ID);
+		mockRequestDeliveryQuote.mockResolvedValue({status: "unverifiable"});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields({state: "British Columbia"});
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+		await screen.findByRole("alert");
+
+		const field = label === "Delivery time"
+			? screen.getByRole("combobox", {name: /delivery time/i})
+			: screen.getByLabelText(label);
+		fireEvent.change(field, {target: {value}});
+		await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+	});
+
+	it("offers Shipping after a blocked quote without auto-submitting or silently switching", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+		await screen.findByRole("alert");
+		fireEvent.click(screen.getByRole("button", {name: "Switch to Shipping"}));
+
+		await waitFor(() => expect(screen.getByLabelText("Delivery method")).toHaveValue(String(SHIPPING_DELIVERY_ID)));
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		await continueToPayment();
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([SHIPPING_DELIVERY_ID, SELF_PICKUP_ID])("drops a stale quote on method %s submit without requesting another", async (deliveryId) => {
+		setCheckoutOrder(deliveryId, [cartItem(false)], {
+			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Old", quotedAt: 1}}},
+		});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		if (deliveryId === SHIPPING_DELIVERY_ID) fillRequiredShippingAddressFields();
+		const persisted = await continueToPayment();
+		expect(persisted.order.custom_attrs).not.toHaveProperty("deliveryQuote");
+		expect(mockCheckoutData.order.custom_attrs.deliveryQuote).toBeDefined();
+		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
+	});
+
+	it("stores the quoted original fee and waiver for a Delivery subtotal of $100", async () => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)], {total: checkoutTotal("100.00")});
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		const persisted = await continueToPayment();
+		expectPersistedShippingFee(persisted, "0.00", 0);
+		expect(persisted.order.custom_attrs.originalShippingRate).toBe("6.00");
+		expect(persisted.order.custom_attrs.freeShippingApplied).toBe(true);
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+	});
 
 	it("switches a paid shipping order to pickup and clears stale payment and shipping totals", async () => {
 		const paidShippingOrder = {

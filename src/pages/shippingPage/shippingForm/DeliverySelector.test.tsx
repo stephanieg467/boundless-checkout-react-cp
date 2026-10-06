@@ -3,8 +3,8 @@ import {render, screen} from "@testing-library/react";
 import {Formik} from "formik";
 import DeliverySelector from "./DeliverySelector";
 import {
-	DELIVERY_COST,
 	DELIVERY_ID,
+	DELIVERY_INFO,
 	SELF_PICKUP_ID,
 	SHIPPING_COST,
 	SHIPPING_DELIVERY_ID,
@@ -25,12 +25,7 @@ const deliveryOptions = [
 		alias: "selfPickup",
 		description: "In Store Pick Up",
 	},
-	{
-		delivery_id: DELIVERY_ID,
-		title: "Delivery",
-		alias: "delivery",
-		description: "Deliver order to your address",
-	},
+	DELIVERY_INFO,
 	{
 		delivery_id: SHIPPING_DELIVERY_ID,
 		title: "Shipping",
@@ -67,7 +62,7 @@ const renderDeliverySelector = ({
 };
 
 describe("DeliverySelector fee copy", () => {
-	const paidDeliveryFeeCopy = `Delivery fee: $${DELIVERY_COST}`;
+	const paidDeliveryFeeCopy = "Delivery fee is based on driving distance and confirmed after your address is entered.";
 
 	it.each([
 		{
@@ -89,10 +84,10 @@ describe("DeliverySelector fee copy", () => {
 			name: "available regular slots are missing applyDeliveryFee, defaulting to paid",
 			deliveryTimeOptions: [{label: "10am - 11am"}, {label: "11am - 12pm"}],
 		},
-	])("shows base Delivery fee copy when $name", ({deliveryTimeOptions}) => {
+	])("defers Delivery pricing until the address is entered when $name", ({deliveryTimeOptions}) => {
 		renderDeliverySelector({deliveryTimeOptions});
 
-		expect(screen.getByText(paidDeliveryFeeCopy)).toBeInTheDocument();
+		expect(screen.getByText(paidDeliveryFeeCopy, {exact: false})).toBeInTheDocument();
 	});
 
 	it.each([
@@ -125,7 +120,8 @@ describe("DeliverySelector fee copy", () => {
 
 			expect(
 				screen.getByText(
-					`Delivery fee: $${DELIVERY_COST} — free delivery available on select time slots`,
+					`${paidDeliveryFeeCopy} Free delivery available on select time slots.`,
+					{exact: false},
 				),
 			).toBeInTheDocument();
 		},
@@ -139,16 +135,48 @@ describe("DeliverySelector fee copy", () => {
 			],
 		});
 
-		expect(screen.getByText("Free delivery")).toBeInTheDocument();
+		expect(screen.getByText(`${paidDeliveryFeeCopy} Free delivery available on all time slots.`, {exact: false})).toBeInTheDocument();
 	});
 
-	it("does not show order-over-$100 free-shipping messaging for local Delivery", () => {
-		renderDeliverySelector({
+	it.each([
+		{
+			name: "paid delivery below the threshold",
+			itemsSubTotalPrice: "99.99",
+			qualifiesForFreeShipping: false,
+		},
+		{
+			name: "free delivery at the threshold",
 			itemsSubTotalPrice: "100.00",
-			deliveryTimeOptions: [{label: "10am - 11am", applyDeliveryFee: true}],
-		});
+			qualifiesForFreeShipping: true,
+		},
+	])(
+		"shows the Delivery subtotal waiver before quoting: $name",
+		({itemsSubTotalPrice, qualifiesForFreeShipping}) => {
+			renderDeliverySelector({
+				itemsSubTotalPrice,
+				deliveryTimeOptions: [{label: "10am - 11am", applyDeliveryFee: true}],
+			});
 
-		expect(screen.queryByText(/FREE \(Order over \$100\)/)).not.toBeInTheDocument();
+			expect(screen.getByText(paidDeliveryFeeCopy, {exact: false})).toBeInTheDocument();
+			expect(screen.getByText("Free delivery on orders over $100", {exact: false})).toBeInTheDocument();
+			expect(screen.queryByText(/Delivery fee: \$/)).not.toBeInTheDocument();
+			if (qualifiesForFreeShipping) {
+				expect(
+					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),
+				).toHaveLength(2);
+			} else {
+				expect(
+					screen.queryByText(/FREE SHIPPING \(Order over \$100\)/),
+				).not.toBeInTheDocument();
+			}
+		},
+	);
+
+	it("describes Delivery availability without a Penticton-only restriction", () => {
+		renderDeliverySelector();
+
+		expect(screen.getByText("Deliver order to your address (availability confirmed after your address is entered)")).toBeInTheDocument();
+		expect(screen.queryByText(/within Penticton/)).not.toBeInTheDocument();
 	});
 
 	it.each([
@@ -172,8 +200,8 @@ describe("DeliverySelector fee copy", () => {
 			).toBeInTheDocument();
 			if (qualifiesForFreeShipping) {
 				expect(
-					screen.getByText(/FREE SHIPPING \(Order over \$100\)/),
-				).toBeInTheDocument();
+					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),
+				).toHaveLength(2);
 			} else {
 				expect(
 					screen.queryByText(/FREE SHIPPING \(Order over \$100\)/),
