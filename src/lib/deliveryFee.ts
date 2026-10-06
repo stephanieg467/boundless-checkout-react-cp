@@ -7,6 +7,7 @@ import {
 import type {IOrderWithCustmAttr} from "../types/Order";
 import type {DeliveryTimeOption} from "./deliveryTimes";
 import {qualifiesForFreeShipping} from "./shipping";
+import {isValidFee} from "./deliveryQuote";
 
 const SHIPPING_TAX = 0.3;
 
@@ -88,7 +89,7 @@ export const calculateCheckoutShippingTotals = ({
 		const quote = order.custom_attrs?.deliveryQuote;
 		if (!quote) throw new Error("Delivery quote is required to calculate Delivery totals");
 		const fee = quote.fee;
-		if (typeof fee !== "string" || !/^\d+\.\d{2}$/.test(fee) || !Number.isFinite(Number(fee))) {
+		if (!isValidFee(fee)) {
 			throw new Error("Delivery quote fee is invalid");
 		}
 		const requiresFee = selectedDeliveryTimesRequireFee({

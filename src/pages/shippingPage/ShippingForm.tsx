@@ -70,8 +70,9 @@ function DeliveryQuoteStatus() {
 		}
 	}, [values, setStatus, submitForm]);
 
-	const quote: DeliveryQuoteResponse | undefined = status?.deliveryQuote;
-	if (!quote || quote.status === "ok") return null;
+	if (status?.deliveryQuoteValues !== values) return null;
+	const quote: DeliveryQuoteResponse = status.deliveryQuote;
+	if (quote.status === "ok") return null;
 
 	return (
 		<Alert severity="warning" sx={{mb: 2}}>
@@ -491,7 +492,7 @@ const useSaveShippingForm = ({
 		if (values.delivery_id === DELIVERY_ID) {
 			const response = await requestDeliveryQuote(toDeliveryQuoteAddress(values.shipping_address));
 			if (response.status !== "ok") {
-				formikHelpers.setStatus({deliveryQuote: response});
+				formikHelpers.setStatus({deliveryQuote: response, deliveryQuoteValues: values});
 				formikHelpers.setSubmitting(false);
 				return;
 			}

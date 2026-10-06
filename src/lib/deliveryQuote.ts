@@ -60,7 +60,7 @@ function isNonNegativeNumber(value: unknown): value is number {
 }
 
 /** @param value Untrusted fee. @returns Whether it is a non-negative CAD amount with two decimals. */
-function isValidFee(value: unknown): value is string {
+export function isValidFee(value: unknown): value is string {
 	return typeof value === "string" && /^\d+\.\d{2}$/.test(value) && Number.isFinite(Number(value));
 }
 

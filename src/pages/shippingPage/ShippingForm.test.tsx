@@ -1,5 +1,5 @@
 import React from "react";
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
 import {
 	DELIVERY_ID,
@@ -9,6 +9,7 @@ import {
 } from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 import {requestDeliveryQuote} from "../../lib/deliveryQuote";
+import type {DeliveryQuoteResponse} from "../../lib/deliveryQuote";
 
 jest.mock("../../lib/deliveryQuote", () => ({
 	...jest.requireActual("../../lib/deliveryQuote"),
@@ -730,6 +731,47 @@ describe("ShippingForm checkout address persistence", () => {
 		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
 		expect(mockDispatch).not.toHaveBeenCalled();
 		expect(screen.getByRole("button", {name: "shippingForm.continueToPayment"})).not.toBeDisabled();
+	});
+
+	it.each([
+		{label: "Shipping address line 1", value: "2 Edited St"},
+		{label: "Delivery method", value: String(SHIPPING_DELIVERY_ID)},
+	])("does not show an old correction when $label changes during a pending quote, but shows fresh-submit feedback", async ({label, value}) => {
+		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
+		let resolveQuote!: (response: DeliveryQuoteResponse) => void;
+		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
+		mockRequestDeliveryQuote.mockImplementationOnce(() => new Promise((resolve) => {
+			resolveQuote = resolve;
+		}));
+		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		fillRequiredShippingAddressFields();
+		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
+		fireEvent.click(button);
+		await waitFor(() => expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1));
+		expect(button).toBeDisabled();
+
+		fireEvent.change(screen.getByLabelText(label), {target: {value}});
+		await act(async () => resolveQuote({
+			status: "needs_confirmation",
+			address: {street: "385 Martin St", city: "Naramata", province: "BC", postalCode: "V0H 1N0"},
+		}));
+
+		expect(screen.getByLabelText(label)).toHaveValue(value);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(button).not.toBeDisabled();
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+
+		fireEvent.change(screen.getByLabelText("Delivery method"), {target: {value: String(DELIVERY_ID)}});
+		fireEvent.click(button);
+		expect(await screen.findByRole("alert")).toHaveTextContent("Local delivery is available up to 30 km");
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2);
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(expect.objectContaining({
+			street: label === "Shipping address line 1" ? value : "123 Main St",
+		}));
+		expect(button).not.toBeDisabled();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
 	});
 
 	it("normalizes a rejected fetch through the real quote client without crashing Formik, and allows retry", async () => {
