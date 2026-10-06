@@ -87,7 +87,7 @@ describe("DeliverySelector fee copy", () => {
 	])("defers Delivery pricing until the address is entered when $name", ({deliveryTimeOptions}) => {
 		renderDeliverySelector({deliveryTimeOptions});
 
-		expect(screen.getByText(paidDeliveryFeeCopy)).toBeInTheDocument();
+		expect(screen.getByText(paidDeliveryFeeCopy, {exact: false})).toBeInTheDocument();
 	});
 
 	it.each([
@@ -121,6 +121,7 @@ describe("DeliverySelector fee copy", () => {
 			expect(
 				screen.getByText(
 					`${paidDeliveryFeeCopy} Free delivery available on select time slots.`,
+					{exact: false},
 				),
 			).toBeInTheDocument();
 		},
@@ -134,18 +135,42 @@ describe("DeliverySelector fee copy", () => {
 			],
 		});
 
-		expect(screen.getByText(`${paidDeliveryFeeCopy} Free delivery available on all time slots.`)).toBeInTheDocument();
+		expect(screen.getByText(`${paidDeliveryFeeCopy} Free delivery available on all time slots.`, {exact: false})).toBeInTheDocument();
 	});
 
-	it.each(["99.99", "100.00"])("advertises the Delivery subtotal waiver before quoting at subtotal %s", (itemsSubTotalPrice) => {
-		renderDeliverySelector({
-			itemsSubTotalPrice,
-			deliveryTimeOptions: [{label: "10am - 11am", applyDeliveryFee: true}],
-		});
+	it.each([
+		{
+			name: "paid delivery below the threshold",
+			itemsSubTotalPrice: "99.99",
+			qualifiesForFreeShipping: false,
+		},
+		{
+			name: "free delivery at the threshold",
+			itemsSubTotalPrice: "100.00",
+			qualifiesForFreeShipping: true,
+		},
+	])(
+		"shows the Delivery subtotal waiver before quoting: $name",
+		({itemsSubTotalPrice, qualifiesForFreeShipping}) => {
+			renderDeliverySelector({
+				itemsSubTotalPrice,
+				deliveryTimeOptions: [{label: "10am - 11am", applyDeliveryFee: true}],
+			});
 
-		expect(screen.getByText("Free delivery on orders over $100")).toBeInTheDocument();
-		expect(screen.queryByText(/Delivery fee: \$/)).not.toBeInTheDocument();
-	});
+			expect(screen.getByText(paidDeliveryFeeCopy, {exact: false})).toBeInTheDocument();
+			expect(screen.getByText("Free delivery on orders over $100", {exact: false})).toBeInTheDocument();
+			expect(screen.queryByText(/Delivery fee: \$/)).not.toBeInTheDocument();
+			if (qualifiesForFreeShipping) {
+				expect(
+					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),
+				).toHaveLength(2);
+			} else {
+				expect(
+					screen.queryByText(/FREE SHIPPING \(Order over \$100\)/),
+				).not.toBeInTheDocument();
+			}
+		},
+	);
 
 	it("describes Delivery availability without a Penticton-only restriction", () => {
 		renderDeliverySelector();
@@ -175,8 +200,8 @@ describe("DeliverySelector fee copy", () => {
 			).toBeInTheDocument();
 			if (qualifiesForFreeShipping) {
 				expect(
-					screen.getByText(/FREE SHIPPING \(Order over \$100\)/),
-				).toBeInTheDocument();
+					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),
+				).toHaveLength(2);
 			} else {
 				expect(
 					screen.queryByText(/FREE SHIPPING \(Order over \$100\)/),

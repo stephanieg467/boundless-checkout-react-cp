@@ -60,6 +60,29 @@ const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
 	return `${feeCopy} Free delivery available on select time slots.`;
 };
 
+const FeeCopy = ({isFree, children}: {isFree: boolean; children: React.ReactNode}) => (
+	<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+		{isFree ? (
+			<>
+				<span style={{textDecoration: "line-through", color: "#999"}}>
+					{children}
+				</span>
+				<span
+					style={{
+						color: "#4a7c4d",
+						fontWeight: "bold",
+						marginLeft: "8px",
+					}}
+				>
+					FREE SHIPPING (Order over $100)
+				</span>
+			</>
+		) : (
+			children
+		)}
+	</Typography>
+);
+
 const DeliveryDetails = ({
 	delivery,
 	deliveryTimeOptions,
@@ -87,36 +110,14 @@ const DeliveryDetails = ({
 				{details}
 			</Typography>
 			{delivery.title === "Delivery" && (
-				<>
-					<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-						{deliveryFeeCopy}
-					</Typography>
-					<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-						Free delivery on orders over $100
-					</Typography>
-				</>
+				<FeeCopy isFree={freeShippingApplies}>
+					{deliveryFeeCopy}
+					<br />
+					Free delivery on orders over $100
+				</FeeCopy>
 			)}
 			{delivery.title === "Shipping" && (
-				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-					{freeShippingApplies ? (
-						<>
-							<span style={{textDecoration: "line-through", color: "#999"}}>
-								{`Shipping fee: $${SHIPPING_COST}`}
-							</span>
-							<span
-								style={{
-									color: "#4a7c4d",
-									fontWeight: "bold",
-									marginLeft: "8px",
-								}}
-							>
-								FREE SHIPPING (Order over $100)
-							</span>
-						</>
-					) : (
-						`Shipping fee: $${SHIPPING_COST}`
-					)}
-				</Typography>
+				<FeeCopy isFree={freeShippingApplies}>{`Shipping fee: $${SHIPPING_COST}`}</FeeCopy>
 			)}
 		</Box>
 	);
