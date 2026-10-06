@@ -309,7 +309,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     const tipInput = screen.getByRole("spinbutton", {name: /tip/i});
     await user.clear(tipInput);
-    await user.type(tipInput, "5");
+    await user.paste("5");
 
     await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
@@ -667,7 +667,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     const tipInput = screen.getByRole("spinbutton", {name: /tip/i});
     await user.clear(tipInput);
-    await user.type(tipInput, "15.00");
+    await user.paste("15.00");
 
     await user.click(screen.getByRole("button", {name: /^complete order$/i}));
 
@@ -801,7 +801,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
     const tipInput = screen.getByRole("spinbutton", {name: /tip/i}) as HTMLInputElement;
     await user.clear(tipInput);
-    await user.type(tipInput, "-5");
+    await user.paste("-5");
 
     await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
 
@@ -830,7 +830,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const tipInput = screen.getByRole("spinbutton", {name: /tip/i}) as HTMLInputElement;
     tipInput.removeAttribute("min");
     await user.clear(tipInput);
-    await user.type(tipInput, "-5");
+    await user.paste("-5");
     await user.tab(); // trigger blur
 
     await user.click(screen.getByRole("button", {name: /^complete order$/i}));
