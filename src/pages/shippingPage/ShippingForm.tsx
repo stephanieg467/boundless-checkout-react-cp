@@ -539,7 +539,6 @@ export default function ShippingForm({
 
 				return (
 					<Form className={"bdl-shipping-form"}>
-						<DeliveryQuoteStatus />
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}
@@ -574,6 +573,7 @@ export default function ShippingForm({
 						{!isPickUpDelivery(delivery_id, shippingPage.options.delivery) && (
 							<AddressesFields shippingPage={shippingPage} />
 						)}
+						<DeliveryQuoteStatus />
 						<Box textAlign={"end"}>
 							<Button
 								variant="contained"
