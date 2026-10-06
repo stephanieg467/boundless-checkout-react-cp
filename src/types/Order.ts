@@ -1,5 +1,6 @@
 import {ICustomer, IOrderDiscount, IOrderService, IPaymentMethod, ITotal, TPublishingStatus} from "boundless-api-client";
 import type {CovaCartItem} from "./cart";
+import type {StoredDeliveryQuote} from "../lib/deliveryQuote";
 
 
 export interface IOrderWithCustmAttr {
@@ -19,6 +20,7 @@ export interface IOrderWithCustmAttr {
 	services?: IOrderService[];
 	tax_calculations: ITotal | null;
 	custom_attrs: {
+		deliveryQuote?: StoredDeliveryQuote;
 		[key: string]: any;
 	};
 	tip?: string;

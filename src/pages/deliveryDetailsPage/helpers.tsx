@@ -1,21 +1,36 @@
 import {Box, Typography, TextField} from "@mui/material";
-import {DELIVERY_COST} from "../../constants";
 import {fieldAttrs} from "../../lib/formUtils";
 import {CovaCartItem} from "../../types/cart";
 import {FormikProps, FormikValues} from "formik";
 import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
 
+/**
+ * @param option Delivery slot to label.
+ * @param quoteFee Saved quote fee; omitted on the address step, even for previously quoted orders.
+ * @returns Slot text with a free-slot annotation or the confirmed fee when available.
+ */
 export const getDeliveryTimeOptionText = (
 	option: DeliveryTimeOption,
+	quoteFee?: string,
 ): string =>
 	option.applyDeliveryFee === false
 		? `${option.label} — Free delivery`
-		: `${option.label} — $${DELIVERY_COST} delivery fee`;
+		: quoteFee !== undefined
+			? `${option.label} — $${quoteFee} delivery fee`
+			: option.label;
 
+/**
+ * @param times Available delivery slots.
+ * @param isLoading Whether slots are loading.
+ * @param hasError Whether loading failed.
+ * @param quoteFee Saved quote fee, only supplied after the address step.
+ * @returns Select options preserving slot labels as values.
+ */
 export const renderDeliveryTimeOptions = (
 	times: DeliveryTimeOption[] | undefined,
 	isLoading: boolean,
 	hasError: boolean,
+	quoteFee?: string,
 ) => (
 	<>
 		<option value=""></option>
@@ -26,7 +41,7 @@ export const renderDeliveryTimeOptions = (
 		) : !hasError && times ? (
 			times.map((option) => (
 				<option key={option.label} value={option.label}>
-					{getDeliveryTimeOptionText(option)}
+					{getDeliveryTimeOptionText(option, quoteFee)}
 				</option>
 			))
 		) : (

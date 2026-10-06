@@ -1,8 +1,8 @@
-import React from "react";
+import React, {useEffect, useRef} from "react";
 import {IAddress, ICheckoutShippingPageData} from "boundless-api-client";
-import {Form, Formik, FormikHelpers} from "formik";
+import {Form, Formik, FormikHelpers, useFormikContext} from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
-import {Box, Button, Typography} from "@mui/material";
+import {Alert, Box, Button, Typography} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
 import {
 	IAddressFormFields,
@@ -18,9 +18,9 @@ import {
 	setCurrentStep,
 } from "../../redux/reducers/app";
 import AddressesFields from "./shippingForm/AddressesFields";
-import {isPickUpDelivery, qualifiesForFreeShipping} from "../../lib/shipping";
+import {isPickUpDelivery} from "../../lib/shipping";
 import {useTranslation} from "react-i18next";
-import {IOrderWithCustmAttr} from "../../types/Order";
+import {ICheckoutData, IOrderWithCustmAttr} from "../../types/Order";
 import {
 	DELIVERY_ID,
 	DELIVERY_INFO,
@@ -49,15 +49,76 @@ import {
 } from "../deliveryDetailsPage/helpers";
 import {calculateCheckoutShippingTotals} from "../../lib/deliveryFee";
 import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
+import {requestDeliveryQuote} from "../../lib/deliveryQuote";
+import type {DeliveryQuoteRequest, DeliveryQuoteResponse} from "../../lib/deliveryQuote";
 
-// Function to validate if postal code is a Penticton postal code
-const isPentictonPostalCode = (postalCode: string): boolean => {
-	if (!postalCode) return false;
-	// Remove spaces and convert to uppercase
-	const cleanedCode = postalCode.replace(/\s+/g, "").toUpperCase();
-	// Penticton postal codes start with V2A
-	return cleanedCode.startsWith("V2A");
-};
+/** @returns Quote feedback and actions, with correction submission deferred until Formik has updated values. */
+function DeliveryQuoteStatus() {
+	const {values, status, setStatus, setValues, setFieldValue, submitForm} =
+		useFormikContext<IShippingFormValues>();
+	const previousValues = useRef(values);
+	const correctedValuesToSubmit = useRef<IShippingFormValues | null>(null);
+
+	useEffect(() => {
+		if (previousValues.current !== values) {
+			previousValues.current = values;
+			setStatus(undefined);
+		}
+		if (correctedValuesToSubmit.current === values) {
+			correctedValuesToSubmit.current = null;
+			void submitForm();
+		}
+	}, [values, setStatus, submitForm]);
+
+	const quote: DeliveryQuoteResponse | undefined = status?.deliveryQuote;
+	if (!quote || quote.status === "ok") return null;
+
+	return (
+		<Alert severity="warning" sx={{mb: 2}}>
+			{quote.status === "needs_confirmation" ? (
+				<>
+					<Typography>Please confirm this corrected delivery address:</Typography>
+					<Typography>
+						{[quote.address.street, quote.address.unit, quote.address.city,
+							quote.address.province, quote.address.postalCode].filter(Boolean).join(", ")}
+					</Typography>
+					<Button type="button" onClick={() => {
+						const correctedValues = {
+							...values,
+							shipping_address: {
+								...(values.shipping_address ?? getEmptyAddressFields()),
+								address_line_1: quote.address.street,
+								address_line_2: quote.address.unit ?? "",
+								city: quote.address.city,
+								state: quote.address.province,
+								zip: quote.address.postalCode,
+							},
+						};
+						correctedValuesToSubmit.current = correctedValues;
+						setStatus(undefined);
+						void setValues(correctedValues, false);
+					}}>
+						Use this address
+					</Button>
+				</>
+			) : (
+				<>
+					<Typography>
+						{quote.status === "out_of_range"
+							? `Local delivery is available up to ${quote.maxKm} km from the store. Please switch to Shipping.`
+							: "We couldn't verify your delivery address. Please check the address and retry, or switch to Shipping."}
+					</Typography>
+					<Button type="button" onClick={() => {
+						setStatus(undefined);
+						void setFieldValue("delivery_id", SHIPPING_DELIVERY_ID);
+					}}>
+						Switch to Shipping
+					</Button>
+				</>
+			)}
+		</Alert>
+	);
+}
 
 // Function to validate if postal code is a British Columbia postal code
 const isBCPostalCode = (postalCode: string): boolean => {
@@ -73,11 +134,11 @@ const makeValidateShippingForm = (hasRegularItems: boolean) =>
 	(values: IShippingFormValues) => {
 		const errors: any = {};
 
-		// Validate Penticton postal code for Delivery method
+		// Validate BC postal code for Delivery method
 		if (values.delivery_id === DELIVERY_ID && values.shipping_address?.zip) {
-			if (!isPentictonPostalCode(values.shipping_address.zip)) {
+			if (!isBCPostalCode(values.shipping_address.zip)) {
 				errors["shipping_address.zip"] =
-					"Delivery is only available within Penticton, BC. Please enter a valid Penticton postal code.";
+					"Delivery is only available within British Columbia. Please enter a valid BC postal code.";
 			}
 		}
 
@@ -173,6 +234,17 @@ const getEmptyAddressFields = (
 	};
 };
 
+/** @param address Form address, possibly absent. @returns The storefront quote request fields. */
+function toDeliveryQuoteAddress(address = getEmptyAddressFields()): DeliveryQuoteRequest {
+	return {
+		street: address.address_line_1 ?? "",
+		unit: address.address_line_2 ?? "",
+		city: address.city ?? "",
+		province: address.state ?? "",
+		postalCode: address.zip ?? "",
+	};
+}
+
 const useSaveShippingForm = ({
 	shippingPage,
 	regularDeliveryOptions,
@@ -187,11 +259,18 @@ const useSaveShippingForm = ({
 	const dispatch = useAppDispatch();
 	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
 
+	/**
+	 * @param values Submitted form values.
+	 * @param formikHelpers Submission feedback helpers.
+	 * @param checkoutData Checkout data carrying an accepted quote for Delivery.
+	 * @returns The address persistence and step-advance promise.
+	 */
 	const onSubmit = (
 		values: IShippingFormValues,
 		formikHelpers: FormikHelpers<IShippingFormValues>,
+		checkoutData: ICheckoutData,
 	) => {
-		const {order, total} = getCheckoutData() || {};
+		const {order, total} = checkoutData;
 		if (!order) return;
 
 		const {
@@ -326,9 +405,6 @@ const useSaveShippingForm = ({
 					regularOptions: regularDeliveryOptions,
 				});
 
-				const freeShippingApplies =
-					delivery_id === SHIPPING_DELIVERY_ID && qualifiesForFreeShipping(total);
-
 				const updatedOrder = {
 					...order,
 					...(delivery_id === DELIVERY_ID && hasRegularItems
@@ -351,7 +427,7 @@ const useSaveShippingForm = ({
 						shippingRate: shippingCalculation.shippingRate,
 						originalShippingRate: shippingCalculation.originalShippingRate,
 						shippingTax: shippingCalculation.shippingTax,
-						freeShippingApplied: freeShippingApplies,
+						freeShippingApplied: shippingCalculation.freeShippingApplied,
 						deliveryInstructions: values.deliveryInstructions || "",
 					},
 				} as unknown as IOrderWithCustmAttr;
@@ -396,11 +472,39 @@ const useSaveShippingForm = ({
 				dispatch(setCurrentStep(nextStep));
 			});
 
-		dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
+		return dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
+	};
+
+	/**
+	 * @param values Submitted form values.
+	 * @param formikHelpers Submission feedback helpers.
+	 * @returns Saves and advances only after an accepted Delivery quote, or after a non-Delivery submit.
+	 */
+	const submitWithDeliveryQuote = async (
+		values: IShippingFormValues,
+		formikHelpers: FormikHelpers<IShippingFormValues>,
+	) => {
+		const checkoutData = getCheckoutData();
+		if (!checkoutData?.order) return;
+		const customAttrs = {...checkoutData.order.custom_attrs};
+		delete customAttrs.deliveryQuote;
+		if (values.delivery_id === DELIVERY_ID) {
+			const response = await requestDeliveryQuote(toDeliveryQuoteAddress(values.shipping_address));
+			if (response.status !== "ok") {
+				formikHelpers.setStatus({deliveryQuote: response});
+				formikHelpers.setSubmitting(false);
+				return;
+			}
+			customAttrs.deliveryQuote = {fee: response.fee, zoneLabel: response.zoneLabel, quotedAt: Date.now()};
+		}
+		return onSubmit(values, formikHelpers, {
+			...checkoutData,
+			order: {...checkoutData.order, custom_attrs: customAttrs},
+		});
 	};
 
 	return {
-		onSubmit,
+		onSubmit: submitWithDeliveryQuote,
 	};
 };
 
@@ -447,6 +551,7 @@ export default function ShippingForm({
 
 				return (
 					<Form className={"bdl-shipping-form"}>
+						<DeliveryQuoteStatus />
 						{Object.keys(formikProps.errors).length > 0 && (
 							<ExtraErrors
 								excludedFields={Object.keys(formikProps.initialValues)}

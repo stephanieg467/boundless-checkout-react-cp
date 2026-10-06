@@ -17,7 +17,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import {useAppSelector} from "../../../hooks/redux";
 import {qualifiesForFreeShipping} from "../../../lib/shipping";
 import type {DeliveryTimeOption} from "../../../lib/deliveryTimes";
-import {DELIVERY_COST, SHIPPING_COST} from "../../../constants";
+import {SHIPPING_COST} from "../../../constants";
 
 const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 	const iconSx = {
@@ -48,15 +48,16 @@ const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
 			).length
 		: 0;
 
+	const feeCopy = "Delivery fee is based on driving distance and confirmed after your address is entered.";
 	if (feeFreeSlotCount === 0) {
-		return `Delivery fee: $${DELIVERY_COST}`;
+		return feeCopy;
 	}
 
 	if (feeFreeSlotCount === deliveryTimeOptions?.length) {
-		return "Free delivery";
+		return `${feeCopy} Free delivery available on all time slots.`;
 	}
 
-	return `Delivery fee: $${DELIVERY_COST} — free delivery available on select time slots`;
+	return `${feeCopy} Free delivery available on select time slots.`;
 };
 
 const DeliveryDetails = ({
@@ -86,9 +87,14 @@ const DeliveryDetails = ({
 				{details}
 			</Typography>
 			{delivery.title === "Delivery" && (
-				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
-					{deliveryFeeCopy}
-				</Typography>
+				<>
+					<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+						{deliveryFeeCopy}
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+						Free delivery on orders over $100
+					</Typography>
+				</>
 			)}
 			{delivery.title === "Shipping" && (
 				<Typography variant="body2" color="text.secondary" sx={{mt: 1}}>

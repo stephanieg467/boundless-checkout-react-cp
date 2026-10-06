@@ -2,13 +2,12 @@ export const DELIVERY_ID = 2;
 export const SHIPPING_DELIVERY_ID = 3;
 export const SELF_PICKUP_ID = 1;
 
-export const DELIVERY_COST = "4.00";
 export const SHIPPING_COST = "6.00";
 
 export const DELIVERY_INFO = {
 	delivery_id: DELIVERY_ID,
 	title: "Delivery",
-	description: "Deliver order to your address (available within Penticton, BC)",
+	description: "Deliver order to your address (availability confirmed after your address is entered)",
 	alias: "delivery",
 	shipping_id: DELIVERY_ID,
 	shipping_config: null,

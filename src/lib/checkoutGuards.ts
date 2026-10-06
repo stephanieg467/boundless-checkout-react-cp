@@ -6,6 +6,7 @@ import {
 } from "../constants";
 import {IOrderWithCustmAttr} from "../types/Order";
 import {ICheckoutStepper, TCheckoutStep} from "../types/common";
+import {isDeliveryQuoteFresh} from "./deliveryQuote";
 
 export interface ICheckoutStepWarning {
 	step: TCheckoutStep;
@@ -95,6 +96,11 @@ export const isShippingStepComplete = (
 
 	if (!hasRequiredAddressFields(shippingAddress)) return false;
 	if (billingAddress && !hasRequiredAddressFields(billingAddress)) return false;
+
+	const isDelivery = service.service_id === DELIVERY_ID ||
+		service.serviceDelivery?.title === "Delivery" ||
+		service.serviceDelivery?.delivery?.title === "Delivery";
+	if (isDelivery && !isDeliveryQuoteFresh(order?.custom_attrs?.deliveryQuote)) return false;
 
 	return true;
 };

@@ -283,6 +283,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
   it("uses the latest persisted tipped total when completing checkout after card approval", async () => {
     const user = userEvent.setup();
     const deliveryOrder = makeOrder({
+      custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
       services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
       delivery_time: "10:00 AM",
       total_price: "100.00",
@@ -336,6 +337,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const user = userEvent.setup();
     const deliveryOrder = makeOrder({
       delivery_time: "",
+      custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
       services: [deliveryService()],
     });
 
@@ -359,6 +361,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
       ...mockCheckoutData,
       order: makeOrder({
         delivery_time: "",
+        custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
         services: [deliveryService()],
       }),
     };
@@ -369,6 +372,18 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     expect(screen.queryByText("Delivery time is required")).not.toBeInTheDocument();
     expect(mockRecordApprovedPayment).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(mockOnThankYouPage).toHaveBeenCalledTimes(1));
+  });
+
+  it("blocks payment for a restored Delivery address without a quote before contacting PayHQ", async () => {
+    const user = userEvent.setup();
+    setup({order: makeOrder({services: [deliveryService()]})});
+
+    await user.click(screen.getByRole("button", {name: /^pay and complete order$/i}));
+
+    await expectRedirectedToCheckoutStep(TCheckoutStep.shippingAddress);
+    expect(mockSubmitPayment).not.toHaveBeenCalled();
+    expect(mockRecordApprovedPayment).not.toHaveBeenCalled();
+    expect(mockOnThankYouPage).not.toHaveBeenCalled();
   });
 
   it("does not recharge when the latest persisted credit-card order is already paid", async () => {
@@ -642,6 +657,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
     const user = userEvent.setup();
     const order = makeOrder({
       payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
+      custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
       services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
       delivery_time: "10:00 AM",
       total_price: "100.00",

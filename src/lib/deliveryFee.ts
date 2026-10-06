@@ -1,6 +1,5 @@
 import {ITotal} from "boundless-api-client";
 import {
-	DELIVERY_COST,
 	DELIVERY_ID,
 	SHIPPING_COST,
 	SHIPPING_DELIVERY_ID,
@@ -9,7 +8,6 @@ import type {IOrderWithCustmAttr} from "../types/Order";
 import type {DeliveryTimeOption} from "./deliveryTimes";
 import {qualifiesForFreeShipping} from "./shipping";
 
-const DELIVERY_TAX = 0.2;
 const SHIPPING_TAX = 0.3;
 
 const findDeliveryTimeOptionByLabel = (
@@ -84,8 +82,15 @@ export const calculateCheckoutShippingTotals = ({
 	let shippingRate = "0.00";
 	let originalShippingRate = "0.00";
 	let shippingTax = 0;
+	let freeShippingApplied = false;
 
 	if (deliveryId === DELIVERY_ID) {
+		const quote = order.custom_attrs?.deliveryQuote;
+		if (!quote) throw new Error("Delivery quote is required to calculate Delivery totals");
+		const fee = quote.fee;
+		if (typeof fee !== "string" || !/^\d+\.\d{2}$/.test(fee) || !Number.isFinite(Number(fee))) {
+			throw new Error("Delivery quote fee is invalid");
+		}
 		const requiresFee = selectedDeliveryTimesRequireFee({
 			isDelivery: true,
 			hasRegularItems,
@@ -95,14 +100,15 @@ export const calculateCheckoutShippingTotals = ({
 			regularOptions,
 			dropShipOptions,
 		});
-		shippingRate = requiresFee ? DELIVERY_COST : "0.00";
-		originalShippingRate = shippingRate;
-		shippingTax = requiresFee ? DELIVERY_TAX : 0;
+		freeShippingApplied = !requiresFee || qualifiesForFreeShipping(total);
+		shippingRate = freeShippingApplied ? "0.00" : fee;
+		originalShippingRate = fee;
+		shippingTax = freeShippingApplied ? 0 : Math.round(Number(fee) * 0.05 * 100) / 100;
 	} else if (deliveryId === SHIPPING_DELIVERY_ID) {
-		const freeShippingApplies = qualifiesForFreeShipping(total);
-		shippingRate = freeShippingApplies ? "0.00" : SHIPPING_COST;
+		freeShippingApplied = qualifiesForFreeShipping(total);
+		shippingRate = freeShippingApplied ? "0.00" : SHIPPING_COST;
 		originalShippingRate = SHIPPING_COST;
-		shippingTax = freeShippingApplies ? 0 : SHIPPING_TAX;
+		shippingTax = freeShippingApplied ? 0 : SHIPPING_TAX;
 	}
 
 	let currentTaxes = Number(order.tax_amount ?? 0);
@@ -120,6 +126,7 @@ export const calculateCheckoutShippingTotals = ({
 		shippingRate,
 		originalShippingRate,
 		shippingTax,
+		freeShippingApplied,
 		totalOrderTaxes,
 		totalOrderPrice,
 	};

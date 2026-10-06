@@ -7,6 +7,7 @@ import {getCartOrRetrieve} from "../hooks/getCartOrRetrieve";
 import {getOrderTaxes} from "../lib/taxes";
 import {ordersDropShippingItems} from "../lib/products";
 import {getCheckoutStepWarning} from "../lib/checkoutGuards";
+import {DELIVERY_ID} from "../constants";
 
 jest.mock("../hooks/checkoutData", () => ({
 	getCheckoutData: jest.fn(),
@@ -484,6 +485,45 @@ describe("initCheckoutByCart", () => {
 
 		expect(appState.stepper.currentStep).toBe(TCheckoutStep.shippingAddress);
 		expect(appState.stepWarning).toEqual(getCheckoutStepWarning(TCheckoutStep.shippingAddress));
+	});
+
+	describe.each([TCheckoutStep.paymentMethod, TCheckoutStep.deliveryDetails])("restored Delivery at %s", (currentStep) => {
+		it.each([
+			{label: "missing", age: undefined, blocked: true},
+			{label: "9-hour-old", age: 9 * 60 * 60 * 1000, blocked: true},
+			{label: "fresh", age: 60 * 60 * 1000, blocked: false},
+		])("returns to shipping only when the quote is invalid ($label)", async ({age, blocked}) => {
+			(ordersDropShippingItems as jest.Mock).mockReturnValue([makeCartItem()]);
+			(getCheckoutData as jest.Mock).mockReturnValue({
+				order: makeOrder({
+					customer: completeCustomer({addresses: [{
+						type: "shipping",
+						first_name: "Jane",
+						last_name: "Doe",
+						address_line_1: "123 Main St",
+						city: "Penticton",
+						state: "BC",
+						zip: "V2A 1A1",
+					}]}),
+					services: [{service_id: DELIVERY_ID, qty: 1, total_price: "6.00"}],
+					custom_attrs: age === undefined ? {} : {
+						deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now() - age},
+					},
+				}),
+			});
+			const store = makeStore(currentStep, {
+				stepper: {
+					currentStep,
+					filledSteps: [TCheckoutStep.contactInfo, TCheckoutStep.shippingAddress, TCheckoutStep.deliveryDetails],
+					steps: [TCheckoutStep.contactInfo, TCheckoutStep.shippingAddress, TCheckoutStep.deliveryDetails, TCheckoutStep.paymentMethod],
+				},
+			});
+
+			const appState = await dispatchInitCheckout(store);
+
+			expect(appState.stepper.currentStep).toBe(blocked ? TCheckoutStep.shippingAddress : currentStep);
+			expect(appState.stepWarning).toEqual(blocked ? getCheckoutStepWarning(TCheckoutStep.shippingAddress) : null);
+		});
 	});
 
 	it("leaves currentStep unchanged when prerequisites before it are complete", async () => {

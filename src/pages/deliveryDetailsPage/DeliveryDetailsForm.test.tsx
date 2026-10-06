@@ -2,7 +2,6 @@ import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import DeliveryDetailsForm from "./DeliveryDetailsForm";
 import {
-	DELIVERY_COST,
 	DELIVERY_ID,
 	SHIPPING_COST,
 	SHIPPING_DELIVERY_ID,
@@ -74,8 +73,10 @@ const cartItem = (name: string, isDropShip: boolean) => ({
 const regularItem = cartItem("Regular product", false);
 const dropShipItem = cartItem("Drop-ship product", true);
 
+const quotedFee = "6.00";
+
 const checkoutTotalsForRate = (shippingRate: string) => {
-	const shippingTax = shippingRate === DELIVERY_COST ? 0.2 : 0;
+	const shippingTax = Math.round(Number(shippingRate) * 0.05 * 100) / 100;
 	const totalTax = 1 + shippingTax;
 
 	return {
@@ -119,7 +120,7 @@ const makeOrder = ({
 	overrides?: Record<string, any>;
 }) => {
 	const total = checkoutTotalsForRate(shippingRate);
-	const shippingTax = shippingRate === DELIVERY_COST ? 0.2 : 0;
+	const shippingTax = Math.round(Number(shippingRate) * 0.05 * 100) / 100;
 
 	return {
 		id: "order-1",
@@ -129,9 +130,10 @@ const makeOrder = ({
 		servicesSubTotal: total.servicesSubTotal,
 		custom_attrs: {
 			shippingRate,
-			originalShippingRate: shippingRate,
+			originalShippingRate: quotedFee,
 			shippingTax,
-			freeShippingApplied: false,
+			freeShippingApplied: shippingRate === "0.00",
+			deliveryQuote: {fee: quotedFee, zoneLabel: "15–30 km", quotedAt: Date.now()},
 		},
 		customer: {id: "customer-1", email: "customer@example.com"},
 		services: [deliveryService(shippingRate)],
@@ -142,7 +144,7 @@ const makeOrder = ({
 const setup = ({
 	items = [dropShipItem],
 	orderOverrides = {},
-	staleShippingRate = DELIVERY_COST,
+	staleShippingRate = quotedFee,
 	totalOverride,
 }: {
 	items?: any[];
@@ -227,8 +229,10 @@ const expectPersistedDeliveryTotals = ({
 		]),
 	);
 	expect(persisted.order.custom_attrs.shippingRate).toBe(expectedRate);
-	expect(persisted.order.custom_attrs.originalShippingRate).toBe(expectedRate);
+	expect(persisted.order.custom_attrs.originalShippingRate).toBe(quotedFee);
 	expect(persisted.order.custom_attrs.shippingTax).toBe(expectedShippingTax);
+	expect(persisted.order.custom_attrs.freeShippingApplied).toBe(expectedRate === "0.00");
+	expect(persisted.order.custom_attrs.deliveryQuote).toEqual(mockCheckoutData.order.custom_attrs.deliveryQuote);
 	expect(persisted.total.servicesSubTotal.price).toBe(expectedRate);
 	expect(persisted.total.tax.shipping.shippingTaxes).toBe(
 		expectedShippingTax.toString(),
@@ -268,10 +272,22 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 		expect(screen.queryByText("Regular product")).not.toBeInTheDocument();
 	});
 
+	it("shows the quoted zone fee on paid slots and keeps free slots free", () => {
+		setup();
+
+		expect(screen.getByText("Delivery zone: 15–30 km")).toBeInTheDocument();
+		expect(screen.getByRole("option", {
+			name: "Drop-ship fee slot — $6.00 delivery fee",
+		})).toHaveValue(dropShipFeeRequired.label);
+		expect(screen.getByRole("option", {
+			name: "Drop-ship free slot — Free delivery",
+		})).toHaveValue(dropShipFeeFree.label);
+	});
+
 	it.each([
 		{
 			selectedSlot: dropShipFeeFree.label,
-			staleShippingRate: DELIVERY_COST,
+			staleShippingRate: quotedFee,
 			expectedRate: "0.00",
 			expectedShippingTax: 0,
 			expectedTotalPrice: "11.00",
@@ -279,9 +295,9 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 		{
 			selectedSlot: dropShipFeeRequired.label,
 			staleShippingRate: "0.00",
-			expectedRate: DELIVERY_COST,
-			expectedShippingTax: 0.2,
-			expectedTotalPrice: "15.20",
+			expectedRate: quotedFee,
+			expectedShippingTax: 0.3,
+			expectedTotalPrice: "17.30",
 		},
 	])(
 		"saves drop_ship_delivery_time and recalculates drop-ship-only Delivery totals for $selectedSlot",
@@ -307,6 +323,30 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 			});
 		},
 	);
+
+	it.each([
+		{itemsSubtotal: "99.99", expectedRate: quotedFee, expectedShippingTax: 0.3, expectedTotalPrice: "107.29"},
+		{itemsSubtotal: "100.00", expectedRate: "0.00", expectedShippingTax: 0, expectedTotalPrice: "101.00"},
+	])("keeps the subtotal waiver consistent after selecting paid slots at $itemsSubtotal", async ({
+		itemsSubtotal, expectedRate, expectedShippingTax, expectedTotalPrice,
+	}) => {
+		const shippingStepTotal = checkoutTotalsForRate(expectedRate);
+		setup({
+			items: [regularItem, dropShipItem],
+			staleShippingRate: expectedRate,
+			orderOverrides: {delivery_time: regularFeeRequired.label, total_price: expectedTotalPrice},
+			totalOverride: {
+				...shippingStepTotal,
+				price: expectedTotalPrice,
+				itemsSubTotal: {price: itemsSubtotal, qty: 2},
+			},
+		});
+
+		selectDropShipTime(dropShipFeeRequired.label);
+		const persisted = await submitDeliveryDetails();
+
+		expectPersistedDeliveryTotals({persisted, expectedRate, expectedShippingTax, expectedTotalPrice});
+	});
 
 	it("does not recalculate local Delivery fees for Shipping orders", async () => {
 		const shippingTotal = {
@@ -338,6 +378,7 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 				},
 			},
 		});
+		expect(screen.queryByText(/Delivery zone:/)).not.toBeInTheDocument();
 		const originalOrder = mockCheckoutData.order;
 		const originalTotal = mockCheckoutData.total;
 
@@ -374,23 +415,23 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 		{
 			regularSlot: regularFeeRequired.label,
 			dropShipSlot: dropShipFeeFree.label,
-			expectedRate: DELIVERY_COST,
-			expectedShippingTax: 0.2,
-			expectedTotalPrice: "15.20",
+			expectedRate: quotedFee,
+			expectedShippingTax: 0.3,
+			expectedTotalPrice: "17.30",
 		},
 		{
 			regularSlot: regularFeeFree.label,
 			dropShipSlot: dropShipFeeRequired.label,
-			expectedRate: DELIVERY_COST,
-			expectedShippingTax: 0.2,
-			expectedTotalPrice: "15.20",
+			expectedRate: quotedFee,
+			expectedShippingTax: 0.3,
+			expectedTotalPrice: "17.30",
 		},
 		{
 			regularSlot: regularFeeRequired.label,
 			dropShipSlot: dropShipFeeRequired.label,
-			expectedRate: DELIVERY_COST,
-			expectedShippingTax: 0.2,
-			expectedTotalPrice: "15.20",
+			expectedRate: quotedFee,
+			expectedShippingTax: 0.3,
+			expectedTotalPrice: "17.30",
 		},
 		{
 			regularSlot: regularFeeFree.label,
@@ -418,7 +459,7 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 			setup({
 				items: [regularItem, dropShipItem],
 				orderOverrides: {delivery_time: regularSlot},
-				staleShippingRate: expectedRate === DELIVERY_COST ? "0.00" : DELIVERY_COST,
+				staleShippingRate: expectedRate === quotedFee ? "0.00" : quotedFee,
 			});
 
 			selectDropShipTime(dropShipSlot);
