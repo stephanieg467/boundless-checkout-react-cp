@@ -52,7 +52,6 @@ import type {DeliveryTimeOption} from "../../lib/deliveryTimes";
 import {requestDeliveryQuote} from "../../lib/deliveryQuote";
 import type {DeliveryQuoteRequest, DeliveryQuoteResponse} from "../../lib/deliveryQuote";
 
-/** @returns Quote feedback and actions, with correction submission deferred until Formik has updated values. */
 function DeliveryQuoteStatus() {
 	const {values, status, setStatus, setValues, setFieldValue, submitForm} =
 		useFormikContext<IShippingFormValues>();
@@ -235,7 +234,6 @@ const getEmptyAddressFields = (
 	};
 };
 
-/** @param address Form address, possibly absent. @returns The storefront quote request fields. */
 function toDeliveryQuoteAddress(address = getEmptyAddressFields()): DeliveryQuoteRequest {
 	return {
 		street: address.address_line_1 ?? "",
@@ -260,12 +258,6 @@ const useSaveShippingForm = ({
 	const dispatch = useAppDispatch();
 	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
 
-	/**
-	 * @param values Submitted form values.
-	 * @param formikHelpers Submission feedback helpers.
-	 * @param checkoutData Checkout data carrying an accepted quote for Delivery.
-	 * @returns The address persistence and step-advance promise.
-	 */
 	const onSubmit = (
 		values: IShippingFormValues,
 		formikHelpers: FormikHelpers<IShippingFormValues>,
@@ -476,11 +468,6 @@ const useSaveShippingForm = ({
 		return dispatchFormikSubmitPromise(dispatch, promise, formikHelpers);
 	};
 
-	/**
-	 * @param values Submitted form values.
-	 * @param formikHelpers Submission feedback helpers.
-	 * @returns Saves and advances only after an accepted Delivery quote, or after a non-Delivery submit.
-	 */
 	const submitWithDeliveryQuote = async (
 		values: IShippingFormValues,
 		formikHelpers: FormikHelpers<IShippingFormValues>,
