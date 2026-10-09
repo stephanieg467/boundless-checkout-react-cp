@@ -44,7 +44,6 @@
     "dist"
   ],
   "devDependencies": {
-    "@babel/cli": "^7.22.10",
     "@babel/core": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
     "@babel/preset-react": "^7.22.5",
@@ -84,9 +83,9 @@
     "rollup-plugin-import-css": "^3.3.1",
     "rollup-plugin-scss": "^4.0.0",
     "sass": "^1.49.0",
-    "stylelint": "^14.3.0",
-    "stylelint-config-sass-guidelines": "^9.0.1",
-    "stylelint-config-standard": "^24.0.0",
+    "stylelint": "^17.16.0",
+    "stylelint-config-sass-guidelines": "^13.0.0",
+    "stylelint-order": "^8.1.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.9.3"
   },
@@ -121,6 +120,11 @@
     "react-imask": "^7.6.1",
     "react-redux": "^9.2.0",
     "uuid": "^11.1.0"
+  },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "4.3.2"
+    }
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.66.9",

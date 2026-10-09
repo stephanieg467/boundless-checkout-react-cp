@@ -1,7 +1,23 @@
 {
 	"extends": "stylelint-config-sass-guidelines",
+	"plugins": ["stylelint-order"],
 	"rules": {
-		"indentation": "tab",
+		"@stylistic/indentation": "tab",
+		"@stylistic/function-parentheses-space-inside": "never",
+		"order/order": [
+			[
+				"custom-properties",
+				"dollar-variables",
+				{"type": "at-rule", "name": "extend"},
+				{"type": "at-rule", "name": "include", "hasBlock": false},
+				"declarations",
+				{"type": "at-rule", "name": "include", "hasBlock": true},
+				"rules"
+			]
+		],
+		"order/properties-alphabetical-order": true,
+		"scss/at-mixin-pattern": "^[a-z]+([a-z0-9-]+[a-z0-9]+)?$",
+		"scss/no-global-function-names": null,
 		"max-nesting-depth": 5,
 		"selector-max-compound-selectors": 5,
 		"selector-max-id": 2,
