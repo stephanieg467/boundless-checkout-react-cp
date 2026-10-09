@@ -29,7 +29,7 @@
     "test": "jest",
     "fallow": "fallow",
     "fallow:audit": "fallow audit",
-    "fallow:audit:ci": "fallow audit --gate new-only --ci --fail-on-issues --format json --quiet --explain",
+    "fallow:audit:ci": "fallow audit --base origin/master --gate new-only --ci --fail-on-issues --format json --quiet --explain",
     "fallow:audit:json": "fallow audit --format json --quiet",
     "fallow:health": "fallow health --score --hotspots --targets",
     "fallow:dead-code": "fallow dead-code",
