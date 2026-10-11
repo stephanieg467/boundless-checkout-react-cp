@@ -36,14 +36,14 @@ const getSchedule = (
 ): TimeWindow[] => {
 	return deliveryTimesData
 		? deliveryTimesData
-				.filter((slot) => slot.days.includes(weekdayName))
-				.map((slot) => ({
-					start: parseTimeStringToNumber(slot.timeStart),
-					end: parseTimeStringToNumber(slot.timeEnd),
-					applyDeliveryFee: slot.applyDeliveryFee ?? true,
-					asapDeliveryAvailable: slot.asapDeliveryAvailable ?? false,
-				}))
-				.sort((a, b) => a.start - b.start)
+			.filter((slot) => slot.days.includes(weekdayName))
+			.map((slot) => ({
+				start: parseTimeStringToNumber(slot.timeStart),
+				end: parseTimeStringToNumber(slot.timeEnd),
+				applyDeliveryFee: slot.applyDeliveryFee ?? true,
+				asapDeliveryAvailable: slot.asapDeliveryAvailable ?? false,
+			}))
+			.sort((a, b) => a.start - b.start)
 		: [];
 };
 
@@ -95,7 +95,7 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 		}
 	}
 
-	const dayMap: { [key: string]: number } = {
+	const dayMap: {[key: string]: number} = {
 		Sunday: 0,
 		Monday: 1,
 		Tuesday: 2,
@@ -233,7 +233,7 @@ const calculateSlotsForDate = (
 	const regularSchedule = getSchedule(weekdayName, deliveryTimesData);
 
 	// Exception Dates for 2026
-	const exceptionSchedules: { [key: string]: TimeWindow[] } = {
+	const exceptionSchedules: {[key: string]: TimeWindow[]} = {
 		"2026-1-22": [
 			{start: 11, end: 13, applyDeliveryFee: true, asapDeliveryAvailable: false},
 			{start: 15, end: 16, applyDeliveryFee: true, asapDeliveryAvailable: false},

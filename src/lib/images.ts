@@ -1,11 +1,11 @@
 export function getProductImg(image: IImagePartial): IImageData {
 	const {width, height, path} = image;
-	
+
 	return {
-			src: path,
-			width: width ?? undefined,
-			height: height ?? undefined,
-		};
+		src: path,
+		width: width ?? undefined,
+		height: height ?? undefined,
+	};
 }
 
 export interface IImagePartial {

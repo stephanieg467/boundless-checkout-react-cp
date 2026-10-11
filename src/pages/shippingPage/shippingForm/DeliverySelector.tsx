@@ -19,7 +19,7 @@ import {qualifiesForFreeShipping} from "../../../lib/shipping";
 import type {DeliveryTimeOption} from "../../../lib/deliveryTimes";
 import {SHIPPING_COST} from "../../../constants";
 
-const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
+const DeliveryTitle = ({delivery}: {delivery: IDelivery}) => {
 	const iconSx = {
 		height: "auto",
 		marginRight: "12px",
@@ -44,8 +44,8 @@ const DeliveryTitle = ({delivery}: { delivery: IDelivery }) => {
 const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
 	const feeFreeSlotCount = Array.isArray(deliveryTimeOptions)
 		? deliveryTimeOptions.filter(
-				(option) => option.applyDeliveryFee === false,
-			).length
+			(option) => option.applyDeliveryFee === false,
+		).length
 		: 0;
 
 	const feeCopy = "Delivery fee is based on driving distance and confirmed after your address is entered.";

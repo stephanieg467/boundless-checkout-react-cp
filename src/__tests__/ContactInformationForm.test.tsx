@@ -37,7 +37,7 @@ jest.mock("../components/CheckoutStepWarning", () => () => null);
 jest.mock("../components/ExtraErrors", () => () => null);
 
 jest.mock("@mui/x-date-pickers/DatePicker", () => {
-	const dayjsLib = require("dayjs");
+	const dayjsLib = jest.requireActual("dayjs");
 
 	return {
 		DatePicker: (props: any) => (

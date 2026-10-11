@@ -66,7 +66,7 @@ const appSlice = createSlice({
 			>
 		) {
 			setLocalStorageCheckoutData(action.payload);
-			
+
 			const {
 				items,
 				order,
@@ -87,10 +87,10 @@ const appSlice = createSlice({
 				stepWarning: stepWarning ?? null,
 			};
 		},
-		setCheckoutInited(state, action: PayloadAction<{ isInited: boolean }>) {
+		setCheckoutInited(state, action: PayloadAction<{isInited: boolean}>) {
 			state.isInited = action.payload.isInited;
 		},
-		addFilledStep(state, action: PayloadAction<{ step: TCheckoutStep }>) {
+		addFilledStep(state, action: PayloadAction<{step: TCheckoutStep}>) {
 			const {step} = action.payload;
 			const stepper = state.stepper!;
 			const completedStepIndex = stepper.steps.indexOf(step);

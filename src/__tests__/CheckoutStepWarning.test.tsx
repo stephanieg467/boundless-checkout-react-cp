@@ -1,6 +1,7 @@
 import React from "react";
 import {render, screen} from "@testing-library/react";
 import {TCheckoutStep} from "../types/common";
+import CheckoutStepWarning from "../components/CheckoutStepWarning";
 
 let mockState: any = {};
 
@@ -9,7 +10,6 @@ jest.mock("../hooks/redux", () => ({
 }));
 
 const renderCheckoutStepWarning = (step: TCheckoutStep) => {
-	const CheckoutStepWarning = require("../components/CheckoutStepWarning").default;
 	return render(<CheckoutStepWarning step={step} />);
 };
 

@@ -87,27 +87,26 @@ export interface CovaProduct {
 	MSRPCurrencyCode: null | string;
 }
 
-export interface CleanedCovaProduct
-	extends Pick<
-		CovaProduct,
-		| "ProductId"
-		| "Slug"
-		| "ClassificationId"
-		| "ClassificationName"
-		| "Name"
-		| "ShortDescription"
-		| "LongDescription"
-		| "HeroShotUri"
-		| "ProductSpecifications"
-		| "Assets"
-		| "Availability"
-		| "Prices"
-		| "discountedPrice"
-		| "taxTotal"
-		| "couponPrice"
-		| "discount"
-		| "UpdatedDateUtc"
-	> {}
+export type CleanedCovaProduct = Pick<
+	CovaProduct,
+	| "ProductId"
+	| "Slug"
+	| "ClassificationId"
+	| "ClassificationName"
+	| "Name"
+	| "ShortDescription"
+	| "LongDescription"
+	| "HeroShotUri"
+	| "ProductSpecifications"
+	| "Assets"
+	| "Availability"
+	| "Prices"
+	| "discountedPrice"
+	| "taxTotal"
+	| "couponPrice"
+	| "discount"
+	| "UpdatedDateUtc"
+>;
 
 export interface Cart {
 	id: string;

@@ -37,8 +37,8 @@ export default function LoadingLine() {
 	return (
 		<div className={"bdl-loading-line"}>
 			<LinearProgress variant="determinate"
-											value={isFinished ? 0 : progress*100}
-											className={clsx("bdl-loading-line__linear", {"bdl-loading-line__linear_finished": isFinished})}
+				value={isFinished ? 0 : progress*100}
+				className={clsx("bdl-loading-line__linear", {"bdl-loading-line__linear_finished": isFinished})}
 			/>
 			{!isFinished && <CircularProgress className={"bdl-loading-line__circular"} size={20}/>}
 		</div>

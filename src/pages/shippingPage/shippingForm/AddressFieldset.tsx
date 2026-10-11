@@ -113,10 +113,10 @@ function addressFieldAttrs(
 
 	const fullName = `${keyPrefix}.${field}`;
 	let error = false;
-	//@ts-ignore
+	//@ts-expect-error Formik errors do not type flattened address paths.
 	if (fullName in errors && errors[fullName]) {
 		error = true;
-		//@ts-ignore
+		//@ts-expect-error Formik errors do not type flattened address paths.
 		helperText = errors[fullName] as string;
 	}
 
@@ -127,9 +127,9 @@ function addressFieldAttrs(
 		onChange: handleChange,
 	};
 
-	//@ts-ignore
+	//@ts-expect-error IAddressSubForm has no string index signature.
 	if (field in addressValues && addressValues[field] !== null) {
-		//@ts-ignore
+		//@ts-expect-error IAddressSubForm has no string index signature.
 		out.value = addressValues[field];
 	}
 

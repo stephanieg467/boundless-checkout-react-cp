@@ -62,7 +62,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 				document.body.removeChild(div);
 			}
 		};
-	}, []); 
+	}, []);
 
 	useEffect(() => {
 		store.dispatch(

@@ -38,9 +38,9 @@ export default function ExtraErrors({excludedFields, errors}: {excludedFields: s
 
 	return (
 		<Snackbar open={open}
-							autoHideDuration={6000}
-							onClose={handleClose}
-							anchorOrigin={{vertical: "top", horizontal: "right"}}
+			autoHideDuration={6000}
+			onClose={handleClose}
+			anchorOrigin={{vertical: "top", horizontal: "right"}}
 		>
 			<Alert severity="error">{alertText || ""}</Alert>
 		</Snackbar>

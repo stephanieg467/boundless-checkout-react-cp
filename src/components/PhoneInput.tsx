@@ -2,7 +2,7 @@ import React from "react";
 import {IMaskInput} from "react-imask";
 
 interface PhoneInputProps {
-	onChange: (event: { target: { name: string; value: string } }) => void;
+	onChange: (event: {target: {name: string; value: string}}) => void;
 	name: string;
 }
 

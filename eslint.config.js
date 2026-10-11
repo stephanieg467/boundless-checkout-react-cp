@@ -4,20 +4,13 @@ const globals = require("globals");
 const tsParser = require("@typescript-eslint/parser");
 const typescriptEslint = require("@typescript-eslint/eslint-plugin");
 const reactHooks = require("eslint-plugin-react-hooks");
+const stylistic = require("@stylistic/eslint-plugin");
 
 const js = require("@eslint/js");
 
-const { FlatCompat } = require("@eslint/eslintrc");
-
-const compat = new FlatCompat({
-	baseDirectory: __dirname,
-	recommendedConfig: js.configs.recommended,
-	allConfig: js.configs.all,
-});
-
 module.exports = defineConfig([
 	{
-		files: ['**/*.ts', '**/*.tsx'],
+		files: ["**/*.{js,ts,tsx}"],
 		languageOptions: {
 			globals: {
 				...globals.browser,
@@ -32,25 +25,26 @@ module.exports = defineConfig([
 			parserOptions: {},
 		},
 
-		extends: compat.extends(
-			"eslint:recommended",
-			"plugin:@typescript-eslint/eslint-recommended"
-		),
+		extends: [js.configs.recommended, ...typescriptEslint.configs["flat/recommended"]],
 
 		plugins: {
 			"@typescript-eslint": typescriptEslint,
 			"react-hooks": reactHooks,
+			"@stylistic": stylistic,
 		},
 
 		rules: {
 			"no-unused-vars": "off",
-			semi: ["error", "always"],
-			quotes: ["error", "double"],
-			"no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
-			"object-curly-spacing": ["error", "never"],
-			"array-bracket-spacing": ["error", "never"],
+			"@stylistic/semi": ["error", "always"],
+			"@stylistic/quotes": ["error", "double"],
+			"@stylistic/no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
+			"@stylistic/object-curly-spacing": ["error", "never"],
+			"@stylistic/array-bracket-spacing": ["error", "never"],
+			"@stylistic/indent": ["error", "tab", {SwitchCase: 1}],
+			"@stylistic/no-trailing-spaces": "error",
 			"@typescript-eslint/explicit-function-return-type": "off",
 			"@typescript-eslint/no-unused-vars": "warn",
+			"@typescript-eslint/no-explicit-any": "warn",
 			"react-hooks/rules-of-hooks": "error",
 			"react-hooks/exhaustive-deps": "warn",
 		},
