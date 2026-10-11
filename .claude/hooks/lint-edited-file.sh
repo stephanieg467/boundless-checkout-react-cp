@@ -14,7 +14,7 @@ case "$file" in /*) ;; *) file="${cwd:-$project_dir}/$file" ;; esac
 [ -f "$file" ] || exit 0
 file=$(realpath -- "$file") || exit 1
 case "$file" in "$project_dir"/*) ;; *) exit 0 ;; esac
-touch ".claude/.edited-$(jq -r '.session_id' <<< "$input")"
+touch ".claude/.edited-$(jq -r '.session_id | split("/")[-1]' <<< "$input")" || exit 1
 
 case "$file" in
 	*.ts|*.tsx|"$project_dir"/src/*.js)

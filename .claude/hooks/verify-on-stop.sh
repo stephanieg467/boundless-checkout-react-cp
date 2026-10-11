@@ -3,7 +3,7 @@
 # Recheck after one automatic retry, but report persistent failures without looping.
 input=$(jq -c '.') || exit 1
 stop_hook_active=$(jq -r '.stop_hook_active // false' <<< "$input")
-marker=.claude/.edited-$(jq -r '.session_id' <<< "$input")
+marker=.claude/.edited-$(jq -r '.session_id | split("/")[-1]' <<< "$input")
 project_dir=${CLAUDE_PROJECT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd -- "$project_dir" || exit 1
 [ -f "$marker" ] || exit 0
