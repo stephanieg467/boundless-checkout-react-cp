@@ -14,9 +14,10 @@ case "$file" in /*) ;; *) file="${cwd:-$project_dir}/$file" ;; esac
 [ -f "$file" ] || exit 0
 file=$(realpath -- "$file") || exit 1
 case "$file" in "$project_dir"/*) ;; *) exit 0 ;; esac
+touch ".claude/.edited-$(jq -r '.session_id' <<< "$input")"
 
 case "$file" in
-	*.ts|*.tsx|*.js)
+	*.ts|*.tsx|"$project_dir"/src/*.js)
 		npx eslint --fix --no-warn-ignored "$file" >/dev/null 2>&1
 		out=$(npx eslint --no-warn-ignored --quiet "$file" 2>&1) ;;
 	*.scss)
