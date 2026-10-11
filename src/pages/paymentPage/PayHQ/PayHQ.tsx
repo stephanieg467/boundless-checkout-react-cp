@@ -56,7 +56,7 @@ type PayHQProps = {
 };
 
 export type PayHQHandle = {
-	submitPayment: () => Promise<{ paidAt: string }>;
+	submitPayment: () => Promise<{paidAt: string}>;
 };
 
 export type CreatePaymentInstance = (
@@ -767,7 +767,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 		[],
 	);
 
-	const submitPayment = useCallback(async (): Promise<{ paidAt: string }> => {
+	const submitPayment = useCallback(async (): Promise<{paidAt: string}> => {
 		const activePayment = getPaymentReadyForSubmission({
 			paymentApproved: paymentApprovedRef.current,
 			orderPaidAt: order?.paid_at,

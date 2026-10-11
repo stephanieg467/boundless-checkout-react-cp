@@ -40,14 +40,14 @@ interface IDeliveryDetailsFormValues {
 
 export const makeValidateDeliveryDetailsForm =
 	(_hasRegularItems: boolean, hasDropShipItems: boolean, isDelivery: boolean) =>
-	(values: IDeliveryDetailsFormValues) => {
-		const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> =
-			{};
-		if (isDelivery && hasDropShipItems && !values.drop_ship_delivery_time) {
-			errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
-		}
-		return errors;
-	};
+		(values: IDeliveryDetailsFormValues) => {
+			const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> =
+				{};
+			if (isDelivery && hasDropShipItems && !values.drop_ship_delivery_time) {
+				errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
+			}
+			return errors;
+		};
 
 const useSaveDeliveryDetails = () => {
 	const dispatch = useAppDispatch();

@@ -64,9 +64,9 @@ export const clearCheckoutProgressAfterContactSave = (
 		...orderWithoutServicesSubTotal,
 		customer: order.customer
 			? {
-					...order.customer,
-					addresses: [],
-				}
+				...order.customer,
+				addresses: [],
+			}
 			: order.customer,
 		services: [],
 		service_total_price: "0.00",
@@ -98,22 +98,22 @@ export const clearProgressAfterContact = (
 
 	const nextTotal = total
 		? ({
-				...total,
-				price: totalPrice,
-				tax: {
-					...total.tax,
-					shipping: {
-						...(total.tax as any)?.shipping,
-						shippingTaxes: "0",
-					},
-					totalTaxAmount: taxAmount,
+			...total,
+			price: totalPrice,
+			tax: {
+				...total.tax,
+				shipping: {
+					...(total.tax as any)?.shipping,
+					shippingTaxes: "0",
 				},
-				servicesSubTotal: {
-					...total.servicesSubTotal,
-					price: "0.00",
-					qty: 0,
-				},
-			} as ITotal)
+				totalTaxAmount: taxAmount,
+			},
+			servicesSubTotal: {
+				...total.servicesSubTotal,
+				price: "0.00",
+				qty: 0,
+			},
+		} as ITotal)
 		: total;
 
 	return {order: nextOrder, total: nextTotal};

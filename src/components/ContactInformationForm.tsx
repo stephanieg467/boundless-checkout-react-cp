@@ -302,9 +302,9 @@ const useSaveContactInfo = () => {
 
 		const baseOrder = order
 			? {
-					...order,
-					customer: customer,
-				}
+				...order,
+				customer: customer,
+			}
 			: undefined;
 		const resetCheckout = baseOrder
 			? clearProgressAfterContact(baseOrder, total)
@@ -330,15 +330,13 @@ const useSaveContactInfo = () => {
 };
 
 const getFieldsList = () => {
-	const fields: { type: string; required: boolean; show: boolean }[] = [
+	const fields: {type: string; required: boolean; show: boolean}[] = [
 		"email",
 		"phone",
 	]
 		.map((type) => ({
 			type,
-			//@ts-ignore
 			required: true,
-			//@ts-ignore
 			show: true,
 		}))
 		.filter(({show}) => show);

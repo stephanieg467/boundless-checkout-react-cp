@@ -90,12 +90,12 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 }));
 
 jest.mock("./shippingForm/DeliverySelector", () => {
-	const {useFormikContext} = require("formik");
+	const {useFormikContext} = jest.requireActual("formik");
 	const {
 		DELIVERY_ID: deliveryId,
 		SELF_PICKUP_ID: selfPickupId,
 		SHIPPING_DELIVERY_ID: shippingDeliveryId,
-	} = require("../../constants");
+	} = jest.requireActual("../../constants");
 
 	return function MockDeliverySelector() {
 		const {values, handleChange} = useFormikContext();
@@ -118,7 +118,7 @@ jest.mock("./shippingForm/DeliverySelector", () => {
 });
 
 jest.mock("./shippingForm/AddressesFields", () => {
-	const {useFormikContext} = require("formik");
+	const {useFormikContext} = jest.requireActual("formik");
 	const requiredAddressFields = [
 		{field: "first_name", label: "first name"},
 		{field: "last_name", label: "last name"},

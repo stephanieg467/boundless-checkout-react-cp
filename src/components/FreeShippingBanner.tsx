@@ -7,18 +7,18 @@ import useFormatCurrency from "../hooks/useFormatCurrency";
 const FreeShippingBanner: React.FC = () => {
 	const {total} = useAppSelector((state) => state.app);
 	const {formatCurrency} = useFormatCurrency();
-	
+
 	const itemsSubTotal = Number(total?.itemsSubTotal?.price || 0);
 	const freeShippingThreshold = 100;
 	const remainingForFreeShipping = freeShippingThreshold - itemsSubTotal;
-	
+
 	// Don't show banner if already qualifies for free shipping
 	if (itemsSubTotal >= freeShippingThreshold) {
 		return (
-			<Alert 
-				severity="success" 
+			<Alert
+				severity="success"
 				icon={<LocalShippingIcon />}
-				sx={{ 
+				sx={{
 					mb: 2,
 					backgroundColor: "#e8f5e8",
 					"& .MuiAlert-icon": {
@@ -32,14 +32,14 @@ const FreeShippingBanner: React.FC = () => {
 			</Alert>
 		);
 	}
-	
+
 	// Show how much more is needed for free shipping
 	if (remainingForFreeShipping > 0) {
 		return (
-			<Alert 
-				severity="info" 
+			<Alert
+				severity="info"
 				icon={<LocalShippingIcon />}
-				sx={{ 
+				sx={{
 					mb: 2,
 					backgroundColor: "#e3f2fd",
 					"& .MuiAlert-icon": {
@@ -58,7 +58,7 @@ const FreeShippingBanner: React.FC = () => {
 			</Alert>
 		);
 	}
-	
+
 	return null;
 };
 

@@ -29,8 +29,8 @@ export const setLocalStorageCheckoutData = (data: ICheckoutData): void => {
 			(typeof e === "object" &&
 				e !== null &&
 				"name" in e &&
-				(e as { name: string }).name === "QuotaExceededError") ||
-			(e as { name: string }).name === "NS_ERROR_DOM_QUOTA_REACHED"
+				(e as {name: string}).name === "QuotaExceededError") ||
+			(e as {name: string}).name === "NS_ERROR_DOM_QUOTA_REACHED"
 		) {
 			// Firefox specific
 			console.error("Error: LocalStorage quota exceeded!");

@@ -17,7 +17,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const order = reduxOrder ?? checkoutData?.order;
 	const total = reduxTotal ?? checkoutData?.total;
 	const cart = getCartOrRetrieve();
-	
+
 	const {formatCurrency} = useFormatCurrency();
 	const {t} = useTranslation();
 

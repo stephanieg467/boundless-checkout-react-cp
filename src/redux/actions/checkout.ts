@@ -371,12 +371,12 @@ const buildCheckoutInitData = ({
 	total: checkoutDataTotal
 		? checkoutDataTotal
 		: buildCheckoutTotal({
-				price: resolveCheckoutTotalPrice(checkoutDataOrder, initialOrder),
-				cartTotal,
-				checkoutDataOrder,
-				checkoutDataOrderService,
-				tax,
-			}),
+			price: resolveCheckoutTotalPrice(checkoutDataOrder, initialOrder),
+			cartTotal,
+			checkoutDataOrder,
+			checkoutDataOrderService,
+			tax,
+		}),
 });
 
 const hasCheckoutCartItems = (cart: Cart | null): cart is CheckoutCartWithItems => Boolean(cart?.items?.length);
@@ -449,28 +449,28 @@ const handleCheckoutInitializationError = (
 };
 
 export const initCheckoutByCart =
-	(config: { onCheckoutInited?: TOnCheckoutInited }): AppThunk =>
-	async (dispatch, getState) => {
-		const {cartId, order, stepper} = getState().app;
-		const {onCheckoutInited} = config;
+	(config: {onCheckoutInited?: TOnCheckoutInited}): AppThunk =>
+		async (dispatch, getState) => {
+			const {cartId, order, stepper} = getState().app;
+			const {onCheckoutInited} = config;
 
-		const cart = getCartOrRetrieve();
+			const cart = getCartOrRetrieve();
 
-		try {
-			if (!hasCheckoutCartItems(cart)) {
-				dispatchEmptyCartError(dispatch);
-				return;
+			try {
+				if (!hasCheckoutCartItems(cart)) {
+					dispatchEmptyCartError(dispatch);
+					return;
+				}
+
+				const data = await buildCheckoutInitDataForCart({
+					cart,
+					cartId,
+					stateOrder: order,
+					stateStepper: stepper,
+				});
+
+				completeCheckoutInitialization(dispatch, data, onCheckoutInited);
+			} catch (error) {
+				handleCheckoutInitializationError(dispatch, error);
 			}
-
-			const data = await buildCheckoutInitDataForCart({
-				cart,
-				cartId,
-				stateOrder: order,
-				stateStepper: stepper,
-			});
-
-			completeCheckoutInitialization(dispatch, data, onCheckoutInited);
-		} catch (error) {
-			handleCheckoutInitializationError(dispatch, error);
-		}
-	};
+		};
