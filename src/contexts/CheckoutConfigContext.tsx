@@ -9,6 +9,7 @@ export interface ICheckoutConfig {
 	payfirmaInfo: IPayfirmaInfo;
 	onCheckoutInited?: TOnCheckoutInited;
 	logo?: string | ReactNode;
+	footerMenu?: ReactNode;
 }
 
 const CheckoutConfigContext = createContext<ICheckoutConfig | null>(null);

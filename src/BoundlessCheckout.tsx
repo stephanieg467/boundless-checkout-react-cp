@@ -25,6 +25,7 @@ export interface IBoundlessCheckoutProps {
 	payfirmaInfo: IPayfirmaInfo;
 	cartId?: string;
 	logo?: string | ReactNode;
+	footerMenu?: ReactNode;
 	logoSrc?: string;
 	logoText?: string;
 	onCheckoutInited?: TOnCheckoutInited;
@@ -39,6 +40,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 		logoSrc,
 		logoText,
 		logo,
+		footerMenu,
 		onCheckoutInited,
 	} = props;
 
@@ -77,8 +79,8 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 	}, [cartId]);
 
 	const config = useMemo(
-		() => ({onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, logo: resolvedLogo}),
-		[onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, resolvedLogo],
+		() => ({onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, logo: resolvedLogo, footerMenu}),
+		[onHide, onThankYouPage, payfirmaInfo, onCheckoutInited, resolvedLogo, footerMenu],
 	);
 
 	if (!el) return null;

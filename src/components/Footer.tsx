@@ -1,10 +1,12 @@
 import React from "react";
 import FooterAbout from "./footer/About";
 import FooterContacts from "./footer/Contacts";
-import FooterMenu from "./footer/FooterMenu";
+import {useCheckoutConfig} from "../contexts/CheckoutConfigContext";
 import SocialButtons from "./footer/SocialButtons";
 
 export default function Footer() {
+	const {footerMenu} = useCheckoutConfig();
+
 	return (
 		<footer className='page-footer'>
 			<div className='container'>
@@ -13,7 +15,7 @@ export default function Footer() {
 						<FooterAbout/>
 					</div>
 					<div className='page-footer__item col-sm-12 col-md-6 col-lg-3 order-lg-2 order-md-1 order-1'>
-						<FooterMenu/>
+						{footerMenu}
 					</div>
 					<div className='page-footer__item col-sm-12 col-md-6 col-lg-3 order-lg-3 order-md-2 order-2'>
 						<FooterContacts />

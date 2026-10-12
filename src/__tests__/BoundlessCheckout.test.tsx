@@ -1,5 +1,5 @@
 import React from "react";
-import {render} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
 import {setBasicProps, showCheckout} from "../redux/reducers/app";
 
 jest.mock("../redux/store", () => ({
@@ -15,7 +15,11 @@ jest.mock("react-redux", () => ({
 	useSelector: jest.fn((selector: any) => selector({app: {show: true}})),
 }));
 
-jest.mock("../StepRenderer", () => () => <div data-testid="step-renderer" />);
+jest.mock("../StepRenderer", () => {
+	const Footer = jest.requireActual("../components/Footer").default;
+
+	return () => <div data-testid="step-renderer"><Footer /></div>;
+});
 
 const mockQueryClientConstructor = jest.fn();
 
@@ -76,6 +80,19 @@ describe("BoundlessCheckout", () => {
 		const dispatchedTypes = mockStore.dispatch.mock.calls.map((call) => call[0].type);
 		expect(dispatchedTypes).toContain(setBasicPropsType);
 		expect(dispatchedTypes).toContain(showCheckoutType);
+	});
+
+	test("renders and updates the storefront footer menu", () => {
+		const {rerender} = render(
+			<BoundlessCheckout {...defaultProps} footerMenu={<a href="/store-info">Store info</a>} />
+		);
+		expect(screen.getByRole("link", {name: "Store info"})).toHaveAttribute("href", "/store-info");
+
+		rerender(
+			<BoundlessCheckout {...defaultProps} footerMenu={<a href="/store-policies">Store policies</a>} />
+		);
+		expect(screen.queryByRole("link", {name: "Store info"})).not.toBeInTheDocument();
+		expect(screen.getByRole("link", {name: "Store policies"})).toHaveAttribute("href", "/store-policies");
 	});
 
 	test("QueryClient is not recreated across re-renders", () => {
