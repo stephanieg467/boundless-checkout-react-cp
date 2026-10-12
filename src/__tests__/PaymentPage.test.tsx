@@ -11,7 +11,9 @@ import {
 } from "./checkoutPageTestUtils";
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
 
 jest.mock("../hooks/redux", () => ({
@@ -57,6 +59,7 @@ const renderPaymentPage = (
 ) => {
 	mockState = {app: appState};
 	mockCheckoutData = checkoutData;
+
 	return render(<PaymentPage />);
 };
 

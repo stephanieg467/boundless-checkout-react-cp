@@ -57,5 +57,6 @@ export const qualifiesForFreeShipping = (
 ): boolean => {
 	const itemsSubTotal = total?.itemsSubTotal?.price || "0";
 	const subtotal = Number(itemsSubTotal);
+
 	return subtotal >= 100;
 };

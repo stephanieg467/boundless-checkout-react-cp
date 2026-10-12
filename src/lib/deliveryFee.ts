@@ -16,6 +16,7 @@ const findDeliveryTimeOptionByLabel = (
 	label: string | undefined,
 ): DeliveryTimeOption | undefined => {
 	if (!label) return undefined;
+
 	return options?.find((option) => option.label === label);
 };
 
@@ -24,6 +25,7 @@ const selectedLabelRequiresFee = (
 	label: string | undefined,
 ): boolean => {
 	const option = findDeliveryTimeOptionByLabel(options, label);
+
 	return option?.applyDeliveryFee ?? true;
 };
 
@@ -47,9 +49,11 @@ export const selectedDeliveryTimesRequireFee = ({
 	if (!isDelivery) return false;
 
 	const relevant: boolean[] = [];
+
 	if (hasRegularItems) {
 		relevant.push(selectedLabelRequiresFee(regularOptions, deliveryTime));
 	}
+
 	if (hasDropShipItems) {
 		relevant.push(
 			selectedLabelRequiresFee(dropShipOptions, dropShipDeliveryTime),
@@ -87,11 +91,14 @@ export const calculateCheckoutShippingTotals = ({
 
 	if (deliveryId === DELIVERY_ID) {
 		const quote = order.custom_attrs?.deliveryQuote;
+
 		if (!quote) throw new Error("Delivery quote is required to calculate Delivery totals");
 		const fee = quote.fee;
+
 		if (!isValidFee(fee)) {
 			throw new Error("Delivery quote fee is invalid");
 		}
+
 		const requiresFee = selectedDeliveryTimesRequireFee({
 			isDelivery: true,
 			hasRegularItems,
@@ -101,6 +108,7 @@ export const calculateCheckoutShippingTotals = ({
 			regularOptions,
 			dropShipOptions,
 		});
+
 		freeShippingApplied = !requiresFee || qualifiesForFreeShipping(total);
 		shippingRate = freeShippingApplied ? "0.00" : fee;
 		originalShippingRate = fee;
@@ -113,10 +121,13 @@ export const calculateCheckoutShippingTotals = ({
 	}
 
 	let currentTaxes = Number(order.tax_amount ?? 0);
+
 	if (order.custom_attrs?.shippingTax) {
 		currentTaxes -= Number(order.custom_attrs.shippingTax);
 	}
+
 	const totalOrderTaxes = (currentTaxes + shippingTax).toString();
+
 	const totalOrderPrice = (
 		Number(total?.itemsSubTotal?.price ?? 0) +
 		Number(totalOrderTaxes) +

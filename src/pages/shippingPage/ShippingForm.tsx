@@ -55,6 +55,7 @@ import type {DeliveryQuoteRequest, DeliveryQuoteResponse} from "../../lib/delive
 function DeliveryQuoteStatus() {
 	const {values, status, setStatus, setValues, setFieldValue, submitForm} =
 		useFormikContext<IShippingFormValues>();
+
 	const previousValues = useRef(values);
 	const correctedValuesToSubmit = useRef<IShippingFormValues | null>(null);
 
@@ -63,6 +64,7 @@ function DeliveryQuoteStatus() {
 			previousValues.current = values;
 			setStatus(undefined);
 		}
+
 		if (correctedValuesToSubmit.current === values) {
 			correctedValuesToSubmit.current = null;
 			void submitForm();
@@ -71,6 +73,7 @@ function DeliveryQuoteStatus() {
 
 	if (status?.deliveryQuoteValues !== values) return null;
 	const quote: DeliveryQuoteResponse = status.deliveryQuote;
+
 	if (quote.status === "ok") return null;
 
 	return (
@@ -94,6 +97,7 @@ function DeliveryQuoteStatus() {
 								zip: quote.address.postalCode,
 							},
 						};
+
 						correctedValuesToSubmit.current = correctedValues;
 						setStatus(undefined);
 						void setValues(correctedValues, false);
@@ -125,6 +129,7 @@ const isBCPostalCode = (postalCode: string): boolean => {
 	if (!postalCode) return false;
 	// Remove spaces and convert to uppercase
 	const cleanedCode = postalCode.replace(/\s+/g, "").toUpperCase();
+
 	// BC postal codes start with V and follow the pattern V#A#A#
 	return /^V\d[A-Z]\d[A-Z]\d$/.test(cleanedCode);
 };
@@ -264,6 +269,7 @@ const useSaveShippingForm = ({
 		checkoutData: ICheckoutData,
 	) => {
 		const {order, total} = checkoutData;
+
 		if (!order) return;
 
 		const {
@@ -387,6 +393,7 @@ const useSaveShippingForm = ({
 			.then((result) => {
 				if (!result) throw new Error("Order data is missing");
 				const {order} = result;
+
 				const shippingCalculation = calculateCheckoutShippingTotals({
 					order,
 					total,
@@ -473,18 +480,24 @@ const useSaveShippingForm = ({
 		formikHelpers: FormikHelpers<IShippingFormValues>,
 	) => {
 		const checkoutData = getCheckoutData();
+
 		if (!checkoutData?.order) return;
 		const customAttrs = {...checkoutData.order.custom_attrs};
 		delete customAttrs.deliveryQuote;
+
 		if (values.delivery_id === DELIVERY_ID) {
 			const response = await requestDeliveryQuote(toDeliveryQuoteAddress(values.shipping_address));
+
 			if (response.status !== "ok") {
 				formikHelpers.setStatus({deliveryQuote: response, deliveryQuoteValues: values});
 				formikHelpers.setSubmitting(false);
+
 				return;
 			}
+
 			customAttrs.deliveryQuote = {fee: response.fee, zoneLabel: response.zoneLabel, quotedAt: Date.now()};
 		}
+
 		return onSubmit(values, formikHelpers, {
 			...checkoutData,
 			order: {...checkoutData.order, custom_attrs: customAttrs},
@@ -508,6 +521,7 @@ export default function ShippingForm({
 	const {t} = useTranslation();
 	const initialValues = useFormInitialValues(shippingPage);
 	const cartItemHasTickets = useCartHasTickets();
+
 	const {
 		isLoading,
 		isError,
@@ -515,12 +529,14 @@ export default function ShippingForm({
 	} = useDeliveryTimes({
 		returnTimeForTodayAndTwoDaysFromNow: false,
 	});
+
 	const {onSubmit} = useSaveShippingForm({
 		shippingPage,
 		regularDeliveryOptions: deliveryTimes?.times,
 		hasRegularItems,
 		hasDropShipItems,
 	});
+
 	const nextDayHelperText = deliveryTimes?.isNextDay
 		? "NOTE: Delivery is closed for the day; your order will be delivered tomorrow."
 		: "Will be delivered today.";

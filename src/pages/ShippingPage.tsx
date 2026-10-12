@@ -22,13 +22,16 @@ import {
 
 const useInitShippingPage = () => {
 	const {isInited} = useInitCheckoutByCart();
+
 	const [shippingPage, setShippingPage] =
 		useState<null | ICheckoutShippingPageData>(null);
+
 	const {order} = useAppSelector((state) => state.app);
 	const cartItems = useAppSelector((state) => state.app.items);
 	const dispatch = useAppDispatch();
 
 	const cartItemHasTickets = useCartHasTickets();
+
 	const clonesInCart = cartItems?.some(
 		(item) => item.product.ClassificationName === "Clones"
 	);
@@ -41,10 +44,12 @@ const useInitShippingPage = () => {
 	const isMarchFourteenth = month === 3 && day === 14;
 
 	const deliveryOptions = [SELF_PICKUP_INFO];
+
 	if (showAllDeliveryOptions) {
 		if (!isMarchFourteenth) {
 			deliveryOptions.push(DELIVERY_INFO);
 		}
+
 		deliveryOptions.push(SHIPPING_DELIVERY_INFO);
 	}
 
@@ -81,6 +86,7 @@ const useInitShippingPage = () => {
 					person: order.customer as any,
 					orderServiceDelivery: null,
 				};
+
 				setShippingPage(shippingPageData);
 			}
 		}

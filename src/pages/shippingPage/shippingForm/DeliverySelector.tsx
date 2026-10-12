@@ -49,6 +49,7 @@ const getDeliveryFeeCopy = (deliveryTimeOptions?: DeliveryTimeOption[]) => {
 		: 0;
 
 	const feeCopy = "Delivery fee is based on driving distance and confirmed after your address is entered.";
+
 	if (feeFreeSlotCount === 0) {
 		return feeCopy;
 	}

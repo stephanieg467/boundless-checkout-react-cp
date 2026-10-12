@@ -44,8 +44,10 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 
 	const resolvedLogo = useMemo<string | ReactNode | undefined>(() => {
 		if (logoText !== undefined) return logoText;
+
 		if (logoSrc)
 			return <img src={logoSrc} className={"bdl-header__img-logo"} />;
+
 		return logo;
 	}, [logoText, logoSrc, logo]);
 
@@ -57,6 +59,7 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 		const div = document.createElement("div");
 		document.body.appendChild(div);
 		setEl(div);
+
 		return () => {
 			if (div.parentNode === document.body) {
 				document.body.removeChild(div);
@@ -98,5 +101,6 @@ export default function BoundlessCheckout(props: IBoundlessCheckoutProps) {
 
 const WrappedApp = () => {
 	const show = useAppSelector((state) => state.app.show);
+
 	return show ? <StepRenderer /> : null;
 };

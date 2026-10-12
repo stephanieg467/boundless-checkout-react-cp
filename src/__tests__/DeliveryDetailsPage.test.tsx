@@ -6,6 +6,7 @@ import {TCheckoutStep} from "../types/common";
 import {completeCustomer, orderWith, stepperWith} from "./checkoutPageTestUtils";
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
 
 jest.mock("../hooks/redux", () => ({

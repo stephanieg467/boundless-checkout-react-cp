@@ -54,6 +54,7 @@ const isPickupService = (service: IOrderService | null): boolean => {
 
 const isAddressRequiredService = (service: IOrderService | null): boolean => {
 	if (!service) return false;
+
 	if (isPickupService(service)) return false;
 
 	return (
@@ -70,6 +71,7 @@ export const isContactStepComplete = (
 	order: IOrderWithCustmAttr | undefined,
 ): boolean => {
 	const customer = order?.customer;
+
 	if (!customer) return false;
 
 	return [
@@ -86,8 +88,11 @@ export const isShippingStepComplete = (
 	order: IOrderWithCustmAttr | undefined,
 ): boolean => {
 	const service = getSelectedService(order);
+
 	if (!service) return false;
+
 	if (isPickupService(service)) return true;
+
 	if (!isAddressRequiredService(service)) return false;
 
 	const addresses = order?.customer?.addresses ?? [];
@@ -95,11 +100,13 @@ export const isShippingStepComplete = (
 	const billingAddress = addresses.find((address: any) => address.type === "billing");
 
 	if (!hasRequiredAddressFields(shippingAddress)) return false;
+
 	if (billingAddress && !hasRequiredAddressFields(billingAddress)) return false;
 
 	const isDelivery = service.service_id === DELIVERY_ID ||
 		service.serviceDelivery?.title === "Delivery" ||
 		service.serviceDelivery?.delivery?.title === "Delivery";
+
 	if (isDelivery && !isDeliveryQuoteFresh(order?.custom_attrs?.deliveryQuote)) return false;
 
 	return true;
@@ -153,8 +160,10 @@ export const canNavigateToCheckoutStep = (
 	const targetStepIndex = stepper.steps.indexOf(targetStep);
 
 	if (targetStepIndex === -1) return false;
+
 	if (currentStepIndex !== -1 && targetStepIndex < currentStepIndex) return true;
 
 	const prerequisiteSteps = stepper.steps.slice(0, targetStepIndex);
+
 	return prerequisiteSteps.every((step) => isStepComplete(step, order, stepper));
 };

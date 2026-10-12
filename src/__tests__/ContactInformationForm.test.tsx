@@ -14,8 +14,11 @@ import {TCheckoutStep} from "../types/common";
 (globalThis as any).React = React;
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
+
 const mockSetLocalStorageCheckoutData = jest.fn();
 
 jest.mock("../hooks/redux", () => ({
@@ -34,6 +37,7 @@ jest.mock("react-i18next", () => ({
 }));
 
 jest.mock("../components/CheckoutStepWarning", () => () => null);
+
 jest.mock("../components/ExtraErrors", () => () => null);
 
 jest.mock("@mui/x-date-pickers/DatePicker", () => {
@@ -182,6 +186,7 @@ describe("ContactInformationForm - progress invalidation on save", () => {
 		const dispatchedActionTypes = mockDispatch.mock.calls.map(
 			([action]) => action?.type,
 		);
+
 		[
 			setOrdersCustomer.type,
 			setOrder.type,

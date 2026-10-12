@@ -45,6 +45,7 @@ describe("renderDeliveryTimeOptions", () => {
 		const paidOption = screen.getByRole("option", {
 			name: "1pm - 2pm — $6.00 delivery fee",
 		});
+
 		const freeOption = screen.getByRole("option", {
 			name: "2pm - 3pm — Free delivery",
 		});

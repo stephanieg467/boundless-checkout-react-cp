@@ -1,6 +1,8 @@
 import React from "react";
+
 // This is a test-environment workaround for the existing component runtime and not part of production behavior.
 global.React = React;
+
 import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {TPublishingStatus} from "boundless-api-client";
@@ -12,10 +14,15 @@ import {setCurrentStep, setStepWarning} from "../../redux/reducers/app";
 import {TCheckoutStep} from "../../types/common";
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
+
 const mockOnThankYouPage = jest.fn();
+
 const mockSubmitPayment = jest.fn();
+
 const mockRecordApprovedPayment = jest.fn();
 
 jest.mock("../../hooks/redux", () => ({
@@ -25,6 +32,7 @@ jest.mock("../../hooks/redux", () => ({
 
 jest.mock("../../lib/paymentOutcome", () => {
 	const original = jest.requireActual("../../lib/paymentOutcome");
+
 	return {
 		...original,
 		completeCreditCardPaymentOutcome: jest.fn(original.completeCreditCardPaymentOutcome),
@@ -77,6 +85,7 @@ jest.mock("./PayHQ/PayHQ", () => {
 			React.useImperativeHandle(ref, () => ({
 				submitPayment: mockSubmitPayment,
 			}));
+
 			return <div data-testid="payhq">PayHQ mock</div>;
 		}),
 	};
@@ -282,6 +291,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("uses the latest persisted tipped total when completing checkout after card approval", async () => {
 		const user = userEvent.setup();
+
 		const deliveryOrder = makeOrder({
 			custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
 			services: [{service_id: DELIVERY_ID, serviceDelivery: {delivery: {title: "Delivery"}}}],
@@ -289,6 +299,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 			total_price: "100.00",
 			tip: "0.00",
 		});
+
 		const tippedTotal = {...total, price: "105.00"};
 
 		mockRecordApprovedPayment.mockImplementation(({paidAt}: {paidAt: string}) => {
@@ -302,6 +313,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 				},
 				total: tippedTotal,
 			};
+
 			return {order: mockCheckoutData.order, total: mockCheckoutData.total};
 		});
 
@@ -335,6 +347,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("does not require a submitted delivery_time before submitting PayHQ payment", async () => {
 		const user = userEvent.setup();
+
 		const deliveryOrder = makeOrder({
 			delivery_time: "",
 			custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
@@ -453,9 +466,11 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 	it("keeps the shared button busy after thank-you callback resolves", async () => {
 		const user = userEvent.setup();
 		let resolveThankYou!: () => void;
+
 		const thankYouPromise = new Promise<void>((resolve) => {
 			resolveThankYou = resolve;
 		});
+
 		mockOnThankYouPage.mockReturnValue(thankYouPromise);
 
 		setup();
@@ -655,6 +670,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("updates non-credit-card checkout completion data with a tip", async () => {
 		const user = userEvent.setup();
+
 		const order = makeOrder({
 			payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
 			custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},

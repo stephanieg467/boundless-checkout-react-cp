@@ -41,6 +41,7 @@ const ZERO_TIP = "0.00";
 
 export const parseLenientAmount = (value: string | number | null | undefined): number => {
 	const amount = Number(value ?? 0);
+
 	return Number.isFinite(amount) ? amount : 0;
 };
 
@@ -48,6 +49,7 @@ const parseAmount = (value: string | null | undefined): number => {
 	if (value === undefined || value === null || value === "") return 0;
 
 	const stringValue = String(value).trim();
+
 	if (stringValue === "") return 0;
 
 	if (!/^-?\d+(\.\d+)?$/.test(stringValue)) {
@@ -55,6 +57,7 @@ const parseAmount = (value: string | null | undefined): number => {
 	}
 
 	const amount = Number(stringValue);
+
 	if (!Number.isFinite(amount)) {
 		throw new PaymentOutcomeError(`Invalid payment amount: ${value}`);
 	}

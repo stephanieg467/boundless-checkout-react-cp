@@ -49,6 +49,7 @@ export const Logo = () => {
 	const {logo} = useCheckoutConfig();
 
 	const textLogoClass = "bdl-header__text-logo";
+
 	if (logo) {
 		return typeof logo === "string" ? (
 			<h1 className={textLogoClass}>{logo}</h1>

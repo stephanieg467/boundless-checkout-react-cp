@@ -6,11 +6,17 @@ import {setOrder, setTotal} from "../../redux/reducers/app";
 (globalThis as any).React = React;
 
 const mockDispatch = jest.fn();
+
 const mockSetCart = jest.fn();
+
 const mockSetLocalStorageCheckoutData = jest.fn();
+
 const mockGetOrderTaxes = jest.fn();
+
 let mockCart: any;
+
 let mockCheckoutData: any;
+
 let mockCoupons: any[];
 
 jest.mock("../../hooks/redux", () => ({
@@ -74,6 +80,7 @@ describe("CartDiscountForm", () => {
 			total: {total: "103.97"},
 			items: [item("A", 32.54), item("B", 34.92), item("C", 36.51)],
 		};
+
 		mockCart = {
 			id: "current-cart",
 			total: {total: "3.00"},

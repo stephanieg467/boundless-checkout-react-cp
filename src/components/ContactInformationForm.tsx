@@ -46,9 +46,11 @@ interface IContactInformationFormValues {
 const validateContactForm = (values: IContactInformationFormValues) => {
 	const errors: Partial<Record<keyof IContactInformationFormValues, string>> =
 		{};
+
 	const fields = getFieldsList();
 
 	const emailField = fields.find((field) => field.type === "email");
+
 	if (emailField?.required && !values.email) {
 		errors.email = "Email is required";
 	} else if (
@@ -59,6 +61,7 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 	}
 
 	const phoneField = fields.find((field) => field.type === "phone");
+
 	if (phoneField?.required && !values.phone) {
 		errors.phone = "Phone is required";
 	}
@@ -72,6 +75,7 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 	}
 
 	const dobField = fields.find((field) => field.type === "dob");
+
 	if (dobField?.required && !values.dob) {
 		errors.dob = "Date of birth is required";
 	} else if (values.dob) {
@@ -83,6 +87,7 @@ const validateContactForm = (values: IContactInformationFormValues) => {
 			errors.dob = "Please enter a valid date";
 		} else {
 			const age = today.diff(birthDate, "year");
+
 			if (age < 19) {
 				errors.dob = "You must be at least 19 years old";
 			}
@@ -306,15 +311,19 @@ const useSaveContactInfo = () => {
 				customer: customer,
 			}
 			: undefined;
+
 		const resetCheckout = baseOrder
 			? clearProgressAfterContact(baseOrder, total)
 			: {order: undefined, total};
 
 		setLocalStorageCheckoutData(resetCheckout);
+
 		if (resetCheckout.order?.customer) {
 			dispatch(setOrdersCustomer(resetCheckout.order.customer));
 		}
+
 		if (resetCheckout.order) dispatch(setOrder(resetCheckout.order));
+
 		if (resetCheckout.total) dispatch(setTotal(resetCheckout.total));
 		dispatch(addFilledStep({step: TCheckoutStep.contactInfo}));
 

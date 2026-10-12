@@ -5,10 +5,12 @@ import {useCheckoutConfig} from "../../contexts/CheckoutConfigContext";
 
 export default function FooterAbout() {
 	const {onHide} = useCheckoutConfig();
+
 	const onLogoClicked = (e: React.MouseEvent<HTMLAnchorElement>) => {
 		e.preventDefault();
 		onHide!(TClickedElement.logo);
 	};
+
 	return (
 		<>
 			<a href={"#"} className={"bdl-header__logo"} onClick={onLogoClicked}>

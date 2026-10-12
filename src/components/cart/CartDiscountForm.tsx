@@ -86,6 +86,7 @@ export default function CartDiscountForm() {
 					};
 				})
 				.filter((coupon: Coupon | undefined): coupon is Coupon => !!coupon);
+
 			return coupons;
 		},
 	});
@@ -95,6 +96,7 @@ export default function CartDiscountForm() {
 
 	if (isError) {
 		console.error("Failed to fetch coupon products:", error);
+
 		return null;
 	}
 
@@ -106,15 +108,19 @@ export default function CartDiscountForm() {
 
 		if (!values.code) {
 			errors.code = "Required";
+
 			return errors;
 		}
 
 		const valueCode = values.code.trim().toLowerCase();
+
 		const validCode = coupons.some(
 			(coupon) => coupon.code.toLowerCase() === valueCode
 		);
+
 		if (!validCode) {
 			errors.code = "Invalid coupon code";
+
 			return errors;
 		}
 
@@ -125,6 +131,7 @@ export default function CartDiscountForm() {
 
 			if (usedCoupons.includes(valueCode)) {
 				errors.code = "Coupon code has already been used";
+
 				return errors;
 			}
 		}
@@ -137,38 +144,49 @@ export default function CartDiscountForm() {
 		formikHelpers: FormikHelpers<IDiscountFormValues>
 	) => {
 		const {setSubmitting, setErrors} = formikHelpers;
+
 		if (!order || !total || !cart || !cart.items) return;
 		const code = values.code.trim();
+
 		const coupon = coupons.find(
 			(cpn) => cpn.code.toLowerCase() === code.toLowerCase()
 		);
+
 		if (!coupon) {
 			setErrors({code: "Invalid coupon code"});
 			setSubmitting(false);
+
 			return;
 		}
+
 		const originalCart = order.custom_attrs.originalCart ?? cart;
+
 		if (!originalCart.items) {
 			setErrors({code: "Unable to apply coupon"});
 			setSubmitting(false);
+
 			return;
 		}
 
 		let allocation: ReturnType<typeof allocateCouponDiscount>;
+
 		try {
 			allocation = allocateCouponDiscount(originalCart.items, coupon);
 		} catch {
 			setErrors({code: "Unable to apply coupon"});
 			setSubmitting(false);
+
 			return;
 		}
 
 		const {items: discountedCartItems, discountAmount, merchandiseSubtotal} =
 			allocation;
+
 		const promise = Promise.resolve().then(async () => {
 			const newSubTotal = merchandiseSubtotal;
 			const shippingTaxes = total.tax.shipping?.shippingTaxes;
 			const newOrderTaxes = await getOrderTaxes(discountedCartItems);
+
 			const totalOrderTaxes = (
 				Number(newOrderTaxes) + Number(shippingTaxes ?? 0)
 			).toString();
@@ -259,6 +277,7 @@ export default function CartDiscountForm() {
 			{(formikProps) => {
 				const {helperText, error, ...restProps} =
 					fieldAttrs<IDiscountFormValues>("code", formikProps);
+
 				return (
 					<Form className={"bdl-cart__discount-form"}>
 						<FormControl fullWidth variant="standard" error={error} required>

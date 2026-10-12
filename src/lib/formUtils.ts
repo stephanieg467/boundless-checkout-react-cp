@@ -13,6 +13,7 @@ export function fieldAttrs<V extends FormikValues>(field: string, formikProps: F
 	const {errors, values, handleChange} = formikProps;
 
 	let error = false;
+
 	if (field in errors && errors[field]) {
 		error = true;
 		helperText = errors[field] as string;

@@ -3,6 +3,7 @@ import {render, screen, fireEvent} from "@testing-library/react";
 
 // ── mocks ──────────────────────────────────────────────────────────────
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
 
 jest.mock("../hooks/redux", () => ({
@@ -65,6 +66,7 @@ const renderWithStepper = (
 			stepWarning: null,
 		},
 	};
+
 	return render(<CheckoutProgress />);
 };
 

@@ -24,14 +24,17 @@ const feeRequired: DeliveryTimeOption = {
 	label: "5pm - 6pm",
 	applyDeliveryFee: true,
 };
+
 const feeFree: DeliveryTimeOption = {
 	label: "6pm - 7pm",
 	applyDeliveryFee: false,
 };
+
 const dropShipFeeRequired: DeliveryTimeOption = {
 	label: "Friday 1pm - 2pm",
 	applyDeliveryFee: true,
 };
+
 const dropShipFeeFree: DeliveryTimeOption = {
 	label: "Friday 2pm - 3pm",
 	applyDeliveryFee: false,
@@ -42,8 +45,11 @@ const defaultOrder: TestOrder = {
 	delivery_time: feeRequired.label,
 	custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: 1}},
 };
+
 const defaultTotal = {itemsSubTotal: {price: "20.00"}} as ITotal;
+
 const defaultRegularOptions = [feeRequired, feeFree];
+
 const defaultDropShipOptions = [dropShipFeeRequired, dropShipFeeFree];
 
 const defaultSelection = {
@@ -328,6 +334,7 @@ describe("delivery fee calculation", () => {
 			deliveryId: SELF_PICKUP_ID,
 			order: {delivery_time: feeRequired.label},
 		});
+
 		const shipping = calculateTotals({
 			deliveryId: SHIPPING_DELIVERY_ID,
 			order: {delivery_time: feeFree.label},
@@ -372,6 +379,7 @@ describe("delivery fee calculation", () => {
 			deliveryId: SHIPPING_DELIVERY_ID,
 			total: {itemsSubTotal: {price: "103.97"}} as ITotal,
 		});
+
 		const allocatedSubtotal = calculateTotals({
 			deliveryId: SHIPPING_DELIVERY_ID,
 			total: {itemsSubTotal: {price: "83.18"}} as ITotal,

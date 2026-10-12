@@ -1,6 +1,8 @@
 import React from "react";
+
 // Test-environment workaround for existing component runtime expectations.
 global.React = React;
+
 import {render, waitFor} from "@testing-library/react";
 import PaymentPage from "../pages/PaymentPage";
 import ShippingPage from "../pages/ShippingPage";
@@ -12,11 +14,15 @@ import {
 } from "../constants";
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
 
 const mockPaymentMethodForm = jest.fn();
+
 const mockShippingForm = jest.fn();
+
 const mockInitCheckout = jest.fn(() => ({isInited: true}));
 
 jest.mock("../hooks/redux", () => ({
@@ -51,6 +57,7 @@ jest.mock("../pages/paymentPage/PaymentMethodForm", () => ({
 	__esModule: true,
 	default: (props: any) => {
 		mockPaymentMethodForm(props);
+
 		return <div data-testid="payment-method-form" />;
 	},
 }));
@@ -59,6 +66,7 @@ jest.mock("../pages/shippingPage/ShippingForm", () => ({
 	__esModule: true,
 	default: (props: any) => {
 		mockShippingForm(props);
+
 		return <div data-testid="shipping-form" />;
 	},
 }));

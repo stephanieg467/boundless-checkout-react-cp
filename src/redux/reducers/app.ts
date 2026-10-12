@@ -99,6 +99,7 @@ const appSlice = createSlice({
 
 			stepper.filledSteps = stepper.filledSteps.filter((filledStep) => {
 				const filledStepIndex = stepper.steps.indexOf(filledStep);
+
 				return filledStepIndex !== -1 && filledStepIndex <= completedStepIndex;
 			});
 
@@ -112,9 +113,11 @@ const appSlice = createSlice({
 		},
 		setOrder(state, action: PayloadAction<IOrderWithCustmAttr>) {
 			const order = {...action.payload};
+
 			if (order && order.customer === null) {
 				order.customer = undefined;
 			}
+
 			state.order = order;
 		},
 		setOrdersCustomer(state, action: PayloadAction<ICustomCustomer>) {
@@ -141,6 +144,7 @@ const appSlice = createSlice({
 			if (state.stepper) {
 				state.stepper.currentStep = action.payload;
 			}
+
 			if (state.stepWarning && state.stepWarning.step !== action.payload) {
 				state.stepWarning = null;
 			}
@@ -174,6 +178,7 @@ export type TOnThankYouPage = (data: {
 	total: ITotal;
 	items: CovaCartItem[];
 }) => Promise<void>;
+
 export type TOnCheckoutInited = (data: CovaCheckoutInitData) => void;
 
 export interface IAppState {

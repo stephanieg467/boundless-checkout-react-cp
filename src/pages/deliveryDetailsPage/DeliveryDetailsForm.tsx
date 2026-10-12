@@ -43,9 +43,11 @@ export const makeValidateDeliveryDetailsForm =
 		(values: IDeliveryDetailsFormValues) => {
 			const errors: Partial<Record<keyof IDeliveryDetailsFormValues, string>> =
 				{};
+
 			if (isDelivery && hasDropShipItems && !values.drop_ship_delivery_time) {
 				errors.drop_ship_delivery_time = "Drop-ship delivery time is required";
 			}
+
 			return errors;
 		};
 
@@ -57,6 +59,7 @@ const useSaveDeliveryDetails = () => {
 	const hasRegularItems = regularItems.length > 0;
 	const dropShipItems = ordersDropShippingItems(items ?? []);
 	const hasDropShipItems = dropShipItems.length > 0;
+
 	const {
 		isLoading: loadingDeliveryTimes,
 		isError: errorLoadingDeliveryTimes,
@@ -70,11 +73,13 @@ const useSaveDeliveryDetails = () => {
 		{setSubmitting, setErrors}: FormikHelpers<IDeliveryDetailsFormValues>,
 	) => {
 		const {order: checkoutDataOrder, total} = getCheckoutData() || {};
+
 		if (!order || !checkoutDataOrder || !total) {
 			setErrors({
 				_error: "No order found. Please return to menu and try again.",
 			} as any);
 			setSubmitting(false);
+
 			return;
 		}
 
@@ -99,6 +104,7 @@ const useSaveDeliveryDetails = () => {
 
 		if (!hasDeliveryId(checkoutDataOrder, DELIVERY_ID)) {
 			persistAndContinue(updatedOrderBase, total);
+
 			return;
 		}
 
@@ -115,6 +121,7 @@ const useSaveDeliveryDetails = () => {
 				? deliveryTimes.dropShipTimes.times
 				: undefined,
 		});
+
 		const updatedServices = checkoutDataOrder.services?.map((service) =>
 			service.service_id === DELIVERY_ID
 				? {...service, total_price: calculation.shippingRate}
@@ -136,6 +143,7 @@ const useSaveDeliveryDetails = () => {
 				freeShippingApplied: calculation.freeShippingApplied,
 			},
 		} as unknown as IOrderWithCustmAttr;
+
 		const updatedTotal = {
 			...total,
 			price: calculation.totalOrderPrice,
@@ -179,6 +187,7 @@ export default function DeliveryDetailsForm() {
 		errorLoadingDeliveryTimes,
 		deliveryTimes,
 	} = useSaveDeliveryDetails();
+
 	const {order} = useAppSelector((state) => state.app);
 	const isPickup = !!(order && hasDeliveryId(order, SELF_PICKUP_ID));
 	const isDelivery = !!(order && hasDeliveryId(order, DELIVERY_ID));

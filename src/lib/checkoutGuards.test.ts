@@ -19,7 +19,9 @@ import {
 import {CHECKOUT_WINDOW_MS} from "./deliveryQuote";
 
 const requiredContactFields = ["id", "first_name", "last_name", "email", "phone", "dob"] as const;
+
 const requiredAddressFields = ["first_name", "last_name", "address_line_1", "city", "state", "zip"] as const;
+
 const invalidStringValues = [null, "", "   "] as const;
 
 const completeCustomer = (overrides: Partial<ICustomCustomer> = {}): ICustomCustomer => ({
@@ -78,7 +80,9 @@ const selectedService = (
 });
 
 const pickupService = () => selectedService(SELF_PICKUP_ID, "Self Pickup", SELF_PICKUP_INFO);
+
 const deliveryService = () => selectedService(DELIVERY_ID, "Delivery", DELIVERY_INFO);
+
 const shippingService = () => selectedService(SHIPPING_DELIVERY_ID, "Shipping", SHIPPING_DELIVERY_INFO);
 
 const orderWith = (overrides: Partial<IOrderWithCustmAttr> = {}): IOrderWithCustmAttr => ({
@@ -242,12 +246,14 @@ describe("checkout guards", () => {
 		it("expires the Delivery quote at exactly the 8-hour checkout cutoff", () => {
 			const now = Date.now();
 			const clock = jest.spyOn(Date, "now").mockReturnValue(now);
+
 			try {
 				const order = orderWith({
 					services: [deliveryService()],
 					customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
 					custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: now - CHECKOUT_WINDOW_MS + 1}},
 				});
+
 				expect(isShippingStepComplete(order)).toBe(true);
 				order.custom_attrs!.deliveryQuote!.quotedAt -= 1;
 				expect(isShippingStepComplete(order)).toBe(false);
@@ -265,6 +271,7 @@ describe("checkout guards", () => {
 				customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
 				custom_attrs: {},
 			});
+
 			expect(isShippingStepComplete(order)).toBe(false);
 			order.custom_attrs = {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now()}};
 			expect(isShippingStepComplete(order)).toBe(true);
@@ -279,6 +286,7 @@ describe("checkout guards", () => {
 				customer: completeCustomer({addresses: [completeAddress(TAddressType.shipping)]}),
 				custom_attrs: {},
 			});
+
 			expect(isShippingStepComplete(order)).toBe(true);
 			order.custom_attrs = {deliveryQuote: {fee: "6.00", zoneLabel: "15–30 km", quotedAt: Date.now() - 9 * 60 * 60 * 1000}};
 			expect(isShippingStepComplete(order)).toBe(true);

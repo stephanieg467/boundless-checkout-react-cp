@@ -249,12 +249,17 @@ function getVancouverDateTimeParts(date: Date) {
 		month: "numeric",
 		day: "numeric",
 	});
+
 	const parts = formatter.formatToParts(date);
 	let year = 0, month = 0, day = 0;
+
 	for (const part of parts) {
 		if (part.type === "year") year = parseInt(part.value);
+
 		if (part.type === "month") month = parseInt(part.value);
+
 		if (part.type === "day") day = parseInt(part.value);
 	}
+
 	return {year, month, day};
 }

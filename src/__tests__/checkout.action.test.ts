@@ -118,6 +118,7 @@ const dispatchInitCheckout = async (
 	config: Parameters<typeof initCheckoutByCart>[0] = {},
 ) => {
 	await store.dispatch(initCheckoutByCart(config) as any);
+
 	return store.getState().app as any;
 };
 
@@ -254,6 +255,7 @@ describe("initCheckoutByCart", () => {
 				qty: 0,
 			},
 		};
+
 		const persistedTotal = {
 			price: "12.34",
 			itemsSubTotal: {
@@ -511,6 +513,7 @@ describe("initCheckoutByCart", () => {
 					},
 				}),
 			});
+
 			const store = makeStore(currentStep, {
 				stepper: {
 					currentStep,

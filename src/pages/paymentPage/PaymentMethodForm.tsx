@@ -62,9 +62,11 @@ const scrollPaymentFormToFirstErrorField = (
 	if (typeof document === "undefined") return;
 
 	const firstErrorField = paymentFormFieldOrder.find((field) => Boolean(errors[field]));
+
 	if (!firstErrorField) return;
 
 	const paymentForm = document.querySelector<HTMLElement>(".bdl-payment-form");
+
 	const fieldElement = Array.from(
 		(paymentForm ?? document).querySelectorAll<HTMLElement>("[name]"),
 	).find((element) => element.getAttribute("name") === firstErrorField);
@@ -117,6 +119,7 @@ const getPaymentDeliveryContext = (order: IOrderWithCustmAttr | undefined) => ({
 
 const usePaymentDeliveryContext = () => {
 	const {order} = useAppSelector((state) => state.app);
+
 	return getPaymentDeliveryContext(order);
 };
 
@@ -128,10 +131,12 @@ const redirectToIncompleteStep = (
 	if (!stepper) return false;
 
 	const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+
 	if (!firstIncompleteStep) return false;
 
 	dispatch(setCurrentStep(firstIncompleteStep));
 	dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));
+
 	return true;
 };
 
@@ -164,6 +169,7 @@ export default function PaymentMethodForm({
 	);
 
 	const paymentMethods = paymentPage.paymentMethods;
+
 	const onlyPaymentMethodIsCreditCard =
 		paymentMethods.length === 1 &&
 		paymentMethods[0].payment_method_id === CREDIT_CARD_PAYMENT_METHOD;
@@ -178,8 +184,10 @@ export default function PaymentMethodForm({
 			{(formikProps) => {
 				const {values} = formikProps;
 				const selectedPaymentMethodId = values.payment_method_id;
+
 				const isCreditCard =
 					selectedPaymentMethodId === CREDIT_CARD_PAYMENT_METHOD;
+
 				const showPayHQ = isCreditCard || onlyPaymentMethodIsCreditCard;
 
 				const submitCreditCardCheckout = async () => {
@@ -190,19 +198,23 @@ export default function PaymentMethodForm({
 					formikProps.setStatus(undefined);
 
 					const validationErrors = await formikProps.validateForm();
+
 					if (Object.keys(validationErrors).length > 0) {
 						scrollPaymentFormToFirstErrorField(validationErrors);
+
 						return;
 					}
 
 					const latestCheckoutData = getCheckoutData();
 					const latestOrder = latestCheckoutData?.order;
+
 					if (redirectToIncompleteStep(dispatch, stepper, latestOrder)) {
 						return;
 					}
 
 					if (latestOrder?.paid_at || isPaymentApproved) {
 						await formikProps.submitForm();
+
 						return;
 					}
 
@@ -210,6 +222,7 @@ export default function PaymentMethodForm({
 						formikProps.setStatus({
 							serverError: "Payment module is still loading. Please try again.",
 						});
+
 						return;
 					}
 
@@ -228,6 +241,7 @@ export default function PaymentMethodForm({
 									"Your payment was approved but we could not update your order. Please contact support.",
 							});
 							setIsPayHQSubmitting(false);
+
 							return;
 						}
 
@@ -253,13 +267,16 @@ export default function PaymentMethodForm({
 				};
 
 				const creditCardPaymentComplete = Boolean(order?.paid_at || isPaymentApproved);
+
 				const isCheckoutCompletionInProgress = Boolean(
 					formikProps.status?.checkoutCompletionInProgress,
 				);
+
 				const isSharedButtonBusy =
 					formikProps.isSubmitting ||
 					isPayHQSubmitting ||
 					isCheckoutCompletionInProgress;
+
 				const submitButtonLabel =
 					isCreditCard && !creditCardPaymentComplete
 						? isPayHQSubmitting
@@ -344,6 +361,7 @@ const getFormInitialValues = (
 	paymentMethods: IPaymentMethod[],
 ) => {
 	const paidAt = order?.paid_at;
+
 	const initialValues: IPaymentMethodFormValues = {
 		payment_method_id: paidAt
 			? CREDIT_CARD_PAYMENT_METHOD
@@ -399,6 +417,7 @@ const PaymentMethods = ({
 					onChange={(e) => {
 						formikProps.handleChange(e);
 						setIsPaymentApproved(false);
+
 						if (formikProps.status?.serverError) {
 							formikProps.setStatus(undefined);
 						}
@@ -437,6 +456,7 @@ const PaymentMethods = ({
 							{...fieldAttrs("tip", formikProps)}
 							onChange={(e) => {
 								formikProps.handleChange(e);
+
 								if (formikProps.status?.serverError) {
 									formikProps.setStatus(undefined);
 								}
@@ -487,11 +507,13 @@ const useSavePaymentMethod = (
 			});
 			setStatus({serverError: "Unable to complete your order. Please refresh and try again."});
 			setSubmitting(false);
+
 			return;
 		}
 
 		if (redirectToIncompleteStep(dispatch, stepper, checkoutDataOrder)) {
 			setSubmitting(false);
+
 			return;
 		}
 

@@ -6,7 +6,9 @@ import {getCheckoutData} from "../../../hooks/checkoutData";
 import PayHQ, {CreatePaymentInstance, PayHQHandle} from "./PayHQ";
 
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
+
 let mockPayfirmaInfo: {token?: string; environment?: string; endpoint?: string} = {
 	token: "payfirma-api-key",
 	environment: "TEST",
@@ -110,6 +112,7 @@ function PayHQSubmitHarness({
 						// Fallback if payHQRef wasn't provided but the button is clicked
 						const targetRef = typeof ref === "function" ? null : ref;
 						const paymentResult = await targetRef?.current?.submitPayment();
+
 						if (paymentResult?.paidAt) {
 							setResult(paymentResult.paidAt);
 						}
@@ -152,6 +155,7 @@ describe("PayHQ", () => {
 
 	it("fails closed when the Payfirma environment is missing", async () => {
 		mockPayfirmaInfo = {token: "payfirma-api-key", endpoint: ""};
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken: jest.fn(),
 		}));
@@ -171,9 +175,11 @@ describe("PayHQ", () => {
 
 	it("shows required field errors, focuses the first invalid field, and does not request payment when contact details are empty", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -205,9 +211,11 @@ describe("PayHQ", () => {
 
 	it("clears a required field error when the field receives a non-empty value", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -239,6 +247,7 @@ describe("PayHQ", () => {
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -262,9 +271,11 @@ describe("PayHQ", () => {
 
 	it("updates province/state options when the selected country changes", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -294,9 +305,11 @@ describe("PayHQ", () => {
 
 	it("shows required field errors, focuses the first invalid field, and does not request payment when required address details are empty", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -329,9 +342,11 @@ describe("PayHQ", () => {
 
 	it("sends the cardholder contact details to the Payfirma sale endpoint", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -399,9 +414,11 @@ describe("PayHQ", () => {
 
 	it("preserves user-edited billing fields when unchanged checkout order data is cloned", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -436,9 +453,11 @@ describe("PayHQ", () => {
 
 	it("refreshes billing fields and sale payload when the checkout order changes", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-2",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -553,11 +572,13 @@ describe("PayHQ", () => {
 
 	it("prevents duplicate sale attempts if submitPayment is called again while in flight", async () => {
 		let resolveToken: (val: any) => void = () => {};
+
 		const getPaymentToken = jest.fn().mockReturnValue(
 			new Promise((resolve) => {
 				resolveToken = resolve;
 			})
 		);
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -599,6 +620,7 @@ describe("PayHQ", () => {
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -635,9 +657,11 @@ describe("PayHQ", () => {
 
 	it("rejects and reports failure if the sale fails", async () => {
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -680,12 +704,15 @@ describe("PayHQ", () => {
 	it("logs parse errors from non-OK Payfirma responses and reports the generic failure", async () => {
 		const parseError = new Error("invalid json");
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
+
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
@@ -728,9 +755,11 @@ describe("PayHQ", () => {
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
+
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 
@@ -762,12 +791,15 @@ describe("PayHQ", () => {
 
 	it("does not tokenize or submit a sale when persisted checkout session data is unreadable", async () => {
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
+
 		const onPaymentFailed = jest.fn();
 		const payHQRef = React.createRef<PayHQHandle>();
 		const checkoutReadError = new Error("Unexpected token u in JSON at position 0");
@@ -837,9 +869,11 @@ describe("PayHQ", () => {
 
 	it("applies the tip prop to the payment POST payload", async () => {
 		const user = userEvent.setup();
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -869,9 +903,11 @@ describe("PayHQ", () => {
 
 	it("rejects when the API response has success: false", async () => {
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -916,6 +952,7 @@ describe("PayHQ", () => {
 	it("rejects when getPaymentToken resolves with no token", async () => {
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 		const getPaymentToken = jest.fn().mockResolvedValue(null);
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
@@ -951,12 +988,15 @@ describe("PayHQ", () => {
 	it("warns and uses a client timestamp when a successful sale omits paidAt", async () => {
 		jest.useFakeTimers().setSystemTime(new Date("2026-05-30T10:00:00.000Z"));
 		const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
+
 		const payHQRef = React.createRef<PayHQHandle>();
 
 		global.fetch = jest.fn().mockResolvedValue({
@@ -993,12 +1033,15 @@ describe("PayHQ", () => {
 	it("warns and uses a client timestamp when paidAt is not a string", async () => {
 		jest.useFakeTimers().setSystemTime(new Date("2026-05-30T11:00:00.000Z"));
 		const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
 		const getPaymentToken = jest.fn().mockResolvedValue({
 			payment_token: "payment-token-1",
 		});
+
 		const createPaymentInstance: CreatePaymentInstance = jest.fn(() => ({
 			getPaymentToken,
 		}));
+
 		const payHQRef = React.createRef<PayHQHandle>();
 
 		global.fetch = jest.fn().mockResolvedValue({

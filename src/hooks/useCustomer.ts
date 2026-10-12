@@ -30,6 +30,7 @@ export const useCustomer = (order?: IOrderWithCustmAttr) => {
 			}
 
 			const [parseErr, data] = await to(resp.json());
+
 			if (parseErr) {
 				console.error("Failed to parse getCovaCustomer response", parseErr);
 				throw new Error("Failed to parse getCovaCustomer response");

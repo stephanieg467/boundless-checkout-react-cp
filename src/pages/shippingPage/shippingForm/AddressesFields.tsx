@@ -19,9 +19,11 @@ export default function AddressesFields({
 	const {t} = useTranslation();
 
 	const {values} = formikProps;
+
 	if (!values.delivery_id) return null;
 
 	const deliveryMethodSelected = isDeliveryMethod(values.delivery_id, shippingPage.options.delivery);
+
 	return (
 		<>
 			<Box className="bdl-shipping-form__address-form" sx={{mb: 2}}>

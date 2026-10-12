@@ -29,10 +29,12 @@ export const CheckoutConfigProvider = ({
 
 export const useCheckoutConfig = () => {
 	const context = useContext(CheckoutConfigContext);
+
 	if (!context) {
 		throw new Error(
 			"useCheckoutConfig must be used within a CheckoutConfigProvider"
 		);
 	}
+
 	return context;
 };

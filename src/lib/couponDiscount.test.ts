@@ -93,6 +93,7 @@ describe("allocateCouponDiscount", () => {
 			product: product("PROMO", 8, "5.00"),
 			total: "5.00",
 		});
+
 		const result = allocateCouponDiscount(
 			[item("REGULAR", 10), promotion],
 			coupon("50", "Percent"),
@@ -154,6 +155,7 @@ describe("allocateCouponDiscount", () => {
 			[item("B", 1), item("A", 1)],
 			coupon("0.01"),
 		);
+
 		const reversed = allocateCouponDiscount(
 			[item("A", 1), item("B", 1)],
 			coupon("0.01"),

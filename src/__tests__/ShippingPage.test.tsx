@@ -8,6 +8,7 @@ import {orderWith, stepperWith} from "./checkoutPageTestUtils";
 (globalThis as any).React = React;
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
 
 jest.mock("../hooks/redux", () => ({

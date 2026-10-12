@@ -13,6 +13,7 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const {order: reduxOrder, total: reduxTotal} = useAppSelector(
 		(state) => state.app,
 	);
+
 	const checkoutData = !reduxOrder || !reduxTotal ? getCheckoutData() : undefined;
 	const order = reduxOrder ?? checkoutData?.order;
 	const total = reduxTotal ?? checkoutData?.total;
@@ -23,13 +24,17 @@ export default function CartFooter({open}: ICartFooterProps) {
 
 	const itemsSubTotal = parseLenientAmount(total?.itemsSubTotal?.price);
 	const servicesSubTotal = parseLenientAmount(total?.servicesSubTotal?.price);
+
 	const totalTaxAmount = total
 		? parseLenientAmount(total.tax?.totalTaxAmount)
 		: parseLenientAmount(cart?.taxAmount);
+
 	const tipAmount = Math.max(0, parseLenientAmount(order?.tip));
+
 	const fallbackTotalPrice = total
 		? itemsSubTotal + servicesSubTotal + totalTaxAmount + tipAmount
 		: parseLenientAmount(cart?.total?.total) + totalTaxAmount + tipAmount;
+
 	const totalPrice =
 		total?.price !== undefined && total.price !== null && total.price !== ""
 			? parseLenientAmount(total.price)
@@ -38,8 +43,10 @@ export default function CartFooter({open}: ICartFooterProps) {
 	const getDiscountAmount = () => {
 		if (!order?.discounts || !order?.discounts.length) return "";
 		const discount = order.discounts[0];
+
 		if (discount.discount_type === "percent") {
 			const discountPercent = discount.value;
+
 			return ` (${discountPercent}%)`;
 		}
 

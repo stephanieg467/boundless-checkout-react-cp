@@ -27,6 +27,7 @@ const parseTimeStringToNumber = (timeStr: string): number => {
 	const [hoursStr, minutesStr] = timeStr.split(":");
 	const hours = parseInt(hoursStr, 10);
 	const minutes = parseInt(minutesStr, 10);
+
 	return hours + minutes / 60;
 };
 
@@ -58,6 +59,7 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 		day: "numeric",
 		hour12: false, // Use 24-hour format for the hour
 	};
+
 	const formatter = new Intl.DateTimeFormat("en-CA", options);
 	const parts = formatter.formatToParts(baseDate);
 
@@ -77,6 +79,7 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 				hourVancouver = hr === 24 ? 0 : hr;
 				break;
 			}
+
 			case "minute":
 				minuteVancouver = parseInt(part.value);
 				break;
@@ -104,6 +107,7 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 		Friday: 5,
 		Saturday: 6,
 	};
+
 	const dayOfWeek = dayMap[weekdayName];
 
 	return {
@@ -120,19 +124,24 @@ export const getVancouverDateTime = (baseDate: Date = new Date()) => {
 export const addBusinessDays = (date: Date, n: number): Date => {
 	let count = 0;
 	const current = new Date(date);
+
 	// If starting on a weekend, advance to the next business day first
 	while (true) {
 		const {dayOfWeek} = getVancouverDateTime(current);
+
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) break;
 		current.setDate(current.getDate() + 1);
 	}
+
 	while (count < n) {
 		current.setDate(current.getDate() + 1);
 		const {dayOfWeek} = getVancouverDateTime(current);
+
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
 			count++;
 		}
 	}
+
 	return current;
 };
 
@@ -142,6 +151,7 @@ const formatTime = (time: number): string => {
 	const period = hour >= 12 ? "pm" : "am";
 	const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
 	const minutesStr = minutes > 0 ? `:${minutes}` : "";
+
 	return `${displayHour}${minutesStr}${period}`;
 };
 
@@ -151,6 +161,7 @@ const getDateString = (year: number, month: number, day: number) => {
 };
 
 export type DeliveryTimesBase = {times: DeliveryTimeOption[]; isNextDay: boolean};
+
 export type DeliveryTimesWithDropShip = DeliveryTimesBase & {
 	dropShipTimes: {times: DeliveryTimeOption[]; date: string};
 };
@@ -160,6 +171,7 @@ const withAsapDeliveryOption = (
 	isNextDay: boolean,
 ): DeliveryTimeOption[] => {
 	if (isNextDay) return times;
+
 	if (times.some((option) => option.label === ASAP_DELIVERY_LABEL)) {
 		return times;
 	}
@@ -208,6 +220,7 @@ export function getDynamicDeliveryTimes(
 
 	const dropShipDate = addBusinessDays(now, 2);
 	const dropShipSlots = calculateSlotsForDate(dropShipDate, deliveryTimesData, -1);
+
 	const dropShipDateLabel = new Intl.DateTimeFormat("en-CA", {
 		timeZone: "America/Vancouver",
 		weekday: "short",
@@ -255,6 +268,7 @@ const calculateSlotsForDate = (
 
 	// Determine applicable schedule
 	let schedule = regularSchedule;
+
 	if (exceptionSchedules[dateString]) {
 		schedule = exceptionSchedules[dateString];
 	}
@@ -266,6 +280,7 @@ const calculateSlotsForDate = (
 		// We iterate from the start hour up to the end hour
 		// We can fit a 1-hour slot if (start + 1) <= end
 		let slotStart = window.start;
+
 		while (slotStart + 1 <= window.end) {
 			if (slotStart + 0.5 > currentTime) {
 				let slotEnd = slotStart + 1;
@@ -283,6 +298,7 @@ const calculateSlotsForDate = (
 					asapDeliveryAvailable: window.asapDeliveryAvailable,
 				});
 			}
+
 			slotStart += 1;
 		}
 	});
@@ -293,10 +309,12 @@ const calculateSlotsForDate = (
 export const getNextTwoBusinessDaysFormatted = (): string => {
 	const date = addBusinessDays(new Date(), 2);
 	const month = date.toLocaleString("en-US", {month: "long", timeZone: "America/Vancouver"});
+
 	const day = parseInt(
 		date.toLocaleString("en-US", {day: "numeric", timeZone: "America/Vancouver"}),
 		10
 	);
+
 	const suffix =
 		day % 10 === 1 && day !== 11
 			? "st"
@@ -305,5 +323,6 @@ export const getNextTwoBusinessDaysFormatted = (): string => {
 				: day % 10 === 3 && day !== 13
 					? "rd"
 					: "th";
+
 	return `${month} ${day}${suffix}`;
 };

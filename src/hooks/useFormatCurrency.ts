@@ -9,6 +9,7 @@ export default function useFormatCurrency() {
 		amount = Number(amount);
 
 		const currencyOptions: Options = {};
+
 		if (localeSettings) {
 			const {format, precision, symbol, decimal, thousand} = localeSettings.money;
 			let pattern = format.replace("%v", "#");

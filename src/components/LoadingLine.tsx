@@ -18,6 +18,7 @@ export default function LoadingLine() {
 
 	const checkBgPromises = () => {
 		const size = promises.length;
+
 		if (!size) return;
 
 		setIsAnimating(true);

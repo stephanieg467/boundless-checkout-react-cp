@@ -32,6 +32,7 @@ export default function ExtraErrors({excludedFields, errors}: {excludedFields: s
 		if (reason === "clickaway") {
 			return;
 		}
+
 		setIsOpen(false);
 		setAlertText(null);
 	};

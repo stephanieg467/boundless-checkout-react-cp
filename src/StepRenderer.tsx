@@ -37,6 +37,7 @@ const syncCheckoutStepUrl = (step: TCheckoutStep) => {
 	if (typeof window === "undefined") return;
 
 	const slug = checkoutStepUrlSlugs[step];
+
 	if (!slug) return;
 
 	const nextPath = `${checkoutBasePath}/${slug}`;
@@ -94,5 +95,6 @@ export default function StepRenderer() {
 	}
 
 	const StepComponent = stepComponents[stepper.currentStep] ?? ContactInfoPage;
+
 	return <StepComponent />;
 }

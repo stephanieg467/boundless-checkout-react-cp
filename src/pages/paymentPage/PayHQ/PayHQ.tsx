@@ -81,6 +81,7 @@ type RequiredPaymentField =
 	| "province";
 
 type RequiredPaymentFieldErrors = Partial<Record<RequiredPaymentField, string>>;
+
 type RequiredPaymentFieldElement =
 	| HTMLInputElement
 	| HTMLTextAreaElement
@@ -185,11 +186,14 @@ const resolvePaidAt = (paidAt: unknown): string => {
 	console.warn(
 		"[PayHQ] /api/payfirmaSale returned success without a valid paidAt; using client timestamp as fallback.",
 	);
+
 	return new Date().toISOString();
 };
 
 const PAYFIRMA_FIELD_HEIGHT = "56px";
+
 const PAYFIRMA_FIELD_FONT_SIZE = "14px";
+
 const COUNTRY_IDS_BY_ISO_CODE: Record<string, number[]> = {
 	CA: [0, 40],
 };
@@ -219,11 +223,13 @@ function countryCodeFromAddress(
 	address: CustomerAddress | null | undefined,
 ): string {
 	const vwCountryCode = address?.vwCountry?.code;
+
 	if (vwCountryCode) {
 		return vwCountryCode.toUpperCase();
 	}
 
 	const countryId = address?.country_id;
+
 	if (countryId != null) {
 		const matchingCountryCode = Object.entries(COUNTRY_IDS_BY_ISO_CODE).find(
 			([, countryIds]) => countryIds.includes(countryId),
@@ -246,6 +252,7 @@ function findProvinceOption(
 	}
 
 	const normalizedProvince = province.toLowerCase();
+
 	return State.getStatesOfCountry(countryCode).find(
 		(option) =>
 			option.name.toLowerCase() === normalizedProvince ||
@@ -310,6 +317,7 @@ function getPaymentBillingDefaultsSignature(
 
 const missingCheckoutSessionMessage =
 	"Unable to start payment because checkout session data is missing. Please refresh and try again.";
+
 const genericPaymentFailureMessage =
 	"Payment could not be completed. Please try again or contact the store.";
 
@@ -377,6 +385,7 @@ function getRequiredCheckoutData(
 	onPaymentFailed: PaymentFailureReporter,
 ): ICheckoutData {
 	let checkoutData;
+
 	try {
 		checkoutData = getCheckoutData();
 	} catch (error) {
@@ -420,6 +429,7 @@ function prepareSalePayloadData({
 			{order: finalOrder, total: finalTotal},
 			tip,
 		);
+
 		finalOrder = tippedSession.order;
 		finalTotal = tippedSession.total;
 	}
@@ -473,8 +483,10 @@ async function getNonOkPayfirmaSaleMessage(
 	response: Response,
 ): Promise<string> {
 	let message = genericPaymentFailureMessage;
+
 	try {
 		const errorData = await response.json();
+
 		if (typeof errorData.message === "string") message = errorData.message;
 	} catch (parseError) {
 		console.error("[PayHQ] Failed to parse error response body", parseError);
@@ -505,12 +517,15 @@ async function submitPayfirmaSale(
 ): Promise<PayfirmaSaleResponseData> {
 	const paymentToken = await getRequiredPaymentToken(payment);
 	const salePayloadData = prepareSalePayloadData(salePayloadOptions);
+
 	const requestBody = createPayfirmaSaleRequestBody({
 		paymentFields,
 		paymentToken,
 		salePayloadData,
 	});
+
 	const response = await requestPayfirmaSale(requestBody);
+
 	return parsePayfirmaSaleResponse(response);
 }
 
@@ -523,6 +538,7 @@ function reportPayfirmaPaymentError(
 		error instanceof Error ? error.message : String(error),
 	);
 	const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "the store";
+
 	const finalErrorMessage =
 		error instanceof Error
 			? error.message
@@ -612,6 +628,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	const items = propItems || appState.items;
 
 	const paymentBillingDefaults = getPaymentBillingDefaults(order);
+
 	const paymentBillingDefaultsSignature = getPaymentBillingDefaultsSignature(
 		paymentBillingDefaults,
 	);
@@ -620,12 +637,15 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	const submitInFlightRef = useRef(false);
 	const paymentApprovedRef = useRef(false);
 	const latestPaymentBillingDefaultsRef = useRef(paymentBillingDefaults);
+
 	const syncedPaymentBillingDefaultsSignatureRef = useRef(
 		paymentBillingDefaultsSignature,
 	);
+
 	const requiredPaymentFieldRefs = useRef<
 		Partial<Record<RequiredPaymentField, RequiredPaymentFieldElement | null>>
 	>({});
+
 	latestPaymentBillingDefaultsRef.current = paymentBillingDefaults;
 	const [payment, setPayment] = useState<PayfirmaPayment | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -636,12 +656,16 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 	const [address2, setAddress2] = useState(paymentBillingDefaults.address2);
 	const [city, setCity] = useState(paymentBillingDefaults.city);
 	const [country, setCountry] = useState(paymentBillingDefaults.country);
+
 	const [postalCode, setPostalCode] = useState(
 		paymentBillingDefaults.postalCode,
 	);
+
 	const [province, setProvince] = useState(paymentBillingDefaults.province);
+
 	const [requiredPaymentFieldErrors, setRequiredPaymentFieldErrors] =
 		useState<RequiredPaymentFieldErrors>({});
+
 	const countryOptions = useMemo(
 		() =>
 			Country.getAllCountries()
@@ -652,6 +676,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[],
 	);
+
 	const provinceOptions = useMemo(
 		() => (country ? State.getStatesOfCountry(country) : []),
 		[country],
@@ -691,12 +716,14 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 		hasInitialized.current = true;
 		const payfirmaFieldMetrics = getActivePayfirmaFieldMetrics();
+
 		const paymentInstance = createPaymentInstance(apiKey, paymentContainerId, {
 			environment: payfirmaEnvironment,
 			style: {
 				input: createPayfirmaInputStyle(payfirmaFieldMetrics),
 			},
 		}) as PayfirmaPayment;
+
 		setPayment(paymentInstance);
 
 		const paymentContainer = document.getElementById(paymentContainerId);
@@ -761,6 +788,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 
 				const remainingErrors = {...currentErrors};
 				delete remainingErrors[field];
+
 				return remainingErrors;
 			});
 		},
@@ -775,7 +803,9 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			isProcessing: submitInFlightRef.current || isSubmitting,
 			onPaymentFailed,
 		});
+
 		const checkoutData = getRequiredCheckoutData(onPaymentFailed);
+
 		const paymentFields = getTrimmedPaymentFields({
 			firstName,
 			lastName,
@@ -787,6 +817,7 @@ const PayHQ = forwardRef<PayHQHandle, PayHQProps>(function PayHQ(
 			postalCode,
 			province,
 		});
+
 		const paymentFieldErrors = validateRequiredPaymentFields(paymentFields);
 
 		if (hasRequiredPaymentFieldErrors(paymentFieldErrors)) {

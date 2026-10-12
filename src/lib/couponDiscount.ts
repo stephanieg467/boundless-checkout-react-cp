@@ -41,6 +41,7 @@ const originalLineCents = (item: CovaCartItem): number => {
 	}
 
 	const basePrice = Number(covaProductPrice(item.product));
+
 	if (!Number.isFinite(basePrice) || basePrice < 0) {
 		throw new Error("Cart item price must be a finite, non-negative number.");
 	}
@@ -56,9 +57,11 @@ const originalLineCents = (item: CovaCartItem): number => {
  */
 const compareRemainders = (left: EligibleLine, right: EligibleLine): number => {
 	if (left.remainder !== right.remainder) return right.remainder - left.remainder;
+
 	if (left.productId !== right.productId) {
 		return left.productId < right.productId ? -1 : 1;
 	}
+
 	return left.index - right.index;
 };
 
@@ -83,6 +86,7 @@ const distributeCents = (
 
 	const centsToReconcile =
 		discountCents - lines.reduce((total, line) => total + line.allocation, 0);
+
 	for (const line of [...lines].sort(compareRemainders).slice(0, centsToReconcile)) {
 		line.allocation += 1;
 	}
@@ -100,6 +104,7 @@ export const allocateCouponDiscount = (
 	coupon: Coupon,
 ): CouponDiscountAllocation => {
 	const couponValue = Number(coupon.value);
+
 	if (!Number.isFinite(couponValue) || couponValue < 0) {
 		throw new Error("Coupon value must be a finite, non-negative number.");
 	}
@@ -108,12 +113,14 @@ export const allocateCouponDiscount = (
 		...item,
 		product: {...item.product},
 	}));
+
 	const eligibleLines: EligibleLine[] = [];
 	let merchandiseCents = 0;
 
 	items.forEach((item, index) => {
 		const lineCents = originalLineCents(item);
 		merchandiseCents += lineCents;
+
 		if (!isPromotionItem(item.product)) {
 			eligibleLines.push({
 				index,
@@ -129,10 +136,12 @@ export const allocateCouponDiscount = (
 		(total, line) => total + line.lineCents,
 		0,
 	);
+
 	const requestedDiscountCents =
 		coupon.type === "Percent"
 			? roundCents((eligibleCents * couponValue) / 100)
 			: currency(couponValue).intValue;
+
 	const discountCents = Math.min(requestedDiscountCents, eligibleCents);
 
 	distributeCents(eligibleLines, discountCents, eligibleCents);

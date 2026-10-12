@@ -20,6 +20,7 @@ import {
 } from "../../lib/checkoutGuards";
 
 const EMPTY_CART_ERROR = "Your cart is empty. Please go back to the site and start shopping.";
+
 const CHECKOUT_INIT_ERROR = "Cannot initialize checkout. Please go back to the cart and try again.";
 
 const DEFAULT_CURRENCY = {
@@ -50,9 +51,13 @@ const buildCheckoutSteps = (items: Parameters<typeof ordersDropShippingItems>[0]
 };
 
 type CheckoutDataOrder = IOrderWithCustmAttr | undefined;
+
 type CheckoutDataOrderService = IOrderService | null;
+
 type StepWarning = ReturnType<typeof getCheckoutStepWarning>;
+
 type CheckoutInitDataWithWarning = CovaCheckoutInitData & {stepWarning: StepWarning | null};
+
 type CheckoutDispatch = (
 	action:
 		| ReturnType<typeof setCheckoutData>
@@ -328,9 +333,11 @@ const normalizeStepper = (
 ) => {
 	const requestedStepper = buildRequestedStepper(stateStepper, steps);
 	const blockedCheckoutStep = resolveBlockedCheckoutStep(initialOrder, requestedStepper);
+
 	const currentStep = blockedCheckoutStep
 		? blockedCheckoutStep.currentStep
 		: resolveRequestedCurrentStep(requestedStepper);
+
 	const stepWarning = blockedCheckoutStep ? blockedCheckoutStep.stepWarning : null;
 
 	return {
@@ -399,6 +406,7 @@ const buildCheckoutInitDataForCart = async ({
 	const totalOrderTaxes = await resolveOrderTaxes(items, checkoutDataOrder);
 	const tax = buildTaxSummary(items, totalOrderTaxes, checkoutDataOrder);
 	const checkoutDataOrderService = getCheckoutDataOrderService(checkoutDataOrder);
+
 	const initialOrder = buildInitialOrder({
 		cartId,
 		stateOrder,
@@ -408,6 +416,7 @@ const buildCheckoutInitDataForCart = async ({
 		totalOrderTaxes,
 		tax,
 	});
+
 	const {stepper: normalizedStepper, stepWarning} = normalizeStepper(
 		initialOrder,
 		stateStepper,
@@ -459,6 +468,7 @@ export const initCheckoutByCart =
 			try {
 				if (!hasCheckoutCartItems(cart)) {
 					dispatchEmptyCartError(dispatch);
+
 					return;
 				}
 

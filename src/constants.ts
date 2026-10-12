@@ -1,5 +1,7 @@
 export const DELIVERY_ID = 2;
+
 export const SHIPPING_DELIVERY_ID = 3;
+
 export const SELF_PICKUP_ID = 1;
 
 export const SHIPPING_COST = "6.00";

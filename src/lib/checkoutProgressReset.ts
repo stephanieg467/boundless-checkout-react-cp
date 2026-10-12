@@ -18,6 +18,7 @@ const removeKeys = <T extends object>(
 ): T => {
 	const next = {...(source ?? {})} as T & Record<string, unknown>;
 	keys.forEach((key) => delete next[key]);
+
 	return next;
 };
 
@@ -25,11 +26,13 @@ const numeric = (value: string | number | null | undefined, context?: string): n
 	if (value === null || value === undefined) return 0;
 
 	const parsed = Number(value);
+
 	if (!Number.isFinite(parsed)) {
 		console.error(
 			`[checkoutProgressReset] Non-numeric value encountered${context ? ` for ${context}` : ""}`,
 			value,
 		);
+
 		return 0;
 	}
 
@@ -85,6 +88,7 @@ export const clearProgressAfterContact = (
 	const shippingRate = numeric(order.custom_attrs?.shippingRate, "custom_attrs.shippingRate");
 	const tip = numeric(order.tip, "order.tip");
 	const taxAmount = Math.max(0, numeric(order.tax_amount, "order.tax_amount") - shippingTax).toString();
+
 	const totalPrice = Math.max(
 		0,
 		numeric(order.total_price ?? total?.price, "order.total_price") - shippingTax - shippingRate - tip,

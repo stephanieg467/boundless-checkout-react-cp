@@ -160,6 +160,7 @@ describe("DeliverySelector fee copy", () => {
 			expect(screen.getByText(paidDeliveryFeeCopy, {exact: false})).toBeInTheDocument();
 			expect(screen.getByText("Free delivery on orders over $100", {exact: false})).toBeInTheDocument();
 			expect(screen.queryByText(/Delivery fee: \$/)).not.toBeInTheDocument();
+
 			if (qualifiesForFreeShipping) {
 				expect(
 					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),
@@ -198,6 +199,7 @@ describe("DeliverySelector fee copy", () => {
 			expect(
 				screen.getByText(`Shipping fee: $${SHIPPING_COST}`),
 			).toBeInTheDocument();
+
 			if (qualifiesForFreeShipping) {
 				expect(
 					screen.getAllByText(/FREE SHIPPING \(Order over \$100\)/),

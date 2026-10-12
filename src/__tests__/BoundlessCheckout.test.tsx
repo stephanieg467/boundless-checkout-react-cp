@@ -18,12 +18,15 @@ jest.mock("react-redux", () => ({
 jest.mock("../StepRenderer", () => () => <div data-testid="step-renderer" />);
 
 const mockQueryClientConstructor = jest.fn();
+
 jest.mock("@tanstack/react-query", () => {
 	const actual = jest.requireActual("@tanstack/react-query");
+
 	return {
 		...actual,
 		QueryClient: jest.fn().mockImplementation((...args: any[]) => {
 			mockQueryClientConstructor(...args);
+
 			return new actual.QueryClient(...args);
 		}),
 		QueryClientProvider: actual.QueryClientProvider,

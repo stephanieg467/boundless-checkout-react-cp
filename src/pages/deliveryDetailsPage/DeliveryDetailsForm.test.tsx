@@ -11,8 +11,11 @@ import {TCheckoutStep} from "../../types/common";
 (globalThis as any).React = React;
 
 const mockDispatch = jest.fn();
+
 const mockSetLocalStorageCheckoutData = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
 
 jest.mock("../../hooks/redux", () => ({
@@ -27,12 +30,16 @@ jest.mock("../../hooks/checkoutData", () => ({
 }));
 
 const regularAsapFeeFree = {label: "ASAP", applyDeliveryFee: false};
+
 const regularFeeRequired = {label: "Regular fee slot", applyDeliveryFee: true};
+
 const regularFeeFree = {label: "Regular free slot", applyDeliveryFee: false};
+
 const dropShipFeeRequired = {
 	label: "Drop-ship fee slot",
 	applyDeliveryFee: true,
 };
+
 const dropShipFeeFree = {
 	label: "Drop-ship free slot",
 	applyDeliveryFee: false,
@@ -54,6 +61,7 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 }));
 
 jest.mock("../../components/CheckoutStepWarning", () => () => null);
+
 jest.mock("../../components/ExtraErrors", () => () => null);
 
 const cartItem = (name: string, isDropShip: boolean) => ({
@@ -71,6 +79,7 @@ const cartItem = (name: string, isDropShip: boolean) => ({
 });
 
 const regularItem = cartItem("Regular product", false);
+
 const dropShipItem = cartItem("Drop-ship product", true);
 
 const quotedFee = "6.00";
@@ -153,6 +162,7 @@ const setup = ({
 	totalOverride?: any;
 } = {}) => {
 	const total = totalOverride ?? checkoutTotalsForRate(staleShippingRate);
+
 	const order = makeOrder({
 		shippingRate: staleShippingRate,
 		overrides: orderOverrides,
@@ -358,6 +368,7 @@ describe("DeliveryDetailsForm drop-ship delivery details", () => {
 				totalTaxAmount: "0.3",
 			},
 		};
+
 		setup({
 			items: [regularItem, dropShipItem],
 			staleShippingRate: SHIPPING_COST,

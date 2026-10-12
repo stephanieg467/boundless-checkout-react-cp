@@ -3,6 +3,7 @@ import {getCartOrRetrieve} from "./getCartOrRetrieve";
 
 export const getCheckoutData = (): ICheckoutData | null => {
 	const cc_checkout_data = localStorage.getItem("cc_checkout_data");
+
 	if (cc_checkout_data) {
 		return JSON.parse(cc_checkout_data);
 	}
@@ -17,6 +18,7 @@ export const setLocalStorageCheckoutData = (data: ICheckoutData): void => {
 		const itemsWithThc = currentCartItems ? currentCartItems.map((el) => {
 			const equivalentTo = el.product.ProductSpecifications.find((spec) => spec.DisplayName === "Equivalent To");
 			const thcGrams = equivalentTo ? parseFloat(equivalentTo.Value) : 0;
+
 			return {
 				...el,
 				thcGrams

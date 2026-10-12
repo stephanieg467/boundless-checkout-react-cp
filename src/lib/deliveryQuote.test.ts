@@ -8,14 +8,18 @@ import {
 const address: DeliveryQuoteRequest = {
 	street: "385 Martin St", unit: "2", city: "Penticton", province: "BC", postalCode: "V2A 5K6",
 };
+
 const quote = {status: "ok", fee: "6.00", zoneLabel: "Naramata", distanceKm: 20};
+
 const originalFetch = global.fetch;
+
 const fetchMock = jest.fn();
 
 beforeEach(() => {
 	global.fetch = fetchMock;
 	fetchMock.mockReset();
 });
+
 afterAll(() => { global.fetch = originalFetch; });
 
 const respond = (data: unknown, status = 200) => {

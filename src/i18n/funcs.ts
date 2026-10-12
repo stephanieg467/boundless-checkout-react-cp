@@ -21,5 +21,6 @@ export const initI18n = () => {
 	};
 
 	i18n.init(options);
+
 	return i18n;
 };

@@ -11,6 +11,7 @@ export default function CartItems() {
 	const cartItems = useAppSelector(
 		(state: RootState) => state.app.items
 	);
+
 	const {formatCurrency} = useFormatCurrency();
 	const {t} = useTranslation();
 

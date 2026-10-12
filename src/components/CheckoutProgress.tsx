@@ -29,10 +29,12 @@ export default function CheckoutProgress() {
 
 		if (canNavigateToCheckoutStep(step, order, stepper)) {
 			dispatch(setCurrentStep(step));
+
 			return;
 		}
 
 		const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+
 		if (firstIncompleteStep) {
 			dispatch(setCurrentStep(firstIncompleteStep));
 			dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));

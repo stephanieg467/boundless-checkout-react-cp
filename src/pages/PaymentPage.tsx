@@ -80,6 +80,7 @@ const useInitPaymentPage = () => {
 					title: "Pay in store",
 				});
 			}
+
 			setPaymentPage(paymentPageData);
 		}
 	}, [isInited, order, dispatch]); //eslint-disable-line
@@ -88,6 +89,7 @@ const useInitPaymentPage = () => {
 		if (!isInited || !stepper || !hasCheckoutData) return;
 
 		const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+
 		if (firstIncompleteStep) {
 			dispatch(setCurrentStep(firstIncompleteStep));
 			dispatch(setStepWarning(getCheckoutStepWarning(firstIncompleteStep)));

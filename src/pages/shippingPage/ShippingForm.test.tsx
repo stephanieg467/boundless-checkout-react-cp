@@ -15,14 +15,19 @@ jest.mock("../../lib/deliveryQuote", () => ({
 	...jest.requireActual("../../lib/deliveryQuote"),
 	requestDeliveryQuote: jest.fn(),
 }));
+
 const mockRequestDeliveryQuote = jest.mocked(requestDeliveryQuote);
+
 const originalFetch = global.fetch;
 
 (globalThis as any).React = React;
 
 const mockDispatch = jest.fn();
+
 let mockState: any = {};
+
 let mockCheckoutData: any = {};
+
 const mockSetLocalStorageCheckoutData = jest.fn();
 
 type MockDeliveryTimes = {
@@ -41,6 +46,7 @@ const defaultDeliveryTimes: MockDeliveryTimes = {
 		{label: "12:00 PM", applyDeliveryFee: false},
 	],
 };
+
 let mockDeliveryTimes: MockDeliveryTimes = defaultDeliveryTimes;
 
 const setAsapDeliveryTime = (applyDeliveryFee: boolean) => {
@@ -91,6 +97,7 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 
 jest.mock("./shippingForm/DeliverySelector", () => {
 	const {useFormikContext} = jest.requireActual("formik");
+
 	const {
 		DELIVERY_ID: deliveryId,
 		SELF_PICKUP_ID: selfPickupId,
@@ -119,6 +126,7 @@ jest.mock("./shippingForm/DeliverySelector", () => {
 
 jest.mock("./shippingForm/AddressesFields", () => {
 	const {useFormikContext} = jest.requireActual("formik");
+
 	const requiredAddressFields = [
 		{field: "first_name", label: "first name"},
 		{field: "last_name", label: "last name"},
@@ -131,6 +139,7 @@ jest.mock("./shippingForm/AddressesFields", () => {
 
 	return function MockAddressesFields() {
 		const {values, handleChange} = useFormikContext();
+
 		const renderRequiredFields = (prefix: string, labelPrefix: string) =>
 			requiredAddressFields.map(({field, label}) => {
 				const id = `${prefix.replace("_address", "")}-${field.replaceAll("_", "-")}`;
@@ -356,6 +365,7 @@ describe("ShippingForm checkout address persistence", () => {
 		const deliveryTimeSelector = screen.getByRole("combobox", {
 			name: /delivery time/i,
 		});
+
 		const firstAddressField = screen.getByLabelText("Shipping first name");
 
 		expect(deliveryTimeSelector).toBeInTheDocument();
@@ -455,7 +465,9 @@ describe("ShippingForm checkout address persistence", () => {
 		const submitButton = screen.getByRole("button", {
 			name: "shippingForm.continueToPayment",
 		});
+
 		const form = submitButton.closest("form");
+
 		if (!form) throw new Error("Expected continue button to be inside a form");
 
 		fireEvent.submit(form);
@@ -562,9 +574,11 @@ describe("ShippingForm checkout address persistence", () => {
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
 
 		fillRequiredShippingAddressFields();
+
 		const deliveryTimeSelector = screen.getByRole("combobox", {
 			name: /delivery time/i,
 		});
+
 		const staleOption = document.createElement("option");
 		staleOption.value = "Unlisted regular time";
 		deliveryTimeSelector.appendChild(staleOption);
@@ -664,6 +678,7 @@ describe("ShippingForm checkout address persistence", () => {
 			render(<ShippingForm shippingPage={shippingPage() as any} />);
 
 			fillRequiredShippingAddressFields();
+
 			if (selectedRegularTime) {
 				fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
 					target: {value: selectedRegularTime},
@@ -853,6 +868,7 @@ describe("ShippingForm checkout address persistence", () => {
 		const field = label === "Delivery time"
 			? screen.getByRole("combobox", {name: /delivery time/i})
 			: screen.getByLabelText(label);
+
 		fireEvent.change(field, {target: {value}});
 		await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
 		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
@@ -881,6 +897,7 @@ describe("ShippingForm checkout address persistence", () => {
 			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Old", quotedAt: 1}}},
 		});
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
+
 		if (deliveryId === SHIPPING_DELIVERY_ID) fillRequiredShippingAddressFields();
 		const persisted = await continueToPayment();
 		expect(persisted.order.custom_attrs).not.toHaveProperty("deliveryQuote");
@@ -922,6 +939,7 @@ describe("ShippingForm checkout address persistence", () => {
 				addresses: [{type: "shipping", first_name: "Old", last_name: "Ship"}],
 			},
 		} as any;
+
 		const paidShippingTotal = {
 			price: "16.30",
 			itemsSubTotal: {price: "10.00"},
@@ -999,9 +1017,11 @@ describe("ShippingForm checkout address persistence", () => {
 		});
 
 		const savedOrder = mockSetLocalStorageCheckoutData.mock.calls[0][0].order;
+
 		const shippingAddress = savedOrder.customer.addresses.find(
 			(address: any) => address.type === "shipping",
 		);
+
 		const billingAddress = savedOrder.customer.addresses.find(
 			(address: any) => address.type === "billing",
 		);

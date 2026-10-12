@@ -24,6 +24,7 @@ export default function DeliveryDetailsPage() {
 		if (!isInited || !stepper) return;
 
 		const firstIncompleteStep = getFirstIncompleteCheckoutStep(order, stepper);
+
 		if (
 			firstIncompleteStep &&
       stepper.steps.indexOf(firstIncompleteStep) < stepper.steps.indexOf(TCheckoutStep.deliveryDetails)

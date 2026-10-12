@@ -185,6 +185,7 @@ describe("PaymentOutcome", () => {
 	describe("completeCreditCardPaymentOutcome paymentMethod preservation", () => {
 		it("preserves an existing order.paymentMethod when input.paymentMethod is omitted", () => {
 			const existingPaymentMethod = {payment_method_id: "6", title: "Existing Method"} as any;
+
 			const result = completeCreditCardPaymentOutcome(
 				{
 					order: makeOrder({

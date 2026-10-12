@@ -6,13 +6,18 @@ import {TCheckoutStep} from "../types/common";
 jest.mock("../hooks/initCheckout", () => () => ({isInited: true}));
 
 jest.mock("../pages/ContactInfoPage", () => () => <div data-testid="contact-info-page" />);
+
 jest.mock("../pages/ShippingPage", () => () => <div data-testid="shipping-page" />);
+
 jest.mock("../pages/DeliveryDetailsPage", () => () => <div data-testid="delivery-details-page" />);
+
 jest.mock("../pages/PaymentPage", () => () => <div data-testid="payment-page" />);
+
 jest.mock("../components/Loading", () => () => <div data-testid="loading" />);
 
 // Controllable Redux state
 let mockState: any = {};
+
 jest.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 }));
@@ -23,6 +28,7 @@ import StepRenderer from "../StepRenderer";
 import {CheckoutConfigProvider} from "../contexts/CheckoutConfigContext";
 
 const mockOnHide = jest.fn();
+
 const mockOnThankYouPage = jest.fn();
 
 const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string | null = null) => {
@@ -35,6 +41,7 @@ const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string |
 				: null,
 		},
 	};
+
 	return render(
 		<CheckoutConfigProvider config={{onHide: mockOnHide, onThankYouPage: mockOnThankYouPage, payfirmaInfo: {token: "mock", environment: "sandbox", endpoint: "mock"}}}>
 			<StepRenderer />

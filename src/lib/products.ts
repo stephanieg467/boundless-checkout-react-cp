@@ -4,6 +4,7 @@ import {Cart, CleanedCovaProduct, CovaCartItem} from "../types/cart";
 export const covaProductPrice = (product: CleanedCovaProduct): string => {
 	const price = product.Prices[0]?.Price;
 	const discountedPrice = product.discountedPrice;
+
 	return discountedPrice ? discountedPrice : price.toString();
 };
 
@@ -45,6 +46,7 @@ const extractSpec = (
 				return true;
 			}
 		}
+
 		return spec.DisplayName === specName;
 	});
 

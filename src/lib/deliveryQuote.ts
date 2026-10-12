@@ -49,6 +49,7 @@ function isPricedQuote(value: Record<string, unknown>): boolean {
 
 function isQuoteResponse(value: unknown): value is DeliveryQuoteResponse {
 	if (!isRecord(value)) return false;
+
 	if (["unverifiable", "unavailable"].includes(value.status as string)) return true;
 
 	switch (value.status) {
@@ -70,9 +71,11 @@ export async function requestDeliveryQuote(address: DeliveryQuoteRequest): Promi
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify(address),
 		});
+
 		if (response.status !== 200) return {status: "unavailable"};
 
 		const data: unknown = await response.json();
+
 		return isQuoteResponse(data) ? data : {status: "unavailable"};
 	} catch {
 		return {status: "unavailable"};
@@ -88,5 +91,6 @@ export function isDeliveryQuoteFresh(quote: unknown, now = Date.now()): quote is
 	if (!isStoredDeliveryQuote(quote) || !Number.isFinite(now)) return false;
 
 	const age = now - quote.quotedAt;
+
 	return age >= 0 && age < CHECKOUT_WINDOW_MS;
 }

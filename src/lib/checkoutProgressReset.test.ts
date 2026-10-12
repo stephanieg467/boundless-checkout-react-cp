@@ -148,10 +148,12 @@ describe("checkout progress reset", () => {
 			id: "submitted-shipping-address-1",
 			address_line_1: "99 New Shipping St",
 		});
+
 		const submittedService = selectedShippingService({
 			order_service_id: "submitted-service-1" as unknown as number,
 			total_price: "0.00",
 		});
+
 		const result = clearPaymentAndDeliveryProgress(
 			makeOrder({
 				customer: {

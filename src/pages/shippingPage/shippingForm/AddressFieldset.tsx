@@ -113,6 +113,7 @@ function addressFieldAttrs(
 
 	const fullName = `${keyPrefix}.${field}`;
 	let error = false;
+
 	//@ts-expect-error Formik errors do not type flattened address paths.
 	if (fullName in errors && errors[fullName]) {
 		error = true;
