@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, waitFor} from "@testing-library/react";
 import {getCheckoutStepWarning} from "../lib/checkoutGuards";
@@ -5,36 +6,36 @@ import {setCurrentStep, setStepWarning} from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
 import {orderWith, stepperWith} from "./checkoutPageTestUtils";
 
-(globalThis as any).React = React;
-
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../hooks/initCheckout", () => () => ({isInited: true}));
+vi.mock("../hooks/initCheckout", () => ({default: () => ({isInited: true})}));
 
-jest.mock("../layout/CheckoutLayout", () => ({children}: {children: React.ReactNode}) => (
-	<div data-testid="checkout-layout">{children}</div>
-));
+vi.mock("../layout/CheckoutLayout", () => ({
+	default: ({children}: {children: React.ReactNode}) => (
+		<div data-testid="checkout-layout">{children}</div>
+	),
+}));
 
-jest.mock("../components/Loading", () => () => <div data-testid="loading" />);
+vi.mock("../components/Loading", () => ({default: () => <div data-testid="loading" />}));
 
-jest.mock("../pages/shippingPage/ShippingForm", () => () => (
-	<div data-testid="shipping-form" />
-));
+vi.mock("../pages/shippingPage/ShippingForm", () => ({
+	default: () => <div data-testid="shipping-form" />,
+}));
 
-jest.mock("../lib/products", () => ({useCartHasTickets: () => false}));
+vi.mock("../lib/products", () => ({useCartHasTickets: () => false}));
 
-jest.mock("../lib/deliveryTimes", () => ({
+vi.mock("../lib/deliveryTimes", () => ({
 	getVancouverDateTime: () => ({month: 1, day: 1}),
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 

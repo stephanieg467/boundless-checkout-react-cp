@@ -40,6 +40,14 @@ Need more example? Look at: [Checkout page at Next.js](https://github.com/kirill
 
 [NextJS eCommerce templates](https://boundless-commerce.com/templates) - Free. Ready to use. Just clone & deploy!
 
+## Tests
+
+Tests run with Vitest and jsdom (Node.js 22.12+ or 24+).
+
+- `npm test` — run all tests once, including in CI.
+- `npm test -- src/lib/deliveryQuote.test.ts` — run a single test file.
+- `npx vitest` — run tests in watch mode.
+
 ## Fallow commands
 fallow                       # Full codebase analysis: cleanup + duplication + health
 fallow audit                 # Audit changed files (verdict: pass/warn/fail)

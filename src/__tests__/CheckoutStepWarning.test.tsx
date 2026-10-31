@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, screen} from "@testing-library/react";
 import {TCheckoutStep} from "../types/common";
@@ -5,7 +6,7 @@ import CheckoutStepWarning from "../components/CheckoutStepWarning";
 
 let mockState: any = {};
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 }));
 

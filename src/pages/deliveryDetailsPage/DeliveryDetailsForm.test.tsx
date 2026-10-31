@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import DeliveryDetailsForm from "./DeliveryDetailsForm";
@@ -8,22 +9,20 @@ import {
 } from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 
-(globalThis as any).React = React;
+const mockDispatch = vi.fn();
 
-const mockDispatch = jest.fn();
-
-const mockSetLocalStorageCheckoutData = jest.fn();
+const mockSetLocalStorageCheckoutData = vi.fn();
 
 let mockState: any = {};
 
 let mockCheckoutData: any = {};
 
-jest.mock("../../hooks/redux", () => ({
+vi.mock("../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../../hooks/checkoutData", () => ({
+vi.mock("../../hooks/checkoutData", () => ({
 	getCheckoutData: () => mockCheckoutData,
 	setLocalStorageCheckoutData: (data: any) =>
 		mockSetLocalStorageCheckoutData(data),
@@ -45,7 +44,7 @@ const dropShipFeeFree = {
 	applyDeliveryFee: false,
 };
 
-jest.mock("../../hooks/useDeliveryTimes", () => ({
+vi.mock("../../hooks/useDeliveryTimes", () => ({
 	useDeliveryTimes: () => ({
 		isLoading: false,
 		isError: false,
@@ -60,9 +59,9 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 	}),
 }));
 
-jest.mock("../../components/CheckoutStepWarning", () => () => null);
+vi.mock("../../components/CheckoutStepWarning", () => ({default: () => null}));
 
-jest.mock("../../components/ExtraErrors", () => () => null);
+vi.mock("../../components/ExtraErrors", () => ({default: () => null}));
 
 const cartItem = (name: string, isDropShip: boolean) => ({
 	product: {
@@ -214,7 +213,7 @@ const submitDeliveryDetails = async () => {
 		expect(mockSetLocalStorageCheckoutData).toHaveBeenCalled();
 	});
 
-	return mockSetLocalStorageCheckoutData.mock.calls.at(-1)[0];
+	return mockSetLocalStorageCheckoutData.mock.lastCall?.[0];
 };
 
 const expectPersistedDeliveryTotals = ({

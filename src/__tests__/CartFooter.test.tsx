@@ -1,3 +1,4 @@
+import {vi, type Mock} from "vitest";
 import React from "react";
 import {render, screen} from "@testing-library/react";
 import {ITotal, TPublishingStatus} from "boundless-api-client";
@@ -8,16 +9,16 @@ import {getCartOrRetrieve} from "../hooks/getCartOrRetrieve";
 
 let mockState: any = {};
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 }));
 
-jest.mock("../hooks/checkoutData", () => ({
-	getCheckoutData: jest.fn(),
+vi.mock("../hooks/checkoutData", () => ({
+	getCheckoutData: vi.fn(),
 }));
 
-jest.mock("../hooks/getCartOrRetrieve", () => ({
-	getCartOrRetrieve: jest.fn(),
+vi.mock("../hooks/getCartOrRetrieve", () => ({
+	getCartOrRetrieve: vi.fn(),
 }));
 
 const makeOrder = (
@@ -66,9 +67,9 @@ const setReduxCheckoutState = (
 
 describe("CartFooter", () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
-		(getCheckoutData as jest.Mock).mockReturnValue(null);
-		(getCartOrRetrieve as jest.Mock).mockReturnValue(null);
+		vi.clearAllMocks();
+		(getCheckoutData as Mock).mockReturnValue(null);
+		(getCartOrRetrieve as Mock).mockReturnValue(null);
 		setReduxCheckoutState();
 	});
 
@@ -197,7 +198,7 @@ describe("CartFooter", () => {
 			},
 		};
 
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({tip: "8.00", total_price: "108.00"}),
 			total: makeTotal({price: "108.00"}),
 		});

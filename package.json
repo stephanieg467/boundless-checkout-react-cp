@@ -1,6 +1,6 @@
 {
   "name": "boundless-checkout-react-cp",
-  "version": "9.2.4",
+  "version": "9.2.5",
   "description": "The official checkout React component for CC.",
   "keywords": [
     "cms",
@@ -27,7 +27,7 @@
     "lint": "npm run lint:anti-slop && eslint ./src/",
     "lint:fix": "npm run lint:anti-slop -- --fix && eslint ./src/ --fix",
     "lint:anti-slop": "oxlint ./src/",
-    "test": "jest",
+    "test": "vitest run",
     "fallow": "fallow",
     "fallow:audit": "fallow audit",
     "fallow:audit:ci": "fallow audit --base origin/master --gate new-only --ci --fail-on-issues --format json --quiet --explain",
@@ -48,7 +48,6 @@
     "@babel/core": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
     "@babel/preset-react": "^7.22.5",
-    "@babel/preset-typescript": "^7.28.5",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@eslint/js": "^9.39.1",
@@ -65,21 +64,17 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/jest": "^29.5.14",
     "@types/node": "^22.19.19",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@types/react-redux": "^7.1.34",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
-    "babel-jest": "^29.7.0",
     "boundless-api-client": "^1.0.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "fallow": "2.85.0",
     "globals": "^16.5.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^29.1.1",
     "oxlint": "1.87.0",
     "postcss": "^8.4.28",
@@ -91,7 +86,8 @@
     "stylelint-config-sass-guidelines": "^13.0.0",
     "stylelint-order": "^8.1.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
   },
   "browserslist": [
     "last 3 chrome versions",
@@ -124,11 +120,6 @@
     "react-imask": "^7.6.1",
     "react-redux": "^9.2.0",
     "uuid": "^11.1.0"
-  },
-  "overrides": {
-    "@istanbuljs/load-nyc-config": {
-      "js-yaml": "4.3.2"
-    }
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

@@ -43,6 +43,6 @@ out=$(npm run -s fallow:audit:ci 2>/dev/null) || fail "Fallow audit found introd
 	"$(echo "$out" | jq -c '.. | objects | select(.introduced == true) | del(.actions)' 2>/dev/null || echo "$out")"
 
 if [ -n "$ts" ]; then
-	out=$(npx jest --findRelatedTests $ts 2>&1) || fail "Jest failed for tests related to changed files:" "$out"
+	out=$(npx --no-install vitest related --run $ts 2>&1) || fail "Vitest failed for tests related to changed files:" "$out"
 fi
 pass

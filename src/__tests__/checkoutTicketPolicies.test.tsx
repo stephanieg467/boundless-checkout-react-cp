@@ -1,7 +1,5 @@
+import {vi} from "vitest";
 import React from "react";
-
-// Test-environment workaround for existing component runtime expectations.
-global.React = React;
 
 import {render, waitFor} from "@testing-library/react";
 import PaymentPage from "../pages/PaymentPage";
@@ -13,48 +11,44 @@ import {
 	SHIPPING_DELIVERY_INFO,
 } from "../constants";
 
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
 let mockCheckoutData: any = {};
 
-const mockPaymentMethodForm = jest.fn();
+const mockPaymentMethodForm = vi.fn();
 
-const mockShippingForm = jest.fn();
+const mockShippingForm = vi.fn();
 
-const mockInitCheckout = jest.fn(() => ({isInited: true}));
+const mockInitCheckout = vi.fn(() => ({isInited: true}));
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../hooks/initCheckout", () => ({
-	__esModule: true,
+vi.mock("../hooks/initCheckout", () => ({
 	default: () => mockInitCheckout(),
 }));
 
-jest.mock("../hooks/checkoutData", () => ({
-	getCheckoutData: jest.fn(() => mockCheckoutData),
+vi.mock("../hooks/checkoutData", () => ({
+	getCheckoutData: vi.fn(() => mockCheckoutData),
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 
-jest.mock("../layout/CheckoutLayout", () => ({
-	__esModule: true,
+vi.mock("../layout/CheckoutLayout", () => ({
 	default: ({children}: {children: React.ReactNode}) => <>{children}</>,
 }));
 
-jest.mock("../components/Loading", () => ({
-	__esModule: true,
+vi.mock("../components/Loading", () => ({
 	default: () => <div data-testid="loading" />,
 }));
 
-jest.mock("../pages/paymentPage/PaymentMethodForm", () => ({
-	__esModule: true,
+vi.mock("../pages/paymentPage/PaymentMethodForm", () => ({
 	default: (props: any) => {
 		mockPaymentMethodForm(props);
 
@@ -62,8 +56,7 @@ jest.mock("../pages/paymentPage/PaymentMethodForm", () => ({
 	},
 }));
 
-jest.mock("../pages/shippingPage/ShippingForm", () => ({
-	__esModule: true,
+vi.mock("../pages/shippingPage/ShippingForm", () => ({
 	default: (props: any) => {
 		mockShippingForm(props);
 
@@ -71,7 +64,7 @@ jest.mock("../pages/shippingPage/ShippingForm", () => ({
 	},
 }));
 
-jest.mock("../lib/deliveryTimes", () => ({
+vi.mock("../lib/deliveryTimes", () => ({
 	getVancouverDateTime: () => ({month: 1, day: 1}),
 }));
 
@@ -111,7 +104,7 @@ function setCheckoutState(items: any[]) {
 
 describe("checkout ticket policy regressions", () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockInitCheckout.mockReturnValue({isInited: true});
 	});
 

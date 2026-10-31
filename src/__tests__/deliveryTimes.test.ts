@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import {
 	addBusinessDays,
 	getDynamicDeliveryTimes,
@@ -7,8 +8,8 @@ import {
 } from "../lib/deliveryTimes";
 
 const setVancouverSystemTime = (isoDate: string) => {
-	jest.useFakeTimers();
-	jest.setSystemTime(new Date(isoDate));
+	vi.useFakeTimers();
+	vi.setSystemTime(new Date(isoDate));
 };
 
 type DeliveryTimeSlotWithAsapMetadata = DeliveryTimeSlot & {
@@ -65,7 +66,7 @@ describe("addBusinessDays", () => {
 
 describe("getDynamicDeliveryTimes delivery option metadata", () => {
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	it("propagates fee and ASAP metadata from Contentful windows to generated one-hour options", () => {
@@ -123,7 +124,7 @@ describe("getDynamicDeliveryTimes delivery option metadata", () => {
 
 describe("getDynamicDeliveryTimes synthetic ASAP option", () => {
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	it("prepends exactly one ASAP option using the fee from the earliest eligible currently selectable option", () => {

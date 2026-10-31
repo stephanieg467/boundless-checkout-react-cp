@@ -1,7 +1,5 @@
+import {vi, type Mock} from "vitest";
 import React from "react";
-
-// This is a test-environment workaround for the existing component runtime and not part of production behavior.
-global.React = React;
 
 import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,47 +11,47 @@ import {getCheckoutStepWarning} from "../../lib/checkoutGuards";
 import {setCurrentStep, setStepWarning} from "../../redux/reducers/app";
 import {TCheckoutStep} from "../../types/common";
 
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
 let mockCheckoutData: any = {};
 
-const mockOnThankYouPage = jest.fn();
+const mockOnThankYouPage = vi.fn();
 
-const mockSubmitPayment = jest.fn();
+const mockSubmitPayment = vi.fn();
 
-const mockRecordApprovedPayment = jest.fn();
+const mockRecordApprovedPayment = vi.fn();
 
-jest.mock("../../hooks/redux", () => ({
+vi.mock("../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../../lib/paymentOutcome", () => {
-	const original = jest.requireActual("../../lib/paymentOutcome");
+vi.mock("../../lib/paymentOutcome", async () => {
+	const original = await vi.importActual<typeof import("../../lib/paymentOutcome")>("../../lib/paymentOutcome");
 
 	return {
 		...original,
-		completeCreditCardPaymentOutcome: jest.fn(original.completeCreditCardPaymentOutcome),
+		completeCreditCardPaymentOutcome: vi.fn(original.completeCreditCardPaymentOutcome),
 	};
 });
 
-jest.mock("../../hooks/checkoutData", () => ({
-	getCheckoutData: jest.fn(() => mockCheckoutData),
-	setLocalStorageCheckoutData: jest.fn((updates) => {
+vi.mock("../../hooks/checkoutData", () => ({
+	getCheckoutData: vi.fn(() => mockCheckoutData),
+	setLocalStorageCheckoutData: vi.fn((updates) => {
 		mockCheckoutData = {...mockCheckoutData, ...updates};
 	}),
 }));
 
-jest.mock("../../contexts/CheckoutConfigContext", () => ({
+vi.mock("../../contexts/CheckoutConfigContext", () => ({
 	useCheckoutConfig: () => ({
 		onThankYouPage: mockOnThankYouPage,
 		payfirmaInfo: {token: "payfirma-api-key", environment: "TEST", endpoint: ""},
 	}),
 }));
 
-jest.mock("../../hooks/useDeliveryTimes", () => ({
+vi.mock("../../hooks/useDeliveryTimes", () => ({
 	useDeliveryTimes: () => ({
 		isLoading: false,
 		isError: false,
@@ -67,20 +65,19 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 	}),
 }));
 
-jest.mock("../../hooks/useCreditCardPaymentOutcome", () => ({
+vi.mock("../../hooks/useCreditCardPaymentOutcome", () => ({
 	useCreditCardPaymentOutcome: () => ({
 		recordApprovedPayment: mockRecordApprovedPayment,
 	}),
 }));
 
-jest.mock("./PayHQ/PayHQ", () => {
-	const React = jest.requireActual("react");
+vi.mock("./PayHQ/PayHQ", async () => {
+	const React = await vi.importActual<typeof import("react")>("react");
 
 	// The PayHQ mock only resolves `submitPayment()`.
 	// PaymentMethodForm records the payment approval from that result,
 	// serving as a single source of truth.
 	return {
-		__esModule: true,
 		default: React.forwardRef((_props: any, ref: any) => {
 			React.useImperativeHandle(ref, () => ({
 				submitPayment: mockSubmitPayment,
@@ -223,7 +220,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 	let paymentFormEl: HTMLDivElement | null = null;
 
 	beforeAll(() => {
-		Element.prototype.scrollIntoView = jest.fn();
+		Element.prototype.scrollIntoView = vi.fn();
 	});
 
 	afterAll(() => {
@@ -242,7 +239,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 	});
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockSubmitPayment.mockResolvedValue({paidAt: "2026-05-23T12:00:00.000Z"});
 		mockRecordApprovedPayment.mockImplementation(({paidAt}: {paidAt: string}) => {
 			mockCheckoutData = {
@@ -493,7 +490,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("retries only checkout completion after card approval when checkout completion fails", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const checkoutCompletionError = new Error("temporary checkout failure");
 		mockOnThankYouPage
 			.mockRejectedValueOnce(checkoutCompletionError)
@@ -524,7 +521,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("locks payment method after card approval and retries completion without recharging", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const checkoutCompletionError = new Error("temporary checkout failure");
 		mockOnThankYouPage
 			.mockRejectedValueOnce(checkoutCompletionError)
@@ -563,7 +560,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("blocks card-approved checkout completion retry when latest persisted prerequisites are incomplete", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const checkoutCompletionError = new Error("temporary checkout failure");
 		mockOnThankYouPage
 			.mockRejectedValueOnce(checkoutCompletionError)
@@ -699,7 +696,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("drops PayHQ validation errors silently without logging an error", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		mockSubmitPayment.mockRejectedValue(
 			new PaymentValidationError("Required payment fields are missing."),
 		);
@@ -719,7 +716,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("renders server error alert for unhandled PayHQ submit errors", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const submitError = new Error("Card declined");
 		mockSubmitPayment.mockRejectedValue(submitError);
 
@@ -741,7 +738,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("handles failure to record approved payment gracefully", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const recordError = new Error("Local storage full");
 		mockRecordApprovedPayment.mockImplementation(() => {
 			throw recordError;
@@ -776,7 +773,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("renders error banner when session data is missing on submit", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		try {
 			setup({
@@ -806,7 +803,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("scrolls to the first errored field when credit-card payment validation fails", async () => {
 		const user = userEvent.setup();
-		const scrollIntoViewMock = jest.spyOn(Element.prototype, "scrollIntoView");
+		const scrollIntoViewMock = vi.spyOn(Element.prototype, "scrollIntoView");
 
 		const deliveryOrder = makeOrder({
 			delivery_time: "10:00 AM",
@@ -832,7 +829,7 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("scrolls to the first errored field when non-credit-card payment validation fails", async () => {
 		const user = userEvent.setup();
-		const scrollIntoViewMock = jest.spyOn(Element.prototype, "scrollIntoView");
+		const scrollIntoViewMock = vi.spyOn(Element.prototype, "scrollIntoView");
 
 		const order = makeOrder({
 			payment_method_id: PAY_IN_STORE_PAYMENT_METHOD,
@@ -862,10 +859,10 @@ describe("PaymentMethodForm shared PayHQ submit button", () => {
 
 	it("handles PaymentOutcomeError with a specific support error message", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 		// Force checkout completion logic to throw PaymentOutcomeError
-		(completeCreditCardPaymentOutcome as jest.Mock).mockImplementationOnce(() => {
+		(completeCreditCardPaymentOutcome as Mock).mockImplementationOnce(() => {
 			throw new PaymentOutcomeError("tip mismatch");
 		});
 

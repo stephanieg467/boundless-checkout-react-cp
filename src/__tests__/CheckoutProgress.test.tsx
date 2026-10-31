@@ -1,17 +1,18 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, screen, fireEvent} from "@testing-library/react";
 
 // ── mocks ──────────────────────────────────────────────────────────────
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 

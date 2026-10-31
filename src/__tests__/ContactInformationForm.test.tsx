@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import dayjs from "dayjs";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
@@ -11,37 +12,35 @@ import {
 } from "../redux/reducers/app";
 import {TCheckoutStep} from "../types/common";
 
-(globalThis as any).React = React;
-
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
 let mockCheckoutData: any = {};
 
-const mockSetLocalStorageCheckoutData = jest.fn();
+const mockSetLocalStorageCheckoutData = vi.fn();
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../hooks/checkoutData", () => ({
+vi.mock("../hooks/checkoutData", () => ({
 	getCheckoutData: () => mockCheckoutData,
 	setLocalStorageCheckoutData: (data: any) =>
 		mockSetLocalStorageCheckoutData(data),
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 
-jest.mock("../components/CheckoutStepWarning", () => () => null);
+vi.mock("../components/CheckoutStepWarning", () => ({default: () => null}));
 
-jest.mock("../components/ExtraErrors", () => () => null);
+vi.mock("../components/ExtraErrors", () => ({default: () => null}));
 
-jest.mock("@mui/x-date-pickers/DatePicker", () => {
-	const dayjsLib = jest.requireActual("dayjs");
+vi.mock("@mui/x-date-pickers/DatePicker", async () => {
+	const {default: dayjsLib} = await vi.importActual<{default: typeof dayjs}>("dayjs");
 
 	return {
 		DatePicker: (props: any) => (
@@ -60,11 +59,11 @@ jest.mock("@mui/x-date-pickers/DatePicker", () => {
 	};
 });
 
-jest.mock("@mui/x-date-pickers/LocalizationProvider", () => ({
+vi.mock("@mui/x-date-pickers/LocalizationProvider", () => ({
 	LocalizationProvider: ({children}: any) => <>{children}</>,
 }));
 
-jest.mock("@mui/x-date-pickers/AdapterDayjs", () => ({AdapterDayjs: class {}}));
+vi.mock("@mui/x-date-pickers/AdapterDayjs", () => ({AdapterDayjs: class {}}));
 
 const staleOrder = () => ({
 	id: "order-1",

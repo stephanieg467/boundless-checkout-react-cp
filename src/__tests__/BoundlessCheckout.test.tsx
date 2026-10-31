@@ -1,34 +1,35 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, screen} from "@testing-library/react";
 import {setBasicProps, showCheckout} from "../redux/reducers/app";
 
-jest.mock("../redux/store", () => ({
+vi.mock("../redux/store", () => ({
 	store: {
-		dispatch: jest.fn(),
+		dispatch: vi.fn(),
 		getState: () => ({app: {show: true}}),
-		subscribe: jest.fn(() => jest.fn()),
+		subscribe: vi.fn(() => vi.fn()),
 	},
 }));
 
-jest.mock("react-redux", () => ({
+vi.mock("react-redux", () => ({
 	Provider: ({children}: {children: React.ReactNode}) => <>{children}</>,
-	useSelector: jest.fn((selector: any) => selector({app: {show: true}})),
+	useSelector: vi.fn((selector: any) => selector({app: {show: true}})),
 }));
 
-jest.mock("../StepRenderer", () => {
-	const Footer = jest.requireActual("../components/Footer").default;
+vi.mock("../StepRenderer", async () => {
+	const {default: Footer} = await vi.importActual<typeof import("../components/Footer")>("../components/Footer");
 
-	return () => <div data-testid="step-renderer"><Footer /></div>;
+	return {default: () => <div data-testid="step-renderer"><Footer /></div>};
 });
 
-const mockQueryClientConstructor = jest.fn();
+const mockQueryClientConstructor = vi.fn();
 
-jest.mock("@tanstack/react-query", () => {
-	const actual = jest.requireActual("@tanstack/react-query");
+vi.mock("@tanstack/react-query", async () => {
+	const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
 
 	return {
 		...actual,
-		QueryClient: jest.fn().mockImplementation((...args: any[]) => {
+		QueryClient: vi.fn().mockImplementation(function (...args: ConstructorParameters<typeof actual.QueryClient>) {
 			mockQueryClientConstructor(...args);
 
 			return new actual.QueryClient(...args);
@@ -39,13 +40,13 @@ jest.mock("@tanstack/react-query", () => {
 
 import BoundlessCheckout from "../BoundlessCheckout";
 
-const mockStore = jest.requireMock("../redux/store").store as {
-	dispatch: jest.Mock;
-};
+import {store} from "../redux/store";
+
+const mockStore = vi.mocked(store);
 
 const defaultProps = {
-	onHide: jest.fn(),
-	onThankYouPage: jest.fn(),
+	onHide: vi.fn(),
+	onThankYouPage: vi.fn(),
 	payfirmaInfo: {token: "mock-token", environment: "sandbox", endpoint: "mock-endpoint"}
 };
 

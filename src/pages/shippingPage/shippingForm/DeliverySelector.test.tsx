@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, screen} from "@testing-library/react";
 import {Formik} from "formik";
@@ -10,11 +11,9 @@ import {
 	SHIPPING_DELIVERY_ID,
 } from "../../../constants";
 
-(globalThis as any).React = React;
-
 let mockState: any = {};
 
-jest.mock("../../../hooks/redux", () => ({
+vi.mock("../../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 }));
 
@@ -52,7 +51,7 @@ const renderDeliverySelector = ({
 	const TestDeliverySelector = DeliverySelector as React.ComponentType<any>;
 
 	return render(
-		<Formik initialValues={{delivery_id: DELIVERY_ID}} onSubmit={jest.fn()}>
+		<Formik initialValues={{delivery_id: DELIVERY_ID}} onSubmit={vi.fn()}>
 			<TestDeliverySelector
 				options={{delivery: deliveryOptions}}
 				deliveryTimeOptions={deliveryTimeOptions}

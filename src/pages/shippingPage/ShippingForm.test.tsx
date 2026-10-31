@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import React from "react";
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import ShippingForm from "./ShippingForm";
@@ -11,24 +12,22 @@ import {TCheckoutStep} from "../../types/common";
 import {requestDeliveryQuote} from "../../lib/deliveryQuote";
 import type {DeliveryQuoteResponse} from "../../lib/deliveryQuote";
 
-jest.mock("../../lib/deliveryQuote", () => ({
-	...jest.requireActual("../../lib/deliveryQuote"),
-	requestDeliveryQuote: jest.fn(),
+vi.mock("../../lib/deliveryQuote", async () => ({
+	...await vi.importActual<typeof import("../../lib/deliveryQuote")>("../../lib/deliveryQuote"),
+	requestDeliveryQuote: vi.fn(),
 }));
 
-const mockRequestDeliveryQuote = jest.mocked(requestDeliveryQuote);
+const mockRequestDeliveryQuote = vi.mocked(requestDeliveryQuote);
 
 const originalFetch = global.fetch;
 
-(globalThis as any).React = React;
-
-const mockDispatch = jest.fn();
+const mockDispatch = vi.fn();
 
 let mockState: any = {};
 
 let mockCheckoutData: any = {};
 
-const mockSetLocalStorageCheckoutData = jest.fn();
+const mockSetLocalStorageCheckoutData = vi.fn();
 
 type MockDeliveryTimes = {
 	isNextDay: boolean;
@@ -62,32 +61,32 @@ const setAsapDeliveryTime = (applyDeliveryFee: boolean) => {
 	};
 };
 
-jest.mock("../../hooks/redux", () => ({
+vi.mock("../../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../../hooks/checkoutData", () => ({
+vi.mock("../../hooks/checkoutData", () => ({
 	getCheckoutData: () => mockCheckoutData,
 	setLocalStorageCheckoutData: (data: any) =>
 		mockSetLocalStorageCheckoutData(data),
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 
-jest.mock("../../components/CheckoutStepWarning", () => () => null);
+vi.mock("../../components/CheckoutStepWarning", () => ({default: () => null}));
 
-jest.mock("../../components/ExtraErrors", () => () => null);
+vi.mock("../../components/ExtraErrors", () => ({default: () => null}));
 
-jest.mock("../../lib/products", () => {
-	const actual = jest.requireActual("../../lib/products");
+vi.mock("../../lib/products", async () => {
+	const actual = await vi.importActual<typeof import("../../lib/products")>("../../lib/products");
 
 	return {...actual, useCartHasTickets: () => false};
 });
 
-jest.mock("../../hooks/useDeliveryTimes", () => ({
+vi.mock("../../hooks/useDeliveryTimes", () => ({
 	useDeliveryTimes: () => ({
 		isLoading: false,
 		isError: false,
@@ -95,17 +94,17 @@ jest.mock("../../hooks/useDeliveryTimes", () => ({
 	}),
 }));
 
-jest.mock("./shippingForm/DeliverySelector", () => {
-	const {useFormikContext} = jest.requireActual("formik");
+vi.mock("./shippingForm/DeliverySelector", async () => {
+	const {useFormikContext} = await vi.importActual<typeof import("formik")>("formik");
 
 	const {
 		DELIVERY_ID: deliveryId,
 		SELF_PICKUP_ID: selfPickupId,
 		SHIPPING_DELIVERY_ID: shippingDeliveryId,
-	} = jest.requireActual("../../constants");
+	} = await vi.importActual<typeof import("../../constants")>("../../constants");
 
-	return function MockDeliverySelector() {
-		const {values, handleChange} = useFormikContext();
+	function MockDeliverySelector() {
+		const {values, handleChange} = useFormikContext<{delivery_id: number}>();
 
 		return (
 			<label>
@@ -121,11 +120,13 @@ jest.mock("./shippingForm/DeliverySelector", () => {
 				</select>
 			</label>
 		);
-	};
+	}
+
+	return {default: MockDeliverySelector};
 });
 
-jest.mock("./shippingForm/AddressesFields", () => {
-	const {useFormikContext} = jest.requireActual("formik");
+vi.mock("./shippingForm/AddressesFields", async () => {
+	const {useFormikContext} = await vi.importActual<typeof import("formik")>("formik");
 
 	const requiredAddressFields = [
 		{field: "first_name", label: "first name"},
@@ -137,8 +138,8 @@ jest.mock("./shippingForm/AddressesFields", () => {
 		{field: "state", label: "state"},
 	];
 
-	return function MockAddressesFields() {
-		const {values, handleChange} = useFormikContext();
+	function MockAddressesFields() {
+		const {values, handleChange} = useFormikContext<Record<string, Record<string, string>>>();
 
 		const renderRequiredFields = (prefix: string, labelPrefix: string) =>
 			requiredAddressFields.map(({field, label}) => {
@@ -164,7 +165,9 @@ jest.mock("./shippingForm/AddressesFields", () => {
 				{renderRequiredFields("billing_address", "Billing")}
 			</div>
 		);
-	};
+	}
+
+	return {default: MockAddressesFields};
 });
 
 const cartItem = (isDropShip = false) => ({
@@ -791,8 +794,9 @@ describe("ShippingForm checkout address persistence", () => {
 
 	it("normalizes a rejected fetch through the real quote client without crashing Formik, and allows retry", async () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
-		mockRequestDeliveryQuote.mockImplementation(jest.requireActual("../../lib/deliveryQuote").requestDeliveryQuote);
-		const fetchMock = jest.fn().mockRejectedValueOnce(new Error("Network offline"));
+		const actual = await vi.importActual<typeof import("../../lib/deliveryQuote")>("../../lib/deliveryQuote");
+		mockRequestDeliveryQuote.mockImplementation(actual.requestDeliveryQuote);
+		const fetchMock = vi.fn().mockRejectedValueOnce(new Error("Network offline"));
 		global.fetch = fetchMock;
 		render(<ShippingForm shippingPage={shippingPage() as any} />);
 		fillRequiredShippingAddressFields();

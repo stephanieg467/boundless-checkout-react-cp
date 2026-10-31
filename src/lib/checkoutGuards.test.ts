@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import {
 	DELIVERY_ID,
 	DELIVERY_INFO,
@@ -245,7 +246,7 @@ describe("checkout guards", () => {
 
 		it("expires the Delivery quote at exactly the 8-hour checkout cutoff", () => {
 			const now = Date.now();
-			const clock = jest.spyOn(Date, "now").mockReturnValue(now);
+			const clock = vi.spyOn(Date, "now").mockReturnValue(now);
 
 			try {
 				const order = orderWith({

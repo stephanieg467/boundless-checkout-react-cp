@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import {
 	CHECKOUT_WINDOW_MS,
 	isDeliveryQuoteFresh,
@@ -13,7 +14,7 @@ const quote = {status: "ok", fee: "6.00", zoneLabel: "Naramata", distanceKm: 20}
 
 const originalFetch = global.fetch;
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
 	global.fetch = fetchMock;
@@ -109,7 +110,7 @@ describe("isDeliveryQuoteFresh", () => {
 	});
 
 	it("uses the current clock by default for a newly persisted quote", () => {
-		const clock = jest.spyOn(Date, "now").mockReturnValue(now);
+		const clock = vi.spyOn(Date, "now").mockReturnValue(now);
 		expect(isDeliveryQuoteFresh(storedQuote)).toBe(true);
 		clock.mockRestore();
 	});

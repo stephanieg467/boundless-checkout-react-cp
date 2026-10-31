@@ -1,17 +1,16 @@
+import {vi} from "vitest";
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import CartDiscountForm from "./CartDiscountForm";
 import {setOrder, setTotal} from "../../redux/reducers/app";
 
-(globalThis as any).React = React;
+const mockDispatch = vi.fn();
 
-const mockDispatch = jest.fn();
+const mockSetCart = vi.fn();
 
-const mockSetCart = jest.fn();
+const mockSetLocalStorageCheckoutData = vi.fn();
 
-const mockSetLocalStorageCheckoutData = jest.fn();
-
-const mockGetOrderTaxes = jest.fn();
+const mockGetOrderTaxes = vi.fn();
 
 let mockCart: any;
 
@@ -19,34 +18,34 @@ let mockCheckoutData: any;
 
 let mockCoupons: any[];
 
-jest.mock("../../hooks/redux", () => ({
+vi.mock("../../hooks/redux", () => ({
 	useAppDispatch: () => mockDispatch,
 }));
 
-jest.mock("../../hooks/getCartOrRetrieve", () => ({
+vi.mock("../../hooks/getCartOrRetrieve", () => ({
 	getCartOrRetrieve: () => mockCart,
 	setCart: (cart: any) => mockSetCart(cart),
 }));
 
-jest.mock("../../hooks/checkoutData", () => ({
+vi.mock("../../hooks/checkoutData", () => ({
 	getCheckoutData: () => mockCheckoutData,
 	setLocalStorageCheckoutData: (data: any) =>
 		mockSetLocalStorageCheckoutData(data),
 }));
 
-jest.mock("../../hooks/useCustomer", () => ({
+vi.mock("../../hooks/useCustomer", () => ({
 	useCustomer: () => ({customer: {}, isSuccess: true}),
 }));
 
-jest.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", () => ({
 	useQuery: () => ({data: mockCoupons, isSuccess: true, isError: false}),
 }));
 
-jest.mock("../../lib/taxes", () => ({
+vi.mock("../../lib/taxes", () => ({
 	getOrderTaxes: (items: any[]) => mockGetOrderTaxes(items),
 }));
 
-jest.mock("react-i18next", () => ({
+vi.mock("react-i18next", () => ({
 	useTranslation: () => ({t: (key: string) => key}),
 }));
 
@@ -71,7 +70,7 @@ const submitCoupon = async () => {
 
 describe("CartDiscountForm", () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockCoupons = [{code: "SAVE20", type: "Percent", value: "20"}];
 		mockGetOrderTaxes.mockResolvedValue("4.16");
 

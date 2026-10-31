@@ -1,3 +1,4 @@
+import {vi, type Mock} from "vitest";
 import {configureStore} from "@reduxjs/toolkit";
 import {TCheckoutStep} from "../types/common";
 import appReducer from "../redux/reducers/app";
@@ -9,22 +10,22 @@ import {ordersDropShippingItems} from "../lib/products";
 import {getCheckoutStepWarning} from "../lib/checkoutGuards";
 import {DELIVERY_ID} from "../constants";
 
-jest.mock("../hooks/checkoutData", () => ({
-	getCheckoutData: jest.fn(),
-	setLocalStorageCheckoutData: jest.fn(),
+vi.mock("../hooks/checkoutData", () => ({
+	getCheckoutData: vi.fn(),
+	setLocalStorageCheckoutData: vi.fn(),
 }));
 
-jest.mock("../hooks/getCartOrRetrieve", () => ({
-	getCartOrRetrieve: jest.fn(),
-	setCart: jest.fn(),
+vi.mock("../hooks/getCartOrRetrieve", () => ({
+	getCartOrRetrieve: vi.fn(),
+	setCart: vi.fn(),
 }));
 
-jest.mock("../lib/taxes", () => ({
-	getOrderTaxes: jest.fn(),
+vi.mock("../lib/taxes", () => ({
+	getOrderTaxes: vi.fn(),
 }));
 
-jest.mock("../lib/products", () => ({
-	ordersDropShippingItems: jest.fn(),
+vi.mock("../lib/products", () => ({
+	ordersDropShippingItems: vi.fn(),
 }));
 
 const makeCartItem = () => ({
@@ -124,16 +125,16 @@ const dispatchInitCheckout = async (
 
 describe("initCheckoutByCart", () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
-		(getCartOrRetrieve as jest.Mock).mockReturnValue(makeCart());
-		(getOrderTaxes as jest.Mock).mockResolvedValue("0.00");
-		(ordersDropShippingItems as jest.Mock).mockReturnValue([]);
+		vi.clearAllMocks();
+		(getCartOrRetrieve as Mock).mockReturnValue(makeCart());
+		(getOrderTaxes as Mock).mockResolvedValue("0.00");
+		(ordersDropShippingItems as Mock).mockReturnValue([]);
 	});
 
 	it("sets a global error and aborts when the cart is empty", async () => {
-		const onCheckoutInited = jest.fn();
+		const onCheckoutInited = vi.fn();
 
-		(getCartOrRetrieve as jest.Mock).mockReturnValue({
+		(getCartOrRetrieve as Mock).mockReturnValue({
 			...makeCart(),
 			items: [],
 		});
@@ -158,12 +159,12 @@ describe("initCheckoutByCart", () => {
 	it("fetches taxes and builds fallback order and total tax summaries when checkout data has no tax amount", async () => {
 		const cart = makeCart();
 
-		(getCartOrRetrieve as jest.Mock).mockReturnValue(cart);
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCartOrRetrieve as Mock).mockReturnValue(cart);
+		(getCheckoutData as Mock).mockReturnValue({
 			order: undefined,
 			total: undefined,
 		});
-		(getOrderTaxes as jest.Mock).mockResolvedValue("1.23");
+		(getOrderTaxes as Mock).mockResolvedValue("1.23");
 
 		const store = makeStore(TCheckoutStep.contactInfo);
 
@@ -211,11 +212,11 @@ describe("initCheckoutByCart", () => {
 
 	it("sets the checkout initialization error and aborts when tax lookup fails", async () => {
 		const taxError = new Error("tax service unavailable");
-		const onCheckoutInited = jest.fn();
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const onCheckoutInited = vi.fn();
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-		(getCheckoutData as jest.Mock).mockReturnValue({});
-		(getOrderTaxes as jest.Mock).mockRejectedValue(taxError);
+		(getCheckoutData as Mock).mockReturnValue({});
+		(getOrderTaxes as Mock).mockRejectedValue(taxError);
 
 		try {
 			const store = makeStore(TCheckoutStep.contactInfo);
@@ -276,7 +277,7 @@ describe("initCheckoutByCart", () => {
 			},
 		};
 
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({
 				tax_amount: "2.34",
 				total_price: "12.34",
@@ -301,7 +302,7 @@ describe("initCheckoutByCart", () => {
 		const services = [pickupService()];
 		const discounts = [{id: "discount-1", title: "Loyalty discount"}];
 
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({
 				payment_method_id: "payment-method-1",
 				paid_at: "2026-01-02T00:00:00.000Z",
@@ -355,9 +356,9 @@ describe("initCheckoutByCart", () => {
 	it("adds the delivery details step for drop-ship items and blocks payment until it is complete", async () => {
 		const cart = makeCart();
 
-		(getCartOrRetrieve as jest.Mock).mockReturnValue(cart);
-		(ordersDropShippingItems as jest.Mock).mockReturnValue([cart.items[0]]);
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCartOrRetrieve as Mock).mockReturnValue(cart);
+		(ordersDropShippingItems as Mock).mockReturnValue([cart.items[0]]);
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({
 				customer: completeCustomer(),
 				services: [pickupService()],
@@ -382,9 +383,9 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("calls onCheckoutInited with the initialized checkout data", async () => {
-		const onCheckoutInited = jest.fn();
+		const onCheckoutInited = vi.fn();
 
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({
 				customer: completeCustomer(),
 				services: [pickupService()],
@@ -420,7 +421,7 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("defaults a null persisted stepper to the contact step without a warning", async () => {
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({customer: completeCustomer(), services: [pickupService()]}),
 			total: undefined,
 		});
@@ -442,9 +443,9 @@ describe("initCheckoutByCart", () => {
 
 	it("sets the checkout initialization error when checkout data assembly fails", async () => {
 		const error = new Error("checkout data failed");
-		const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-		(getCheckoutData as jest.Mock).mockImplementation(() => {
+		(getCheckoutData as Mock).mockImplementation(() => {
 			throw error;
 		});
 
@@ -464,7 +465,7 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("normalizes a current step ahead of incomplete contact back to contactInfo and sets the contact warning", async () => {
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({customer: undefined, services: []}),
 			total: undefined,
 		});
@@ -477,7 +478,7 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("normalizes a current step ahead of incomplete shipping back to shippingAddress and sets the shipping warning", async () => {
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({customer: completeCustomer(), services: []}),
 			total: undefined,
 		});
@@ -495,8 +496,8 @@ describe("initCheckoutByCart", () => {
 			{label: "9-hour-old", age: 9 * 60 * 60 * 1000, blocked: true},
 			{label: "fresh", age: 60 * 60 * 1000, blocked: false},
 		])("returns to shipping only when the quote is invalid ($label)", async ({age, blocked}) => {
-			(ordersDropShippingItems as jest.Mock).mockReturnValue([makeCartItem()]);
-			(getCheckoutData as jest.Mock).mockReturnValue({
+			(ordersDropShippingItems as Mock).mockReturnValue([makeCartItem()]);
+			(getCheckoutData as Mock).mockReturnValue({
 				order: makeOrder({
 					customer: completeCustomer({addresses: [{
 						type: "shipping",
@@ -530,7 +531,7 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("leaves currentStep unchanged when prerequisites before it are complete", async () => {
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({customer: completeCustomer(), services: [pickupService()]}),
 			total: undefined,
 		});
@@ -543,7 +544,7 @@ describe("initCheckoutByCart", () => {
 	});
 
 	it("normalizes a persisted drop-ship-only currentStep when the recomputed flow no longer includes it", async () => {
-		(getCheckoutData as jest.Mock).mockReturnValue({
+		(getCheckoutData as Mock).mockReturnValue({
 			order: makeOrder({customer: completeCustomer(), services: [pickupService()]}),
 			total: undefined,
 		});

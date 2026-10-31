@@ -1,24 +1,25 @@
+import {vi} from "vitest";
 import React from "react";
 import {render, screen, waitFor} from "@testing-library/react";
 import {TCheckoutStep} from "../types/common";
 
 // ── mocks ──────────────────────────────────────────────────────────────
-jest.mock("../hooks/initCheckout", () => () => ({isInited: true}));
+vi.mock("../hooks/initCheckout", () => ({default: () => ({isInited: true})}));
 
-jest.mock("../pages/ContactInfoPage", () => () => <div data-testid="contact-info-page" />);
+vi.mock("../pages/ContactInfoPage", () => ({default: () => <div data-testid="contact-info-page" />}));
 
-jest.mock("../pages/ShippingPage", () => () => <div data-testid="shipping-page" />);
+vi.mock("../pages/ShippingPage", () => ({default: () => <div data-testid="shipping-page" />}));
 
-jest.mock("../pages/DeliveryDetailsPage", () => () => <div data-testid="delivery-details-page" />);
+vi.mock("../pages/DeliveryDetailsPage", () => ({default: () => <div data-testid="delivery-details-page" />}));
 
-jest.mock("../pages/PaymentPage", () => () => <div data-testid="payment-page" />);
+vi.mock("../pages/PaymentPage", () => ({default: () => <div data-testid="payment-page" />}));
 
-jest.mock("../components/Loading", () => () => <div data-testid="loading" />);
+vi.mock("../components/Loading", () => ({default: () => <div data-testid="loading" />}));
 
 // Controllable Redux state
 let mockState: any = {};
 
-jest.mock("../hooks/redux", () => ({
+vi.mock("../hooks/redux", () => ({
 	useAppSelector: (selector: any) => selector(mockState),
 }));
 
@@ -27,9 +28,9 @@ import StepRenderer from "../StepRenderer";
 // ── helpers ─────────────────────────────────────────────────────────────
 import {CheckoutConfigProvider} from "../contexts/CheckoutConfigContext";
 
-const mockOnHide = jest.fn();
+const mockOnHide = vi.fn();
 
-const mockOnThankYouPage = jest.fn();
+const mockOnThankYouPage = vi.fn();
 
 const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string | null = null) => {
 	mockState = {
@@ -52,7 +53,7 @@ const renderWithStep = (currentStep: TCheckoutStep | null, globalError: string |
 // ── tests ────────────────────────────────────────────────────────────────
 describe("StepRenderer scroll-to-top", () => {
 	it("calls scrollTo on .bdl-checkout when currentStep changes", () => {
-		const scrollToMock = jest.fn();
+		const scrollToMock = vi.fn();
 
 		const portalEl = document.createElement("div");
 		portalEl.className = "bdl-checkout";
@@ -84,7 +85,7 @@ describe("StepRenderer scroll-to-top", () => {
 describe("StepRenderer", () => {
 	beforeEach(() => {
 		window.history.replaceState(null, "", "/checkout");
-		jest.restoreAllMocks();
+		vi.restoreAllMocks();
 	});
 
 	it("renders ContactInfoPage for contactInfo step", () => {
@@ -141,7 +142,7 @@ describe("StepRenderer", () => {
 	});
 
 	it("does not update the URL when stepper is null", () => {
-		const replaceStateSpy = jest.spyOn(window.history, "replaceState");
+		const replaceStateSpy = vi.spyOn(window.history, "replaceState");
 
 		renderWithStep(null);
 
@@ -149,7 +150,7 @@ describe("StepRenderer", () => {
 	});
 
 	it("does not update the URL for an unexpected step value", () => {
-		const replaceStateSpy = jest.spyOn(window.history, "replaceState");
+		const replaceStateSpy = vi.spyOn(window.history, "replaceState");
 
 		renderWithStep("unknownStep" as TCheckoutStep);
 
