@@ -91,7 +91,7 @@ function DeliveryQuoteStatus() {
 						const correctedValues = {
 							...values,
 							shipping_address: {
-								...(values.shipping_address ?? getEmptyAddressFields()),
+								...values.shipping_address,
 								address_line_1: quote.address.street,
 								address_line_2: quote.address.unit ?? "",
 								city: quote.address.city,
@@ -241,13 +241,13 @@ const getEmptyAddressFields = (
 	};
 };
 
-function toDeliveryQuoteAddress(address = getEmptyAddressFields()): DeliveryQuoteRequest {
+function toDeliveryQuoteAddress(address: IAddressFormFields): DeliveryQuoteRequest {
 	return {
-		street: address.address_line_1 ?? "",
-		unit: address.address_line_2 ?? "",
-		city: address.city ?? "",
-		province: address.state ?? "",
-		postalCode: address.zip ?? "",
+		street: address.address_line_1,
+		unit: address.address_line_2,
+		city: address.city,
+		province: address.state,
+		postalCode: address.zip,
 	};
 }
 
