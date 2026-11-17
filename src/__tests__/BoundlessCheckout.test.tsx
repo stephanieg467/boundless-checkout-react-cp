@@ -87,6 +87,7 @@ describe("BoundlessCheckout", () => {
 		const {rerender} = render(
 			<BoundlessCheckout {...defaultProps} footerMenu={<a href="/store-info">Store info</a>} />
 		);
+
 		expect(screen.getByRole("link", {name: "Store info"})).toHaveAttribute("href", "/store-info");
 
 		rerender(
