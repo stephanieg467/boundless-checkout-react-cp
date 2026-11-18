@@ -31,7 +31,7 @@
     },
     "src/pages/shippingPage/ShippingForm.tsx": {
       "crap_high": {
-        "count": 2
+        "count": 1
       }
     }
   },
@@ -43,6 +43,8 @@
     "src/pages/ShippingPage.tsx:hidden coupling",
     "src/components/ContactInformationForm.tsx:hidden coupling",
     "src/hooks/checkoutData.ts:high impact",
-    "src/pages/paymentPage/PayHQ/PayHQ.tsx:complexity"
+    "src/pages/paymentPage/PayHQ/PayHQ.tsx:complexity",
+    "src/pages/shippingPage/ShippingForm.test.tsx:hidden coupling",
+    "src/lib/checkoutGuards.test.ts:hidden coupling"
   ]
 }
