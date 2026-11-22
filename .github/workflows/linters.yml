@@ -33,6 +33,9 @@ jobs:
       - name: Run type verification
         run: npm run verify
 
+      - name: Run tests
+        run: npm run test:coverage
+
       - name: Run Fallow quality gate
         uses: fallow-rs/fallow@v3
         with:
@@ -41,6 +44,4 @@ jobs:
           gate: new-only
           fail-on-issues: true
           annotations: true
-
-      - name: Run tests
-        run: npm test
+          coverage: coverage/coverage-final.json

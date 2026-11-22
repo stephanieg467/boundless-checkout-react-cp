@@ -7,5 +7,10 @@ export default defineConfig({
 		setupFiles: ["./src/setupTests.ts"],
 		include: ["src/**/*.test.{ts,tsx}"],
 		sequence: {hooks: "list"},
+		coverage: {
+			provider: "v8",
+			reporter: ["text", "json", "json-summary"],
+			include: ["src/**/*.{ts,tsx}"],
+		},
 	},
 });
