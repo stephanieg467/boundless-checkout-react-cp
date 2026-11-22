@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Runs only on turns where Claude edited a project file (marker set by lint-edited-file.sh).
+# Skips the checks when the working tree matches the last one that passed.
 # Recheck after one automatic retry, but report persistent failures without looping.
 input=$(jq -c '.') || exit 1
 stop_hook_active=$(jq -r '.stop_hook_active // false' <<< "$input")
-marker=.claude/.edited-$(jq -r '.session_id | split("/")[-1]' <<< "$input")
 project_dir=${CLAUDE_PROJECT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd -- "$project_dir" || exit 1
-[ -f "$marker" ] || exit 0
-pass() { rm -f "$marker"; exit 0; }
+state=.claude/.verified-tree
+tree=$( { git rev-parse HEAD; git status --porcelain; git ls-files -m -o --exclude-standard -z | xargs -0 -r sha1sum 2>/dev/null; } | sha1sum)
+[ "$(cat "$state" 2>/dev/null)" = "$tree" ] && exit 0
+pass() { echo "$tree" > "$state"; exit 0; }
 export NO_COLOR=1 FORCE_COLOR=0
 
 changed=$( { git diff --name-only "$(git merge-base origin/master HEAD)"; git ls-files --others --exclude-standard; } \
-	| sort -u | grep -E '\.(ts|tsx|js|scss)$' | while read -r f; do [ -f "$f" ] && echo "$f"; done)
+	| sort -u | grep -E '\.(ts|tsx|mts|cts|js|scss)$' | while read -r f; do [ -f "$f" ] && echo "$f"; done)
 [ -z "$changed" ] && pass
 
 fail() {
