@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from "react";
-import {Form, Formik, FormikHelpers, useFormikContext} from "formik";
+import {Form, Formik, FormikHelpers, FormikProps, useFormikContext} from "formik";
 import ExtraErrors from "../../components/ExtraErrors";
 import {Alert, Box, Button, Typography} from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -76,7 +76,21 @@ function DeliveryQuoteStatus() {
 	if (status?.deliveryQuoteValues !== values) return null;
 	const quote: DeliveryQuoteResponse = status.deliveryQuote;
 
-	if (quote.status === "ok") return null;
+	if (quote.status === "ok") {
+		if (values.delivery_id !== SHIPPING_DELIVERY_ID) return null;
+
+		return (
+			<Alert severity="warning" sx={{mb: 2}}>
+				<Typography>This address is within our local delivery area. Please switch to Delivery.</Typography>
+				<Button type="button" onClick={() => {
+					setStatus(undefined);
+					void setFieldValue("delivery_id", DELIVERY_ID);
+				}}>
+					Switch to Delivery
+				</Button>
+			</Alert>
+		);
+	}
 
 	return (
 		<Alert severity="warning" sx={{mb: 2}}>
@@ -264,6 +278,7 @@ const useSaveShippingForm = ({
 }) => {
 	const dispatch = useAppDispatch();
 	const steps = useAppSelector((state) => state.app.stepper?.steps ?? []);
+	const formikRef = useRef<FormikProps<IShippingFormValues>>(null);
 
 	const onSubmit = (
 		values: IShippingFormValues,
@@ -504,6 +519,23 @@ const useSaveShippingForm = ({
 			customAttrs.deliveryQuote = {fee: response.fee, zoneLabel: response.zoneLabel, quotedAt: Date.now()};
 		}
 
+		if (values.delivery_id === SHIPPING_DELIVERY_ID) {
+			const response = await requestDeliveryQuote(toDeliveryQuoteAddress(values.shipping_address));
+
+			if (response.status === "ok") {
+				formikHelpers.setStatus({deliveryQuote: response, deliveryQuoteValues: values});
+				formikHelpers.setSubmitting(false);
+
+				return;
+			}
+		}
+
+		if (formikRef.current?.values !== values) {
+			formikHelpers.setSubmitting(false);
+
+			return;
+		}
+
 		return onSubmit(values, formikHelpers, {
 			...checkoutData,
 			order: {...checkoutData.order, custom_attrs: customAttrs},
@@ -512,6 +544,7 @@ const useSaveShippingForm = ({
 
 	return {
 		onSubmit: submitWithDeliveryQuote,
+		formikRef,
 	};
 };
 
@@ -536,7 +569,7 @@ export default function ShippingForm({
 		returnTimeForTodayAndTwoDaysFromNow: false,
 	});
 
-	const {onSubmit} = useSaveShippingForm({
+	const {onSubmit, formikRef} = useSaveShippingForm({
 		shippingPage,
 		regularDeliveryOptions: deliveryTimes?.times,
 		hasRegularItems,
@@ -549,6 +582,7 @@ export default function ShippingForm({
 
 	return (
 		<Formik
+			innerRef={formikRef}
 			initialValues={initialValues}
 			onSubmit={onSubmit}
 			validate={makeValidateShippingForm(hasRegularItems)}

@@ -4,13 +4,18 @@ import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/
 import ShippingForm from "./ShippingForm";
 import {
 	DELIVERY_ID,
+	DELIVERY_INFO,
 	SELF_PICKUP_ID,
+	SELF_PICKUP_INFO,
 	SHIPPING_COST,
 	SHIPPING_DELIVERY_ID,
+	SHIPPING_DELIVERY_INFO,
 } from "../../constants";
 import {TCheckoutStep} from "../../types/common";
 import {requestDeliveryQuote} from "../../lib/deliveryQuote";
 import type {DeliveryQuoteResponse} from "../../lib/deliveryQuote";
+import {TAddressType} from "../../types/shippingForm";
+import type {ICheckoutShippingPageData} from "../../types/shippingForm";
 
 vi.mock("../../lib/deliveryQuote", async () => ({
 	...await vi.importActual<typeof import("../../lib/deliveryQuote")>("../../lib/deliveryQuote"),
@@ -211,38 +216,25 @@ const checkoutTotal = (itemsSubTotalPrice = "10.00") => ({
 	},
 });
 
-const shippingPage = () => ({
+const shippingPage = (): ICheckoutShippingPageData => ({
 	shippingAddress: null,
 	billingAddress: {
+		id: "billing-address-1",
+		type: TAddressType.billing,
+		is_default: false,
 		first_name: "Initial",
 		last_name: "Billing",
+		company: null,
 		address_line_1: "1 Billing St",
+		address_line_2: null,
 		city: "Penticton",
 		state: "BC",
 		zip: "V2A 1A1",
+		country_id: 40,
+		created_at: "2026-01-01T00:00:00.000Z",
+		vwCountry: null,
 	},
-	options: {
-		delivery: [
-			{
-				delivery_id: SELF_PICKUP_ID,
-				title: "Self Pickup",
-				alias: "selfPickup",
-				description: "Self Pickup",
-			},
-			{
-				delivery_id: DELIVERY_ID,
-				title: "Delivery",
-				alias: "delivery",
-				description: "Delivery",
-			},
-			{
-				delivery_id: SHIPPING_DELIVERY_ID,
-				title: "Shipping",
-				alias: "shipping",
-				description: "Shipping",
-			},
-		],
-	},
+	options: {delivery: [SELF_PICKUP_INFO, DELIVERY_INFO, SHIPPING_DELIVERY_INFO]},
 });
 
 const fillRequiredShippingAddressFields = (
@@ -361,7 +353,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("renders the delivery-time selector above address fields for Delivery with regular items", () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		const deliveryTimeSelector = screen.getByRole("combobox", {
 			name: /delivery time/i,
@@ -380,7 +372,7 @@ describe("ShippingForm checkout address persistence", () => {
 		setCheckoutOrder(DELIVERY_ID);
 		setAsapDeliveryTime(true);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		const deliveryTimeSelector = screen.getByRole("combobox", {
 			name: /delivery time/i,
@@ -399,7 +391,7 @@ describe("ShippingForm checkout address persistence", () => {
 				custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Naramata", quotedAt: Date.now()}},
 			},
 		});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		const selector = screen.getByRole("combobox", {name: /delivery time/i});
 		expect(within(selector).getByRole("option", {name: "10:00 AM"})).toBeInTheDocument();
@@ -418,7 +410,7 @@ describe("ShippingForm checkout address persistence", () => {
 	])("does not render the delivery-time selector for $name", ({deliveryId}) => {
 		setCheckoutOrder(deliveryId);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		expect(
 			screen.queryByRole("combobox", {name: /delivery time/i}),
@@ -428,7 +420,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("does not render the delivery-time selector for Delivery when the cart is drop-ship-only", () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		expect(
 			screen.queryByRole("combobox", {name: /delivery time/i}),
@@ -445,7 +437,7 @@ describe("ShippingForm checkout address persistence", () => {
 			setCheckoutOrder(deliveryId, items);
 			setAsapDeliveryTime(true);
 
-			render(<ShippingForm shippingPage={shippingPage() as any} />);
+			render(<ShippingForm shippingPage={shippingPage()} />);
 
 			expect(
 				screen.queryByRole("combobox", {name: /delivery time/i}),
@@ -459,7 +451,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("requires delivery_time before submitting Delivery with regular items", async () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 
@@ -480,7 +472,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("persists order.delivery_time on successful Delivery submit", async () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
@@ -494,7 +486,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("persists the Delivery fee when the selected regular delivery time applies the fee", async () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
@@ -522,7 +514,7 @@ describe("ShippingForm checkout address persistence", () => {
 		setCheckoutOrder(DELIVERY_ID);
 		setAsapDeliveryTime(true);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
@@ -539,7 +531,7 @@ describe("ShippingForm checkout address persistence", () => {
 		setCheckoutOrder(DELIVERY_ID);
 		setAsapDeliveryTime(false);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
@@ -555,7 +547,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("waives the Delivery fee when the selected regular delivery time is fee-free", async () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {
@@ -572,7 +564,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("defaults to the Delivery fee when the selected regular delivery time label is unmatched", async () => {
 		setCheckoutOrder(DELIVERY_ID);
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields();
 
@@ -598,7 +590,7 @@ describe("ShippingForm checkout address persistence", () => {
 			orderOverrides: {delivery_time: "10:00 AM"},
 		});
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		const persisted = await continueToPayment();
 
@@ -635,8 +627,9 @@ describe("ShippingForm checkout address persistence", () => {
 				orderOverrides: {delivery_time: deliveryTime},
 				total: checkoutTotal(itemsSubTotalPrice),
 			});
+			mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
 
-			render(<ShippingForm shippingPage={shippingPage() as any} />);
+			render(<ShippingForm shippingPage={shippingPage()} />);
 
 			fillRequiredShippingAddressFields();
 
@@ -676,7 +669,7 @@ describe("ShippingForm checkout address persistence", () => {
 				},
 			});
 
-			render(<ShippingForm shippingPage={shippingPage() as any} />);
+			render(<ShippingForm shippingPage={shippingPage()} />);
 
 			fillRequiredShippingAddressFields();
 
@@ -696,7 +689,7 @@ describe("ShippingForm checkout address persistence", () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)], {
 			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "4.00", zoneLabel: "Old", quotedAt: Date.now()}}},
 		});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields({city: "Naramata", zip: "V0H 1N0"});
 		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
 
@@ -715,7 +708,7 @@ describe("ShippingForm checkout address persistence", () => {
 
 	it("rejects a non-BC Delivery postal code before requesting a quote", async () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields({zip: "T2P 1A1"});
 		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
 		fireEvent.submit(button.closest("form")!);
@@ -734,7 +727,7 @@ describe("ShippingForm checkout address persistence", () => {
 		});
 		const originalOrder = JSON.parse(JSON.stringify(mockCheckoutData.order));
 		mockRequestDeliveryQuote.mockResolvedValue(response);
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
 
@@ -759,7 +752,7 @@ describe("ShippingForm checkout address persistence", () => {
 		mockRequestDeliveryQuote.mockImplementationOnce(() => new Promise((resolve) => {
 			resolveQuote = resolve;
 		}));
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
 		fireEvent.click(button);
@@ -796,7 +789,7 @@ describe("ShippingForm checkout address persistence", () => {
 		mockRequestDeliveryQuote.mockImplementation(actual.requestDeliveryQuote);
 		const fetchMock = vi.fn().mockRejectedValueOnce(new Error("Network offline"));
 		global.fetch = fetchMock;
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
 
@@ -820,7 +813,7 @@ describe("ShippingForm checkout address persistence", () => {
 		const originalOrder = JSON.parse(JSON.stringify(mockCheckoutData.order));
 		const correctedAddress = {street: "385 Martin St", unit: "2", city: "Naramata", province: "BC", postalCode: "V0H 1N0"};
 		mockRequestDeliveryQuote.mockResolvedValueOnce({status: "needs_confirmation", address: correctedAddress});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
 		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
@@ -861,7 +854,7 @@ describe("ShippingForm checkout address persistence", () => {
 	])("clears quote feedback when $label is edited without making another quote request", async ({label, value}) => {
 		setCheckoutOrder(DELIVERY_ID);
 		mockRequestDeliveryQuote.mockResolvedValue({status: "unverifiable"});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields({state: "British Columbia"});
 		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
 		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
@@ -880,7 +873,7 @@ describe("ShippingForm checkout address persistence", () => {
 	it("offers Shipping after a blocked quote without auto-submitting or silently switching", async () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)]);
 		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
 		await screen.findByRole("alert");
@@ -891,25 +884,114 @@ describe("ShippingForm checkout address persistence", () => {
 		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
 		expect(mockDispatch).not.toHaveBeenCalled();
 		await continueToPayment();
-		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1);
 	});
 
-	it.each([SHIPPING_DELIVERY_ID, SELF_PICKUP_ID])("drops a stale quote on method %s submit without requesting another", async (deliveryId) => {
-		setCheckoutOrder(deliveryId, [cartItem(false)], {
+	it("drops a stale quote on Pickup submit without requesting another", async () => {
+		setCheckoutOrder(SELF_PICKUP_ID, [cartItem(false)], {
 			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Old", quotedAt: 1}}},
 		});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
-		if (deliveryId === SHIPPING_DELIVERY_ID) fillRequiredShippingAddressFields();
 		const persisted = await continueToPayment();
 		expect(persisted.order.custom_attrs).not.toHaveProperty("deliveryQuote");
 		expect(mockCheckoutData.order.custom_attrs.deliveryQuote).toBeDefined();
 		expect(mockRequestDeliveryQuote).not.toHaveBeenCalled();
 	});
 
+	it("allows Shipping to an address outside the delivery range without storing a quote", async () => {
+		setCheckoutOrder(SHIPPING_DELIVERY_ID, [cartItem(false)], {
+			orderOverrides: {custom_attrs: {deliveryQuote: {fee: "6.00", zoneLabel: "Old", quotedAt: 1}}},
+		});
+		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
+		render(<ShippingForm shippingPage={shippingPage()} />);
+		fillRequiredShippingAddressFields();
+
+		const persisted = await continueToPayment();
+		expect(persisted.order.custom_attrs).not.toHaveProperty("deliveryQuote");
+	});
+
+	it("discards pending Shipping completions after an address edit or method switch until a fresh submit", async () => {
+		setCheckoutOrder(SHIPPING_DELIVERY_ID);
+		const firstQuote = Promise.withResolvers<DeliveryQuoteResponse>();
+		const secondQuote = Promise.withResolvers<DeliveryQuoteResponse>();
+		mockRequestDeliveryQuote
+			.mockReturnValueOnce(firstQuote.promise)
+			.mockReturnValueOnce(secondQuote.promise)
+			.mockResolvedValue({status: "ok", fee: "8.00", zoneLabel: "Current zone", distanceKm: 12});
+		render(<ShippingForm shippingPage={shippingPage()} />);
+		fillRequiredShippingAddressFields();
+		const button = screen.getByRole("button", {name: "shippingForm.continueToPayment"});
+		fireEvent.click(button);
+		await waitFor(() => expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(1));
+		expect(button).toBeDisabled();
+
+		fireEvent.change(screen.getByLabelText("Shipping address line 1"), {target: {value: "2 Edited St"}});
+		await act(async () => firstQuote.resolve({status: "out_of_range", maxKm: 30}));
+
+		expect(screen.getByLabelText("Shipping address line 1")).toHaveValue("2 Edited St");
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		expect(button).not.toBeDisabled();
+
+		fireEvent.click(button);
+		await waitFor(() => expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2));
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(expect.objectContaining({street: "2 Edited St"}));
+		expect(button).toBeDisabled();
+		fireEvent.change(screen.getByLabelText("Delivery method"), {target: {value: String(DELIVERY_ID)}});
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
+		await act(async () => secondQuote.resolve({status: "out_of_range", maxKm: 30}));
+
+		expect(screen.getByLabelText("Delivery method")).toHaveValue(String(DELIVERY_ID));
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+		expect(button).not.toBeDisabled();
+
+		const persisted = await continueToPayment();
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(3);
+		expect(mockRequestDeliveryQuote).toHaveBeenLastCalledWith(expect.objectContaining({street: "2 Edited St"}));
+		expect(persisted.order.customer.addresses[0].address_line_1).toBe("2 Edited St");
+		expect(persisted.order.services[0].service_id).toBe(DELIVERY_ID);
+		expect(persisted.order.delivery_time).toBe("10:00 AM");
+		expect(persisted.order.custom_attrs.deliveryQuote).toEqual({
+			fee: "8.00", zoneLabel: "Current zone", quotedAt: expect.any(Number),
+		});
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	it("blocks in-range Shipping then saves a fresh Delivery quote after switching and choosing a delivery time", async () => {
+		setCheckoutOrder(SHIPPING_DELIVERY_ID, [cartItem(false)]);
+		render(<ShippingForm shippingPage={shippingPage()} />);
+		fillRequiredShippingAddressFields();
+		fireEvent.click(screen.getByRole("button", {name: "shippingForm.continueToPayment"}));
+
+		expect(await screen.findByRole("alert")).toHaveTextContent("within our local delivery area");
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", {name: "Switch to Delivery"}));
+		await waitFor(() => expect(screen.getByLabelText("Delivery method")).toHaveValue(String(DELIVERY_ID)));
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(mockSetLocalStorageCheckoutData).not.toHaveBeenCalled();
+		expect(mockDispatch).not.toHaveBeenCalled();
+
+		fireEvent.change(screen.getByRole("combobox", {name: /delivery time/i}), {target: {value: "10:00 AM"}});
+		mockRequestDeliveryQuote.mockResolvedValueOnce({status: "ok", fee: "9.00", zoneLabel: "Fresh zone", distanceKm: 25});
+		const persisted = await continueToPayment();
+		expect(mockRequestDeliveryQuote).toHaveBeenCalledTimes(2);
+		expect(persisted.order.services[0].service_id).toBe(DELIVERY_ID);
+		expect(persisted.order.delivery_time).toBe("10:00 AM");
+		expect(persisted.order.custom_attrs.deliveryQuote).toEqual({
+			fee: "9.00", zoneLabel: "Fresh zone", quotedAt: expect.any(Number),
+		});
+		expectPersistedShippingFee(persisted, "9.00", 0.45);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
 	it("stores the quoted original fee and waiver for a Delivery subtotal of $100", async () => {
 		setCheckoutOrder(DELIVERY_ID, [cartItem(true)], {total: checkoutTotal("100.00")});
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 		fillRequiredShippingAddressFields();
 		const persisted = await continueToPayment();
 		expectPersistedShippingFee(persisted, "0.00", 0);
@@ -953,7 +1035,7 @@ describe("ShippingForm checkout address persistence", () => {
 		mockState.app.total = paidShippingTotal;
 		mockCheckoutData = {order: paidShippingOrder, total: paidShippingTotal};
 
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fireEvent.change(screen.getByLabelText("Delivery method"), {
 			target: {value: String(SELF_PICKUP_ID)},
@@ -997,7 +1079,8 @@ describe("ShippingForm checkout address persistence", () => {
 	});
 
 	it("persists submitted shipping names and keeps billing names from the billing form", async () => {
-		render(<ShippingForm shippingPage={shippingPage() as any} />);
+		mockRequestDeliveryQuote.mockResolvedValue({status: "out_of_range", maxKm: 30});
+		render(<ShippingForm shippingPage={shippingPage()} />);
 
 		fillRequiredShippingAddressFields({
 			first_name: "Submitted",
